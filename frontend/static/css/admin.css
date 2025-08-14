@@ -1,0 +1,262 @@
+/* 
+ * 管理介面專屬樣式
+ * 使用新的 CSS 架構，遵循主題系統
+ */
+
+/* ==================== 引入核心樣式 ==================== */
+@import url('./themes/theme-variables.css');
+@import url('./core/base.css');
+@import url('./core/components.css');
+@import url('./core/utilities.css');
+@import url('./core/layouts.css');
+
+/* ==================== 管理頁面標識樣式 ==================== */
+
+/* 導航欄添加管理員標識 */
+.admin-navbar {
+    border-top: 3px solid var(--primary);  /* 頂部色條標識管理頁面 */
+}
+
+/* 品牌標誌強調 */
+.admin-navbar .navbar-brand i {
+    color: var(--primary);
+    font-size: 1.2em;
+}
+
+/* 使用者資訊強化 hover 效果 */
+.admin-navbar .user-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: var(--bg-light);
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+}
+
+.admin-navbar .user-info:hover {
+    background: var(--bg-hover);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+/* 歡迎區塊 */
+.welcome-section {
+    text-align: center;
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-md);
+    background: var(--gradient-primary);
+    border-radius: var(--radius-lg);
+    color: white;
+    box-shadow: var(--shadow-md);
+}
+
+.welcome-section h1 {
+    font-size: 2em;
+    margin-bottom: var(--spacing-sm);
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.welcome-section p {
+    font-size: 1.1em;
+    opacity: 0.95;
+}
+
+/* 功能卡片特有樣式（覆蓋 layouts.css） */
+.function-card.hidden {
+    display: none;
+}
+
+/* 卡片圖標 */
+.card-icon {
+    width: 60px;
+    height: 60px;
+    background: var(--gradient-primary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: var(--spacing-md);
+}
+
+.card-icon i {
+    font-size: 1.8em;
+    color: white;
+}
+
+.function-card.disabled .card-icon {
+    background: var(--bg-light);
+    border: 2px solid var(--border-color);
+}
+
+.function-card.disabled .card-icon i {
+    color: var(--text-muted);
+}
+
+/* 卡片內容樣式 */
+.card-content {
+    flex: 1;
+    margin-bottom: var(--spacing-md);
+}
+
+.card-content h3 {
+    font-size: 1.2em;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-xs);
+}
+
+.card-content p {
+    color: var(--text-secondary);
+    line-height: 1.4;
+    font-size: 0.9em;
+}
+
+/* 卡片底部 */
+.card-footer {
+    border-top: 1px solid var(--border-color);
+    padding-top: var(--spacing-md);
+}
+
+/* 進入按鈕 */
+.btn-enter {
+    width: 100%;
+    padding: var(--spacing-sm) var(--spacing-lg);
+    background: var(--gradient-primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-lg);
+    font-size: 1.1em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    transition: transform var(--transition-fast);
+}
+
+.btn-enter:hover:not(:disabled) {
+    transform: scale(1.02);
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-enter:disabled {
+    background: var(--bg-light);
+    color: var(--text-muted);
+    cursor: not-allowed;
+}
+
+/* 個人功能抽屜 */
+.user-menu-drawer {
+    position: fixed;
+    top: 0;
+    right: -300px;
+    width: 300px;
+    height: 100vh;
+    background-color: var(--bg-main);
+    border-left: 1px solid var(--border-color);
+    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+    transition: right var(--transition-normal);
+    z-index: var(--z-modal);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.user-menu-drawer.open {
+    right: 0;
+}
+
+/* 抽屜頭部 */
+.user-menu-header {
+    padding: var(--spacing-lg);
+    background: var(--gradient-primary);
+    color: white;
+}
+
+/* 使用者名稱樣式 */
+#userMenuUsername {
+    display: block;
+    font-size: 1.5em;
+    font-weight: 600;
+    text-align: center;
+    word-break: break-all;
+}
+
+/* 抽屜內容 */
+.user-menu-content {
+    padding: var(--spacing-lg);
+    flex-grow: 1;
+}
+
+/* 選單項目 */
+.menu-item {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: var(--spacing-sm) var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    text-align: left;
+    font-size: 0.95rem;
+}
+
+.menu-item:hover {
+    background: var(--bg-hover);
+    padding-left: var(--spacing-lg);
+}
+
+.menu-item i {
+    margin-right: var(--spacing-sm);
+    width: 20px;
+    text-align: center;
+    color: var(--primary);
+}
+
+.menu-item span {
+    color: var(--text-primary);
+}
+
+.user-menu-content hr {
+    border: none;
+    border-top: 1px solid var(--border-color);
+    margin: var(--spacing-md) 0;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    
+    .welcome-section h1 {
+        font-size: 1.5em;
+    }
+    
+    .welcome-section {
+        padding: var(--spacing-md);
+    }
+}
+
+@media (max-width: 480px) {
+    .navbar-brand span {
+        display: none;
+    }
+    
+    .btn-return span {
+        display: none;
+    }
+    
+    .user-info span:not(.user-role) {
+        display: none;
+    }
+    
+    .welcome-section h1 {
+        font-size: 1.3em;
+    }
+    
+    .welcome-section p {
+        font-size: 0.9em;
+    }
+}

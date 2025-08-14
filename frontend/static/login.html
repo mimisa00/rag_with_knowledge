@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登入 - E-Helper </title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- 新的 CSS 架構 -->
+    <link rel="stylesheet" href="css/themes/theme-variables.css">
+    <link rel="stylesheet" href="css/core/base.css">
+    <link rel="stylesheet" href="css/core/components.css">
+    <link rel="stylesheet" href="css/core/utilities.css">
+    <link rel="stylesheet" href="css/core/layouts.css">
+    <!-- 頁面專用樣式 -->
+    <link rel="stylesheet" href="css/login.css">
+</head>
+
+<body class="auth-layout">
+    <div class="auth-container">
+        <div class="auth-header">
+            <h1><i class="fas fa-robot"></i> E-Helper </h1>
+            <p>請登入以繼續使用</p>
+        </div>
+
+        <div id="error-message" class="alert alert-danger d-none"></div>
+
+        <form id="login-form">
+            <div class="form-group">
+                <label for="username">用戶名</label>
+                <input type="text" id="username" name="username" class="form-control" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">密碼</label>
+                <input type="password" id="password" name="password" class="form-control" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">登入</button>
+        </form>
+
+        <div class="register-link">
+            <p>還沒有帳號？ <a href="/register">立即註冊</a></p>
+        </div>
+    </div>
+
+    <script>
+        // 檢查 URL 中的錯誤參數
+        const urlParams = new URLSearchParams(window.location.search);
+        const error = urlParams.get('error');
+
+        if (error) {
+            let errorMessage = '';
+            switch (error) {
+                case 'token_missing':
+                    errorMessage = '未提供認證憑證。';
+                    break;
+                case 'invalid_token':
+                    errorMessage = '無效的認證憑證。';
+                    break;
+                case 'invalid_user_id':
+                    errorMessage = '無效的用戶ID。';
+                    break;
+                case 'user_not_found':
+                    errorMessage = '用戶不存在。';
+                    break;
+                default:
+                    errorMessage = '登入失敗，請再試一次。';
+            }
+            showError(errorMessage);
+        }
+
+        // 顯示錯誤訊息
+        function showError(message) {
+            const errorDiv = document.getElementById('error-message');
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('d-none');
+        }
+        document.getElementById('login-form').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch('/api/user/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // 只儲存用戶資訊，token 已由後端設置在 httpOnly cookie 中
+                    localStorage.setItem('user_info', JSON.stringify(data.user));
+
+                    // 強制刷新並跳轉到主頁，避免緩存問題
+                    window.location.replace('/dashboard');
+                } else {
+                    showError(data.detail || '登入失敗');
+                }
+            } catch (error) {
+                showError('網路錯誤，請稍後再試');
+            }
+        });
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error-message');
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('d-none');
+        }
+    </script>
+    
+    <!-- 載入新的管理器 -->
+    <script src="/js/modules/theme-manager.js"></script>
+    <script src="/js/modules/style-manager.js"></script>
+</body>
+
+</html>

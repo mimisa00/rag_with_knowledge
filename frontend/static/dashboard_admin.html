@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>E-Helper</title>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Core CSS Architecture -->
+    <link rel="stylesheet" href="css/themes/theme-variables.css">
+    <link rel="stylesheet" href="css/core/base.css">
+    <link rel="stylesheet" href="css/core/components.css">
+    <link rel="stylesheet" href="css/core/utilities.css">
+    <link rel="stylesheet" href="css/core/layouts.css">
+    
+    <!-- Dashboard Shared Styles -->
+    <link rel="stylesheet" href="css/dashboard.css">
+    
+    <!-- Admin Specific Styles -->
+    <link rel="stylesheet" href="css/dashboard_admin.css">
+</head>
+
+<body class="page-wrapper">
+
+    <!-- 頂部導航欄 -->
+    <nav class="navbar admin-navbar">
+        <div class="navbar-brand">
+            <i class="fa-solid fa-comments mr-sm"></i>
+            <span>E-Helper</span>
+        </div>
+        <div class="navbar-info">
+            <span id="userInfo" class="user-info" onclick="openUserMenu()">
+                <i class="fas fa-user-circle"></i>
+                <span id="username">載入中...</span>
+                <span id="userRole" class="user-role"></span>
+            </span>
+        </div>
+    </nav>
+
+    <!-- 個人功能抽屜 -->
+    <div id="userMenuDrawer" onclick="closeUserMenu()" class="user-menu-drawer">
+        <div class="user-menu-header">
+            <span id="userMenuUsername"></span>
+        </div>
+        <div class="user-menu-content">
+            <button onclick="showChangePasswordModal()" class="menu-item">
+                <i class="fa-solid fa-key"></i>
+                <span>變更密碼</span>
+            </button>
+            <hr>
+            <button onclick="logout()" class="menu-item">
+                <i class="fa-solid fa-sign-out-alt"></i>
+                <span>登出</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 變更密碼模態框 -->
+    <div id="changePasswordModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>變更密碼</h3>
+                <button class="modal-close" onclick="closeChangePasswordModal()">
+                    <i class="fa-solid fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="oldPassword" class="form-label">舊密碼</label>
+                    <input type="password" id="oldPassword" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="newPassword" class="form-label">新密碼</label>
+                    <input type="password" id="newPassword" class="form-control" required minlength="6">
+                </div>
+                <div class="form-group">
+                    <label for="confirmNewPassword" class="form-label">確認新密碼</label>
+                    <input type="password" id="confirmNewPassword" class="form-control" required minlength="6">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeChangePasswordModal()" class="btn btn-secondary">取消</button>
+                <button onclick="changePassword()" class="btn btn-primary">確認變更</button>
+            </div>
+        </div>
+    </div>
+
+
+
+    <div class="dashboard-layout">
+
+        <!-- 左側抽屜容器 -->
+        <div id="drawerContainer" class="drawer-closed">
+            <!-- 抽屜頂端按鈕 -->
+            <div id="drawerToggleButtons">
+                <button onclick="QAModule.toggleDrawer()" class="drawer-toggle-btn"><i class="fas fa-bars"></i></button>
+                <button title="對話記憶" class="drawer-toggle-btn" onclick="QAModule.showDrawerContent('memoryDrawer','admin')"><i class="fa-solid fa-folder"></i></button>
+                <button title="系統提示" class="drawer-toggle-btn" onclick="QAModule.showDrawerContent('promptDrawer','admin')"><i class="fa-solid fa-terminal"></i></button>
+            </div>
+
+            <!-- 抽屜內容 -->
+            <div id="drawerContent">
+                <HR>
+                <!-- 對話記憶區 -->
+                <div id="memoryDrawer" class="drawer-panel">
+                    <button title="新增對話" class="drawer-toggle-btn" onclick="QAModule.createNewConversation()"><i class="fas fa-solid fa-plus"></i></button>
+                    <ul id="conversationList" class="conversation-list"></ul>
+                </div>
+
+                <!-- Prompt 區 -->
+                <div id="promptDrawer" class="drawer-panel">
+                    <button class="drawer-toggle-btn" onclick="document.getElementById('actualprompt').innerText = '';" title="清除"><i class="fa-solid fa-eraser"></i></button>
+                    <div id="actualprompt"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右側：問答區 -->
+        <div id="qaContent" class="dashboard-content">
+            <div class="qa-layout">
+                <!-- 知識庫選擇區 -->
+                <div class="qa-header">
+                    <i class="fa-solid fa-database text-success mr-sm" style="font-size: 1.2em;"></i>
+                    <div class="flex-1">
+                        <select id="qaKnowledgeBaseSelect" class="form-control">
+                            <option value="">載入中...</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="d-flex align-start p-xs">
+                    <i id="nounAnalysisToggleIcon" title="開啟名詞分析" onclick="QAModule.toggleNounAnalysis()" class="fa-solid fa-toggle-off fa-2x text-info mr-sm cursor-pointer"></i>
+                    <div id="nounAnalysis" aria-live="polite" aria-atomic="true" class="flex-1">已關閉名詞分析</div>
+                </div>
+                <div id="thinkToggleSection" class="d-flex align-start p-xs">
+                    <i id="thinkResponseToggleIcon" title="開啟推理功能" onclick="QAModule.toggleThinkResponse()" class="fa-solid fa-toggle-off fa-2x text-info mr-sm cursor-pointer"></i>
+                    <div id="thinkResponse" aria-live="polite" aria-atomic="true" class="flex-1">已關閉推理</div>
+                </div>
+                <div id="answer" aria-live="polite" aria-atomic="true" class="qa-content">
+                </div>
+            </div>
+            <div class="qa-input">
+                <textarea id="question" rows="3" placeholder="請輸入問題..." aria-required="true" class="form-control mb-sm"></textarea>
+                <button type="button" id="sendBtn" class="btn btn-primary">送出問題</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 引入 marked.js -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <!-- 模組化載入機制 -->
+    <script>
+        // 定義臨時的全域函數，避免 onclick 事件錯誤
+        window.switchTab = function (tabId) {
+            console.log('等待模組載入完成...');
+            // 基本的 tab 切換功能
+            document.querySelectorAll('.tablink').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            const activeBtn = document.querySelector(`[onclick*="${tabId}"]`);
+            if (activeBtn) activeBtn.classList.add('active');
+            const activeTab = document.getElementById(tabId);
+            if (activeTab) activeTab.classList.add('active');
+        };
+
+        // 內嵌簡單的載入函數（避免快取問題）
+        function loadWithTimestamp(src) {
+            const script = document.createElement('script');
+            script.src = `${src}?_t=${Date.now()}`;
+            return new Promise((resolve, reject) => {
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+
+        // 依序載入模組
+        (async function () {
+            try {
+                // 基礎模組
+                await loadWithTimestamp('/js/modules/script-loader.js');
+
+                // 載入公共模組
+                await ScriptLoader.loadModulesInOrder([
+                    '/js/modules/common-ui.js',
+                    '/js/modules/user-menu-module.js',
+                    '/js/modules/qa-module.js'
+                ]);
+
+                // 載入受保護的管理員模組
+                await ScriptLoader.loadProtectedAdminScriptsInOrder([
+                    'admin-common-ui.js',           // 管理員擴展UI
+                ]);
+
+                // 初始化模組
+                CommonUI.hideSpinner();
+                UserMenu.init();
+                QAModule.init();
+                console.log('所有模組載入完成');
+            } catch (error) {
+                console.error('模組載入失敗:', error);
+                // 如果是權限問題，可能需要重新登入
+                if (error.message && error.message.includes('無權限')) {
+                    alert('您沒有權限存取管理員功能，請重新登入');
+                    window.location.href = '/login';
+                }
+            }
+        })();
+    </script>
+</body>
+
+</html>

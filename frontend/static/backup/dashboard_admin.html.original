@@ -1,0 +1,3050 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>E-Helper</title>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/dashboard_admin.css">
+</head>
+
+<body>
+    <div class="tabs">
+        <div id="loader-overlay">
+            <div class="loader"></div>
+            <div class="loader-text">系統處理中...</div>
+        </div>
+        <button class="tablink active" onclick="switchTab('qaTab')" title="問答"><i class="fa-solid fa-comments"></i></button>
+        <button class="tablink" onclick="switchTab('indexTab')" title="RAG 索引"><i class="fa-solid fa-book-bookmark"></i></button>
+        <button class="tablink" onclick="switchTab('paramTab')" title="LLM 參數"><i class="fa-solid fa-sliders"></i></button>
+        <button class="tablink" onclick="switchTab('accountTab')" title="帳號管理"><i class="fa-solid fa-users"></i></button>
+        <button class="tablink" onclick="openUserMenu()" title="個人功能列表" id="userMenuBtn"><span id="userInitial">U</span></button>
+    </div>
+
+    <!-- 個人功能抽屜 -->
+    <div id="userMenuDrawer" onclick="closeUserMenu()" class="user-menu-drawer">
+        <div class="user-menu-header">
+            <span id="userMenuUsername"></span>
+        </div>
+        <div class="user-menu-content">
+            <button onclick="showChangePasswordModal()" class="menu-item">
+                <i class="fa-solid fa-key"></i>
+                <span>變更密碼</span>
+            </button>
+            <hr>
+            <button onclick="logout()" class="menu-item">
+                <i class="fa-solid fa-sign-out-alt"></i>
+                <span>登出</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 變更密碼模態框 -->
+    <div id="changePasswordModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>變更密碼</h3>
+                <i class="fa-solid fa-key"></i>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="oldPassword">舊密碼</label>
+                    <input type="password" id="oldPassword" required>
+                </div>
+                <div class="form-group">
+                    <label for="newPassword">新密碼</label>
+                    <input type="password" id="newPassword" required minlength="6">
+                </div>
+                <div class="form-group">
+                    <label for="confirmNewPassword">確認新密碼</label>
+                    <input type="password" id="confirmNewPassword" required minlength="6">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeChangePasswordModal()" class="btn-secondary">取消</button>
+                <button onclick="changePassword()" class="btn-primary">確認變更</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 上傳檔案模態框 -->
+    <div id="uploadFileModal" class="modal">
+        <div class="modal-content" style="max-width: 600px; width: 90%; position: relative;">
+            <!-- 上傳Loading覆蓋層 -->
+            <div id="uploadLoadingOverlay" class="upload-loading-overlay">
+                <div class="loader"></div>
+                <div class="loading-text">檔案內容分析處理中</div>
+                <div class="loading-detail">系統正在分析並處理您選擇的檔案，請耐心等待處理完成。此過程可能需要幾分鐘時間，請勿關閉此視窗。</div>
+            </div>
+
+            <div class="modal-header" style="background-color: #3498db; color: white; margin: -20px -20px 20px -20px; padding: 15px 20px; border-radius: 10px 10px 0 0;">
+                <h3 style="margin: 0; color: white;">上傳檔案</h3>
+            </div>
+            <div class="modal-body" style="padding: 0 5px;">
+                <!-- 按鈕區域 -->
+                <div style="display: flex; gap: 10px; margin-bottom: 20px; justify-content: center;">
+                    <button type="button" id="selectFilesBtn" onclick="selectFiles()" style="background-color: #3498db; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">選擇檔案</button>
+                    <button type="button" id="clearFilesBtn" onclick="clearSelectedFiles()" style="background-color: #95a5a6; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">清除檔案</button>
+                    <button type="button" id="startUploadBtn" onclick="startUpload()" style="background-color: #27ae60; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">上傳</button>
+                    <button type="button" id="returnBtn" onclick="closeUploadModal()" style="background-color: #e74c3c; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">返回</button>
+                </div>
+
+                <!-- 待上傳檔案清單 -->
+                <div style="margin-bottom: 20px;">
+                    <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                        <input type="checkbox" id="selectAllFilesCheckbox" onclick="toggleSelectAllFiles()" style="margin-right: 8px; cursor: pointer;" title="全選/取消全選所有檔案">
+                        <h4 style="margin: 0; color: #333;">待上傳檔案清單</h4>
+                    </div>
+                    <div id="pendingFilesList" style="min-height: 150px; max-height: 300px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; background: #f9f9f9; border-radius: 4px;">
+                        <p style="color: #666; text-align: center; margin: 50px 0;">尚未選擇任何檔案</p>
+                    </div>
+                </div>
+
+                <!-- 錯誤訊息區域 -->
+                <div id="uploadErrorMessage" style="color: red; font-size: 0.9em; margin-top: 10px; display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 隱藏的檔案輸入元素 -->
+    <input type="file" id="hiddenFileInput" multiple style="display: none;" accept=".pdf,.doc,.docx,.txt,.md">
+
+    <!-- 移除檔案確認模態框 -->
+    <div id="removeFileModal" class="modal">
+        <div class="modal-content" style="max-width: 500px; width: 90%;">
+            <div class="modal-header">
+                <h3>確認移除檔案</h3>
+            </div>
+            <div class="modal-body">
+                <p style="color: #e74c3c; font-weight: bold; margin-bottom: 15px;">
+                    <i class="fa-solid fa-triangle-exclamation" style="margin-right: 8px;"></i>
+                    警告：此操作無法復原！
+                </p>
+                <p style="margin-bottom: 15px;">您確定要刪除以下檔案嗎？</p>
+                <div id="filesToRemoveList" style="max-height: 200px; overflow-y: auto; background: #f9f9f9; border: 1px solid #ddd; padding: 10px; border-radius: 4px;">
+                    <!-- 檔案列表會動態填入 -->
+                </div>
+                <p style="color: #666; font-size: 0.9em; margin-top: 10px;">
+                    <i class="fa-solid fa-info-circle" style="margin-right: 5px;"></i>
+                    刪除檔案後，檔案的索引資料仍會存在，需重新建立索引。
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeRemoveFileModal()" class="btn-secondary">取消</button>
+                <button onclick="confirmRemoveFiles()" class="btn-primary" style="background-color: #e74c3c;">
+                    <i class="fa-solid fa-trash" style="margin-right: 5px;"></i>
+                    確認刪除
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 建立索引確認模態框 -->
+    <div id="buildIndexModal" class="modal">
+        <div class="modal-content" style="max-width: 600px; width: 90%; position: relative;">
+            <!-- 重建索引Loading覆蓋層 -->
+            <div id="buildIndexLoadingOverlay" class="build-index-loading-overlay">
+                <div class="loader"></div>
+                <div class="loading-text">索引重建處理中</div>
+                <div class="loading-detail">系統正在清除舊索引並重新建立索引，請耐心等待處理完成。此過程可能需要數分鐘時間，請勿關閉此視窗。</div>
+            </div>
+
+            <div class="modal-header">
+                <h3>確認重建索引</h3>
+            </div>
+            <div class="modal-body">
+                <p style="color: #f39c12; font-weight: bold; margin-bottom: 15px;">
+                    <i class="fa-solid fa-exclamation-triangle" style="margin-right: 8px;"></i>
+                    重要提醒：重建索引操作說明
+                </p>
+                <div style="background: #fff3cd; padding: 15px; border-radius: 6px; border-left: 4px solid #ffc107; margin-bottom: 15px;">
+                    <p style="margin: 0; color: #856404;">
+                        <strong>本操作將執行以下步驟：</strong><br>
+                        1. 清除知識庫中現有的所有索引資料<br>
+                        2. 根據您勾選的檔案重新建立索引<br>
+                        3. 此過程可能需要數分鐘時間，請耐心等待
+                    </p>
+                </div>
+                <p style="margin-bottom: 15px; font-weight: bold;">將要重建索引的檔案：</p>
+                <div id="filesToIndexList" style="max-height: 200px; overflow-y: auto; background: #f8f9fa; border: 1px solid #dee2e6; padding: 15px; border-radius: 4px;">
+                    <!-- 檔案列表會動態填入 -->
+                </div>
+                <p style="color: #6c757d; font-size: 0.9em; margin-top: 15px;">
+                    <i class="fa-solid fa-info-circle" style="margin-right: 5px;"></i>
+                    處理期間請勿關閉此頁面，系統將自動顯示處理進度。
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeBuildIndexModal()" class="btn-secondary">取消</button>
+                <button onclick="confirmBuildIndex()" class="btn-primary" style="background-color: #007bff;">
+                    <i class="fa-solid fa-cogs" style="margin-right: 5px;"></i>
+                    確認重建索引
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="qaTab" class="tab-content active">
+
+        <div style="display: flex; gap: 0.1rem; height: calc(100% - 60px); overflow: hidden;">
+
+            <!-- 左側抽屜容器 -->
+            <div id="drawerContainer" class="drawer-closed">
+                <!-- 抽屜頂端按鈕 -->
+                <div id="drawerToggleButtons">
+                    <button onclick="toggleDrawer()"><i class="fas fa-bars"></i></button>
+                    <button title="對話記憶" class="drawer-toggle-btn" onclick="showDrawerContent('memoryDrawer')"><i class="fa-solid fa-folder"></i></button>
+                    <button title="系統提示" class="drawer-toggle-btn" onclick="showDrawerContent('promptDrawer')"><i class="fa-solid fa-terminal"></i></button>
+                </div>
+
+                <!-- 抽屜內容 -->
+                <div id="drawerContent">
+                    <HR>
+                    <!-- 對話記憶區 -->
+                    <div id="memoryDrawer" class="drawer-panel">
+                        <button title="新增對話" onclick="createNewConversation()"><i class="fas fa-solid fa-plus"></i></button>
+                        <ul id="conversationList" style="list-style: none; padding: 0;"></ul>
+                    </div>
+
+                    <!-- Prompt 區 -->
+                    <div id="promptDrawer" class="drawer-panel">
+                        <button onclick="document.getElementById('actualprompt').innerText = '';" title="清除"><i class="fa-solid fa-eraser"></i></button>
+                        <div id="actualprompt" style="white-space: pre-wrap;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右側：問答區 -->
+            <div id="qaContent" style="flex: 2; min-width: 400px; display: flex; flex-direction: column;">
+                <div style="flex-grow: 1; display: flex; flex-direction: column; margin-top: 0px;">
+                    <!-- 知識庫選擇區 -->
+                    <div style="display: flex; align-items: center; margin: 5px; padding: 10px; background: #f8f9fa; border-radius: 6px; border: 1px solid #dee2e6;">
+                        <i class="fa-solid fa-database" style="margin-right: 10px; color: #28a745; font-size: 1.2em;"></i>
+                        <div style="flex-grow: 1;">
+                            <select id="qaKnowledgeBaseSelect" style="width: 100%; padding: 0.4rem; font-size: 0.9em;">
+                                <option value="">載入中...</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: flex-start; margin: 5px;">
+                        <i id="nounAnalysisToggleIcon" title="開啟名詞分析" onclick="toggleNounAnalysis()" class="fa-solid fa-toggle-off fa-2x" style="vertical-align:top;margin-right: 10px;color: #3498db;"></i>
+                        <div id="nounAnalysis" aria-live="polite" aria-atomic="true" style="flex-grow: 1;">己關閉名詞分析功能</div>
+                    </div>
+                    <div id="thinkToggleSection" style="display: flex; align-items: flex-start; margin: 5px;">
+                        <i id="thinkResponseToggleIcon" title="開啟推理功能" onclick="toggleThinkResponse()" class="fa-solid fa-toggle-off fa-2x" style="vertical-align:top;margin-right: 10px;color: #3498db;"></i>
+                        <div id="thinkResponse" aria-live="polite" aria-atomic="true" style="flex-grow: 1;">己關閉推理</div>
+                    </div>
+                    <div id="answer" aria-live="polite" aria-atomic="true" style="
+                      border: 1px solid #ccc;
+                      padding: 1em;
+                      background: #f4f4f4;
+                      overflow-y: auto;
+                      flex-grow: 1;
+                      min-height: 0;
+                      scrollbar-width: none;
+                      box-sizing: border-box;
+                     ">
+                    </div>
+                </div>
+                <div style="flex: 0 0 auto;">
+                    <textarea id="question" rows="3" placeholder="請輸入問題..." aria-required="true" style="width: 100%; resize: vertical;"></textarea>
+                    <button type="button" id="sendBtn" style="margin-top: 10px;">送出問題</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="indexTab" class="tab-content">
+        <!-- 未選擇知識庫時的狀態 -->
+        <div id="emptyKBState" style="text-align: center; padding: 4rem 2rem; display: none;">
+            <i class="fas fa-info-circle" style="font-size: 3rem; margin-bottom: 2rem; color: #95a5a6;"></i>
+            <h3 style="color: #666; margin-bottom: 1rem;">知識庫管理</h3>
+            <div style="max-width: 600px; margin: 0 auto;">
+                <div style="margin-bottom: 0.5rem;">
+                    <button type="button" id="emptyCreateKBBtn" style="width: 100%; background-color: #27ae60; padding: 0.8rem; font-size: 1rem;">創建新知識庫</button>
+                </div>
+                <div style="margin-bottom: 2rem;">
+                    <select id="emptyKnowledgeBaseSelect" style="width: 100%; padding: 0.8rem; font-size: 1.1rem; margin-bottom: 1rem;">
+                        <option value="">請選擇知識庫</option>
+                    </select>
+                </div>
+                <p style="color: #999; font-size: 1.1rem; margin-bottom: 0;">請選擇或創建知識庫以進行檔案與索引操作</p>
+            </div>
+        </div>
+
+        <!-- 已選擇知識庫時的布局 -->
+        <div id="selectedKBState" style="display: flex; gap: 2rem; align-items: flex-start;">
+            <!-- 左側：知識庫管理 -->
+            <div style="flex: 1; min-width: 350px;">
+                <h3 id="kbManagementTitle">知識庫管理</h3>
+
+                <!-- 知識庫選擇區 (僅在預覽模式顯示) -->
+                <div id="kbSelectionSection" style="margin-bottom: 1rem; display: none;">
+                    <select id="knowledgeBaseSelect" style="width: 100%; padding: 0.5rem; margin-bottom: 0.5rem;">
+                        <option value="">請選擇知識庫</option>
+                    </select>
+                </div>
+
+                <!-- 操作按鈕區 (預覽模式) -->
+                <div id="kbPreviewButtons" style="margin-bottom: 1rem;">
+                    <button type="button" id="editKBModeBtn" style="width: 30%; background-color: #3498db; margin-right: 2%;">編輯</button>
+                    <button type="button" id="deleteKBBtn" style="width: 30%; background-color: #e74c3c; margin-right: 2%;">刪除</button>
+                    <button type="button" id="returnToEmptyBtn" style="width: 30%; background-color: #95a5a6;">返回</button>
+                </div>
+
+                <!-- 表單操作按鈕區 (新增/編輯模式) -->
+                <div id="kbFormButtons" style="margin-bottom: 1rem; display: none;">
+                    <button type="button" id="saveKBBtn" style="width: 45%; background-color: #27ae60; margin-right: 5%;">存檔</button>
+                    <button type="button" id="cancelKBBtn" style="width: 45%; background-color: #95a5a6;">取消</button>
+                </div>
+
+                <HR>
+
+                <!-- 統一的知識庫表單 -->
+                <div id="kbFormSection" style="margin-bottom: 1rem;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <label for="kbId" style="display: block; margin-bottom: 0.3rem;">ID：</label>
+                        <input type="text" id="kbId" placeholder="例：hr-manual-2024" maxlength="36" pattern="[a-zA-Z0-9_-]+" style="width: 100%; padding: 0.5rem;" readonly>
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <label for="kbName" style="display: block; margin-bottom: 0.3rem;">名稱：</label>
+                        <input type="text" id="kbName" placeholder="請輸入知識庫名稱" style="width: 100%; padding: 0.5rem;" readonly>
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <label for="kbStatus" style="display: block; margin-bottom: 0.3rem;">狀態：</label>
+                        <select id="kbStatus" style="width: 100%; padding: 0.5rem;" disabled>
+                            <option value="enable">啟用</option>
+                            <option value="disable">停用</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <label for="kbNote" style="display: block; margin-bottom: 0.3rem;">備註：</label>
+                        <input type="text" id="kbNote" placeholder="可選" style="width: 100%; padding: 0.5rem;" readonly>
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <label for="kbSystemPrompt" style="display: block; margin-bottom: 0.3rem;">提示詞 (最大1024字)：</label>
+                        <textarea id="kbSystemPrompt" rows="8" maxlength="1024" placeholder="請輸入針對此知識庫的系統提示詞..." style="width: 100%; padding: 0.5rem; resize: vertical;" readonly></textarea>
+                        <div style="font-size: 0.8em; color: #666; text-align: right;">
+                            <span id="promptCharCount">0</span>/1024
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 中間：檔案與索引操作 - 使用可調整大小的容器 -->
+            <div id="resizableContainer" style="display: flex; flex: 2; min-width: 700px; gap: 0;">
+                <!-- 檔案上傳區塊 -->
+                <div id="fileUploadPanel" style="flex: 2; min-width: 300px; padding-right: 1rem;">
+                    <div id="fileOperationsSection" style="display: none;">
+                        <H3>檔案上傳</H3>
+                        <!-- 檔案操作按鈕區 - 比照知識庫管理區塊排版 -->
+                        <div style="margin-bottom: 1rem;">
+                            <button type="button" id="uploadBtn" style="width: 45%; background-color: #27ae60; margin-right: 2%;">上傳檔案</button>
+                            <button type="button" id="removeFilesBtn" onclick="removeSelectedFiles()" style="width: 45%; background-color: #e74c3c;">移除己上傳檔案</button>
+                        </div>
+                        <div id="uploadResult" style="margin-top: 0.5rem; font-size: 0.9em;"></div>
+
+                        <HR>
+
+                        <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                            <input type="checkbox" id="selectAllUploadedFilesCheckbox" onclick="toggleSelectAllUploadedFiles()" style="margin-right: 8px; cursor: pointer;" title="全選/取消全選所有檔案">
+                            <H3 style="margin: 0;">選擇檔案</H3>
+                        </div>
+                        <div id="fileCheckboxList" style="height: calc(100vh - 400px); min-height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 0.5em; background: #f9f9f9;"></div>
+                    </div>
+
+                    <div id="noKBSelected" style="text-align: center; padding: 2rem; color: #666;">
+                        <i class="fas fa-info-circle" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+                        <p>創建知識庫後，此區塊將可以進行檔案上傳與索引建立操作</p>
+                    </div>
+                </div>
+                
+                <!-- 可拖拽的分割條 -->
+                <div id="resizer" style="
+                    width: 6px; 
+                    background-color: #ddd; 
+                    cursor: col-resize; 
+                    user-select: none;
+                    position: relative;
+                    transition: background-color 0.2s;
+                ">
+                    <div style="
+                        position: absolute;
+                        top: 50%;
+                        left: 50%;
+                        transform: translate(-50%, -50%);
+                        width: 3px;
+                        height: 30px;
+                        background-color: #999;
+                        border-radius: 2px;
+                    "></div>
+                </div>
+
+                <!-- 索引工具區塊 -->
+                <div id="indexToolsPanel" style="flex: 3; min-width: 400px; padding-left: 1rem;">
+                    <div id="indexSummarySection" style="display: none;">
+                        <H3>索引工具</H3>
+                        <!-- 索引工具按鈕區 - 第一行 -->
+                        <div style="margin-bottom: 0.5rem; display: flex; gap: 10px;">
+                            <button type="button" id="prepareSelectedBtn" style="flex: 1; background-color: #27ae60;">建立索引</button>
+                            <button type="button" onclick="document.getElementById('indexSummary').innerText = '';" style="flex: 1; background-color: #95a5a6;">清空摘要</button>
+                        </div>
+                        <!-- 索引工具按鈕區 - 第二行 -->
+                        <div style="margin-bottom: 0.5rem; display: flex; gap: 10px;">
+                            <button type="button" onclick="showIndexSummary100()" style="flex: 1; background-color: #3498db;">顯示索引摘要(前100筆)</button>
+                            <button type="button" onclick="showCurrentKBIndex()" style="flex: 1; background-color: #f39c12;">顯示索引摘要完整內容</button>
+                        </div>
+                        <!-- 索引工具按鈕區 - 第三行 -->
+                        <div style="margin-bottom: 1rem;">
+                            <button type="button" onclick="validateCurrentKBIndex()" style="width: 100%; background-color: #9b59b6;">檢核索引是否有效</button>
+                        </div>
+                        <div id="indexSummary" style="
+                        font-size: 0.9em;
+                        min-height: 400px;
+                        overflow-y: auto;
+                        background: #f4f4f4;
+                        border: 1px solid #ccc;
+                        padding: 1em;
+                        white-space: pre-wrap;
+                        ">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="paramTab" class="tab-content">
+        <form id="paramForm">
+            <div style="max-width: 100%; overflow-x: hidden;">
+                <div style="display: flex; gap: 2rem; align-items: flex-start;">
+                    <div style="flex: 2; min-width: 300px;">
+                        <label for="noun_analysis_prompt" title="用途 : 分析使用者問題裡名詞並產生多種同義詞<BR/>注意事項 : 實際系統送出給 LLM 的 prompt，{query.question} 是使用者的問題，該變數不可以調整，因為程式會參考，其它都可以修改。">名詞分析提示 : noun_analysis_prompt</label>
+                        <textarea id="noun_analysis_prompt" name="noun_analysis_prompt" rows="45" style="max-width: 100%;">### Task:...</textarea>
+
+                        <div style="margin-top: 2rem; padding: 1rem; background-color: #f8f9fa; border-radius: 6px; border: 1px solid #dee2e6;">
+                            <h4 style="margin-top: 0; color: #495057;">
+                                <i class="fa-solid fa-info-circle" style="color: #17a2b8; margin-right: 0.5rem;"></i>
+                                系統提示詞設定
+                            </h4>
+                            <p style="margin-bottom: 0; color: #6c757d; font-size: 0.9em;">
+                                系統提示詞現在可以在「RAG 索引」頁籤中為每個知識庫單獨設定。<br>
+                                這樣可以針對不同的知識庫使用不同的提示詞，提供更精準的回答。
+                            </p>
+                        </div>
+                    </div>
+
+                    <div style="flex: 1; min-width: 400px;">
+                        <button type="button" id="updateConfigBtn" style="margin-top: 1rem; background-color: #e74c3c;">儲存參數</button>
+                        <H3>request control setting</H3>
+                        <div class="formparam-group">
+                            <label for="llm_req_limit_total" title="控制系統整體同時最多只能被請求的次數，超過次數將被系統拒絕">llm_req_limit_total</label>
+                            <input id="llm_req_limit_total" type="number" name="llm_req_limit_total" value="3">
+                        </div>
+                        <div class="formparam-group">
+                            <label for="llm_req_limit_user" title="控制使用者同時最多只能請求的次數，超過次數將被系統拒絕">llm_req_limit_user</label>
+                            <input id="llm_req_limit_user" type="number" name="llm_req_limit_user" value="1">
+                        </div>
+                        <H3>file content fetching setting</H3>
+                        <div class="formparam-group">
+                            <label for="docling_image_export_mode" title="截取圖案的內容如果有圖片透過什麼方式呈現 placeholder embedded referenced">docling_image_export_mode</label>
+                            <input id="docling_image_export_mode" type="text" name="docling_image_export_mode" value="placeholder">
+                        </div>
+                        <H3>embedding setting</H3>
+                        <div class="formparam-group">
+                            <label for="embedding_model" title="文件分詞模型">embedding_model</label>
+                            <input id="embedding_model" type="text" name="embedding_model" value="intfloat/multilingual-e5-large">
+                        </div>
+                        <div class="formparam-group">
+                            <label for="chunk_size" title="文件切割大小，單位 token">chunk_size</label>
+                            <input id="chunk_size" type="number" name="chunk_size" value="500">
+                        </div>
+                        <div class="formparam-group">
+                            <label for="chunk_overlap" title="文件切割後可容許每個文重疊的內容，單位 token">chunk_overlap</label>
+                            <input id="chunk_overlap" type="number" name="chunk_overlap" value="50">
+                        </div>
+                        <div class="formparam-group">
+                            <label for="idx_result_count" title="透過向量資料庫查詢跟問題有關的 chunk 總數，之後會用這些 chunk 排序後組織 question prompt 時需要參考的 context 內容">idx_result_count</label>
+                            <input id="idx_result_count" type="number" name="idx_result_count" value="3">
+                        </div>
+                        <div class="formparam-group">
+                            <label for="rerank_top_k_final" title="透過向量資料庫查詢出來的 chunk 經過BGE重新排序後，取出最相關 rerank_top_k_final 個，並組織 question prompt 時需要參考的 context 內容">rerank_top_k_final</label>
+                            <input id="rerank_top_k_final" type="number" name="rerank_top_k_final" value="3">
+                        </div>
+
+                        <H3>ollama setting</H3>
+                        <div class="formparam-group">
+                            <label for="llm_model_select" title="執行LLM模型">LLM Model</label>
+                            <select id="llm_model_select" name="llm_model">
+                                <option value="gpt-oss:20b">gpt-oss:20b</option>
+                                <option value="gemma3:4b">gemma3:4b</option>
+                                <option value="gemma3:12b">gemma3:12b</option>
+                                <option value="gemma3:27b">gemma3:27b</option>
+                                <option value="qwen3:4b">qwen3:4b thinking</option>
+                                <option value="qwen3:8b">qwen3:8b thinking</option>
+                                <option value="qwen3:14b">qwen3:14b thinking</option>
+                                <option value="mistral:latest">mistral</option>
+                                <option value="llama3.1:8b">llama3.1:8b</option>
+                            </select>
+                        </div>
+                        <div class="formparam-group">
+                            <label for="is_enable_think" title="啟用推理(有些模型才支援)">is_enable_think</label>
+                            <select id="is_enable_think" name="is_enable_think">
+                                <option value="False">off</option>
+                                <option value="True">on</option>
+                            </select>
+                        </div>
+                        <div class="formparam-group">
+                            <label for="num_ctx" style="color: red;" title="設定用於生成下一個詞元（token）的上下文視窗大小。（預設值：4096）">num_ctx</label>
+                            <input id="num_ctx" type="number" name="num_ctx" value="4096">
+                        </div>
+                        <div class="formparam-group">
+                            <label for="repeat_last_n" title="設定模型回看多遠的文字，以避免重複生成。（預設值：64，0 表示停用，-1 表示回看整個上下文長度 num_ctx）">repeat_last_n</label>
+                            <input id="repeat_last_n" type="number" name="repeat_last_n" value="64">
+                        </div>
+                        <div class="formparam-group">
+                            <label for="repeat_penalty" title="設定對重複內容施加懲罰的強度。較高的數值（例如 1.5）會更嚴格地懲罰重複，而較低的數值（例如 0.9）則較為寬鬆。（預設值：1.1）">repeat_penalty</label>
+                            <input id="repeat_penalty" type="number" name="repeat_penalty" value="1.1">
+                        </div>
+                        <div class="formparam-group">
+                            <label for="temperature" style="color: red;" title="模型的溫度參數。提高溫度會讓模型的回答更具創意。（預設值：0.8）">temperature</label>
+                            <input id="temperature" type="number" name="temperature" value="0.5">
+                        </div>
+                        <div class="formparam-group">
+                            <label for="seed" title="設定用於生成的隨機數種子。將此參數設為特定數值，可以讓模型在相同提示詞下產生相同的文字。（預設值：0）">seed</label>
+                            <input id="seed" type="number" name="seed" value="0">
+                        </div>
+                        <div class="formparam-group">
+                            <label for="stop" title="設定要使用的停止字串（stop sequences）。當模型產生文字時遇到這些模式，將會停止生成並返回結果。若要設定多個停止模式，可以在模型檔（modelfile）中分別指定多個 stop 參數。">stop</label>
+                            <input id="stop" type="text" name="stop" value="<|endoftext|>">
+                        </div>
+                        <div class="formparam-group">
+                            <label for="num_predict" style="color: red;" title="生成文字時，預測的最大詞元（token）數量。（預設值：-1，表示無限生成）">num_predict</label>
+                            <input id="num_predict" type="number" name="num_predict" value="1024">
+                        </div>
+                        <div class="formparam-group">
+                            <label for="top_k" style="color: red;" title="降低產生無意義內容的機率。較高的數值（例如 100）會產生更多樣化的回答，而較低的數值（例如 10）則會較保守。（預設值：40）">top_k</label>
+                            <input id="top_k" type="number" name="top_k" value="10">
+                        </div>
+                        <div class="formparam-group">
+                            <label for="top_p" style="color: red;" title="與 top-k 搭配使用。較高的數值（例如 0.95）會產生更多樣化的文字，而較低的數值（例如 0.5）則會產生更集中且保守的文字。（預設值：0.9）">top_p</label>
+                            <input id="top_p" type="number" name="top_p" value="0.9">
+                        </div>
+                        <div class="formparam-group">
+                            <label for="min_p" title="作為 top_p 的替代方案，旨在在品質與多樣性之間取得平衡。參數 p 表示某個詞元被考慮納入的最低機率，這個值是相對於機率最高的詞元而言。例如，若 p=0.05，而最可能的詞元機率為 0.9，則機率低於 0.045 的 logits 會被過濾掉。（預設值：0.0）">min_p</label>
+                            <input id="min_p" type="number" name="min_p" value="0.0">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div id="accountTab" class="tab-content">
+        <div id="accountManagerContainer" style="padding: 1em;"></div>
+    </div>
+
+    <!-- 引入 marked.js -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- 抽屜切換、新對話建立、對話列表切換 -->
+    <script>
+        let fullAnswer = ""
+        let conversations = {};
+        let currentConvId = null;
+        let userScrolled = false; // 追蹤用戶是否手動滾動
+
+        function toggleDrawer() {
+            const container = document.getElementById("drawerContainer");
+            container.classList.toggle("drawer-open");
+            updateMemoryDrawerIcon();
+        }
+
+        function updateMemoryDrawerIcon() {
+            const memoryBtn = document.querySelector('#drawerToggleButtons .drawer-toggle-btn[title="對話記憶"] i');
+            const drawer = document.getElementById('drawerContainer');
+            const memoryPanel = document.getElementById('memoryDrawer');
+            if (drawer.classList.contains('drawer-open') && memoryPanel.classList.contains('active')) {
+                memoryBtn.className = 'fa-solid fa-folder-open';
+            } else {
+                memoryBtn.className = 'fa-solid fa-folder';
+            }
+        }
+
+        function showDrawerContent(id) {
+            // 先隱藏全部
+            document.querySelectorAll(".drawer-panel").forEach(el => {
+                el.classList.remove("active");
+            });
+            // 顯示指定
+            document.getElementById(id).classList.add("active");
+
+            // 確保抽屜展開
+            document.getElementById("drawerContainer").classList.add("drawer-open");
+
+            // drawer-toggle-btn 高亮處理
+            document.querySelectorAll("#drawerToggleButtons .drawer-toggle-btn").forEach(btn => {
+                btn.classList.remove("active");
+            });
+            if (id === "memoryDrawer") {
+                document.querySelector('#drawerToggleButtons .drawer-toggle-btn[title="對話記憶"]').classList.add("active");
+            } else if (id === "promptDrawer") {
+                document.querySelector('#drawerToggleButtons .drawer-toggle-btn[title="系統提示"]').classList.add("active");
+            }
+            updateMemoryDrawerIcon();
+        }
+
+        function createNewConversation() {
+            const q = document.getElementById("question").value.trim();
+            const title = q.slice(0, 10);
+            const id = `conv-${Date.now()}`;
+            fullAnswer = "";
+            answerDiv.innerHTML = "";
+            conversations[id] = { title: title, messages: [] };
+            currentConvId = id;
+            updateConversationList();
+        }
+
+        function updateConversationList() {
+            const list = document.getElementById("conversationList");
+            list.innerHTML = "";
+
+            for (const [id, conv] of Object.entries(conversations)) {
+                const li = document.createElement("li");
+                li.dataset.convId = id;
+                li.style.display = "flex";
+                li.style.justifyContent = "space-between";
+                li.style.alignItems = "center";
+                li.style.marginBottom = "8px";
+
+                const titleSpan = document.createElement("span");
+                titleSpan.textContent = conv.title;
+                titleSpan.style.cursor = "pointer";
+                titleSpan.style.flex = "0 0 180px";   // 固定寬度
+                titleSpan.style.fontSize = "clamp(10px, 2vw, 14px)";
+                titleSpan.style.overflow = "hidden";
+                titleSpan.style.textOverflow = "ellipsis";
+                titleSpan.style.whiteSpace = "nowrap";
+                titleSpan.onclick = () => switchConversation(id);
+
+                const delBtn = document.createElement("button");
+                delBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+                delBtn.onclick = () => deleteConversation(id);
+                delBtn.style.marginLeft = "auto";
+
+                li.appendChild(titleSpan);
+                li.appendChild(delBtn);
+                list.appendChild(li);
+                // 若目前就是 active 的 conversation，就加上 active 樣式
+                if (id === currentConvId) {
+                    li.classList.add("active-conversation");
+                }
+            }
+        }
+
+        function escapeHtml(text) {
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function switchConversation(id) {
+            currentConvId = id;
+
+            // 移除全部 active
+            document.querySelectorAll("#conversationList li").forEach(li => {
+                li.classList.remove("active-conversation");
+            });
+
+            // 加到目前 active
+            const activeLi = document.querySelector(`#conversationList li[data-conv-id='${id}']`);
+            if (activeLi) {
+                activeLi.classList.add("active-conversation");
+            }
+
+            const conv = conversations[id];
+
+            const answerDiv = document.getElementById("answer");
+            answerDiv.innerHTML = "";
+            fullAnswer = "";
+            conv.messages.forEach(item => {
+                // 使用者問題
+                const userBlock = document.createElement("div");
+                userBlock.innerHTML = `<i class="fa-solid fa-user-minus"></i> ${item.q}`;
+                userBlock.style.background = "#e8f0fe";
+                userBlock.style.padding = "8px";
+                userBlock.style.marginBottom = "10px";
+                userBlock.style.textAlign = "right";
+
+                // LLM 回答
+                const answerHtml = marked.parse(item.a);
+                const answerBlock = document.createElement("div");
+                answerBlock.className = "markdown-body";
+                answerBlock.innerHTML = answerHtml;
+                answerBlock.style.background = "#f4f4f4";
+                answerBlock.style.padding = "8px";
+                answerBlock.style.marginBottom = "20px";
+                answerDiv.appendChild(userBlock);
+                answerDiv.appendChild(answerBlock);
+                fullAnswer += answerHtml;
+            });
+
+            answerDiv.scrollTop = answerDiv.scrollHeight;
+            document.getElementById("question").value = "";
+        }
+
+        async function deleteConversation(id) {
+            delete conversations[id];
+            if (currentConvId === id) {
+                currentConvId = null;
+                document.getElementById("question").value = "";
+                document.getElementById("answer").innerHTML = "";
+            }
+            await fetch("/api/conversations/" + id, {
+                method: "DELETE",
+            });
+            updateConversationList();
+        }
+
+        async function loadConversations() {
+            const res = await fetch("/api/conversations");
+            const list = await res.json();
+
+            list.forEach(item => {
+                conversations[item.id] = {
+                    title: item.title,
+                    messages: item.messages,
+                };
+            });
+            updateConversationList();
+        }
+
+        const answerDiv = document.getElementById("answer");
+        const questionInput = document.getElementById("question");
+        const sendBtn = document.getElementById("sendBtn");
+        const fileSelect = document.getElementById("fileSelect");
+        const indexSummaryDiv = document.getElementById("indexSummary");
+        const updateConfigBtn = document.getElementById("updateConfigBtn");
+        const actualpromptDiv = document.getElementById("actualprompt");
+        const thinkResponseDiv = document.getElementById("thinkResponse");
+        const nounAnalysisDiv = document.getElementById("nounAnalysis");
+        const parserTitleStr = "分析問題名詞並生成同義詞中...";
+
+        //支援 markdown table
+        marked.setOptions({
+            breaks: true,
+            gfm: true,
+        });
+        function switchTab(tabId) {
+            document.querySelectorAll('.tablink').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelector(`[onclick*="${tabId}"]`).classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+            checkThinkFeature();
+        }
+
+        /** Loader 處理 Start */
+        function showSpinner(message = "系統處理中...") {
+            const loaderOverlay = document.getElementById('loader-overlay');
+            const loaderText = document.querySelector('#loader-overlay .loader-text');
+            const loaderIcon = document.querySelector('#loader-overlay .loader');
+
+            // 顯示容器
+            loaderOverlay.style.display = 'flex';
+            loaderOverlay.style.opacity = '1';
+
+            // 恢復動畫與透明度
+            loaderIcon.style.animation = 'spin 1s linear infinite';
+            loaderIcon.style.opacity = '1';
+            loaderIcon.style.transition = 'none';  // 清除舊 transition
+            loaderIcon.style.transform = 'rotate(0deg)';
+
+            loaderText.textContent = message;
+            loaderText.style.opacity = '1';
+            loaderText.style.transition = 'none';
+
+            // 如果是上傳相關的spinner，顯示專用的上傳loading
+            if (message.includes('上傳') || message.includes('檔案')) {
+                showUploadLoading();
+            }
+            // 如果是重建索引相關的spinner，顯示專用的重建索引loading
+            if (message.includes('索引') || message.includes('重建')) {
+                showBuildIndexLoading();
+            }
+            // 鎖定上傳對話框的所有操作按鈕
+            disableUploadModalControls(true);
+        }
+
+        function stopSpinner() {
+            //畫面平滑處理
+            const loader = document.getElementById('loader-overlay');
+            const loaderText = document.querySelector('#loader-overlay .loader-text');
+            const loaderIcon = document.querySelector('#loader-overlay .loader');
+            // 更新顯示文字
+            loaderIcon.style.transition = 'opacity 1s ease';
+            loaderIcon.style.opacity = '0';
+            setTimeout(function () {
+
+                // 強制 reflow，確保下一步 transition 生效
+                void loaderIcon.offsetWidth;
+                // 3. 設置最終角度，並添加平滑旋轉 + 淡入
+                loaderIcon.style.transition = 'transform 2s ease-out, opacity 1s ease-in';
+                loaderIcon.style.transform = 'rotate(360deg)';
+                loaderIcon.style.opacity = '1';
+                loaderIcon.style.animation = 'none';
+                loaderIcon.style.animation = 'slow-stop 2s ease-out forwards';
+
+                loaderText.style.transition = 'transform 2s ease-out, opacity 1s ease-in';
+                loaderText.style.opacity = '1';
+                loaderText.style.animation = 'none';
+                loaderText.style.animation = '2s ease-out forwards';
+                loaderText.textContent = '系統處理完成';
+
+            }, 600); // 等待淡出完成
+            // 等待過渡結束後再關閉事件源
+            setTimeout(function () {
+                document.getElementById("loader-overlay").style.display = "none";
+                // 隱藏上傳loading並恢復操作按鈕
+                hideUploadLoading();
+                disableUploadModalControls(false);
+                // 隱藏重建索引loading並恢復操作按鈕
+                hideBuildIndexLoading();
+                disableBuildIndexModalControls(false);
+            }, 2000); // 等待過渡時間結束
+
+        }
+
+        function hideSpinner() {
+            const loader = document.getElementById("loader-overlay");
+            if (loader) {
+                loader.style.opacity = "0";
+                loader.style.transition = "opacity 0.3s ease";
+                setTimeout(() => {
+                    loader.style.display = "none";
+                }, 300);
+            }
+        }
+
+        function showUploadLoading() {
+            const loadingOverlay = document.getElementById('uploadLoadingOverlay');
+            if (loadingOverlay) {
+                loadingOverlay.style.display = 'flex';
+            }
+        }
+
+        function hideUploadLoading() {
+            const loadingOverlay = document.getElementById('uploadLoadingOverlay');
+            if (loadingOverlay) {
+                loadingOverlay.style.display = 'none';
+            }
+        }
+
+        function showBuildIndexLoading() {
+            const loadingOverlay = document.getElementById('buildIndexLoadingOverlay');
+            if (loadingOverlay) {
+                loadingOverlay.style.display = 'flex';
+            }
+        }
+
+        function hideBuildIndexLoading() {
+            const loadingOverlay = document.getElementById('buildIndexLoadingOverlay');
+            if (loadingOverlay) {
+                loadingOverlay.style.display = 'none';
+            }
+        }
+
+        function disableUploadModalControls(disabled) {
+            // 控制上傳對話框中所有的按鈕和輸入元素
+            const uploadModal = document.getElementById('uploadFileModal');
+            if (!uploadModal) return;
+
+            const controls = uploadModal.querySelectorAll('button, input[type="checkbox"], input[type="file"]');
+            controls.forEach(control => {
+                control.disabled = disabled;
+                if (disabled) {
+                    control.style.opacity = '0.5';
+                    control.style.cursor = 'not-allowed';
+                } else {
+                    control.style.opacity = '';
+                    control.style.cursor = '';
+                }
+            });
+
+            // 特別處理全選checkbox
+            const selectAllCheckbox = document.getElementById('selectAllFilesCheckbox');
+            if (selectAllCheckbox) {
+                selectAllCheckbox.disabled = disabled;
+                if (disabled) {
+                    selectAllCheckbox.style.opacity = '0.5';
+                    selectAllCheckbox.style.cursor = 'not-allowed';
+                } else {
+                    selectAllCheckbox.style.opacity = '';
+                    selectAllCheckbox.style.cursor = 'pointer';
+                }
+            }
+        }
+
+        function disableBuildIndexModalControls(disabled) {
+            // 控制重建索引對話框中所有的按鈕
+            const buildIndexModal = document.getElementById('buildIndexModal');
+            if (!buildIndexModal) return;
+
+            const controls = buildIndexModal.querySelectorAll('button');
+            controls.forEach(control => {
+                control.disabled = disabled;
+                if (disabled) {
+                    control.style.opacity = '0.5';
+                    control.style.cursor = 'not-allowed';
+                } else {
+                    control.style.opacity = '';
+                    control.style.cursor = '';
+                }
+            });
+        }
+
+        // 已上傳檔案列表的全選功能
+        function toggleSelectAllUploadedFiles() {
+            const selectAllCheckbox = document.getElementById('selectAllUploadedFilesCheckbox');
+            const fileCheckboxes = document.querySelectorAll('#fileCheckboxList .file-checkbox');
+            const isChecked = selectAllCheckbox.checked;
+
+            fileCheckboxes.forEach(checkbox => {
+                checkbox.checked = isChecked;
+            });
+        }
+
+        function updateUploadedFilesSelectAllState() {
+            const selectAllCheckbox = document.getElementById('selectAllUploadedFilesCheckbox');
+            const fileCheckboxes = document.querySelectorAll('#fileCheckboxList .file-checkbox');
+
+            if (fileCheckboxes.length === 0) {
+                selectAllCheckbox.checked = false;
+                selectAllCheckbox.indeterminate = false;
+                return;
+            }
+
+            const checkedCount = Array.from(fileCheckboxes).filter(cb => cb.checked).length;
+
+            if (checkedCount === 0) {
+                selectAllCheckbox.checked = false;
+                selectAllCheckbox.indeterminate = false;
+            } else if (checkedCount === fileCheckboxes.length) {
+                selectAllCheckbox.checked = true;
+                selectAllCheckbox.indeterminate = false;
+            } else {
+                selectAllCheckbox.checked = false;
+                selectAllCheckbox.indeterminate = true;
+            }
+        }
+
+        /** Loader 處理 End */
+
+        /** 建立索引 Modal 處理 Start */
+        function openBuildIndexModal() {
+            const modal = document.getElementById('buildIndexModal');
+            const fileList = document.getElementById('filesToIndexList');
+            const checkedFiles = document.querySelectorAll('#fileCheckboxList .file-checkbox:checked');
+
+            // 清空並填充選中檔案列表
+            fileList.innerHTML = '';
+            if (checkedFiles.length === 0) {
+                fileList.innerHTML = '<li style="color: #999; font-style: italic;">未選擇任何檔案</li>';
+            } else {
+                checkedFiles.forEach(checkbox => {
+                    //const filename = checkbox.nextElementSibling.textContent;
+                    const filename = checkbox.value;
+                    const listItem = document.createElement('li');
+                    listItem.textContent = filename;
+                    listItem.style.whiteSpace = 'nowrap';
+                    listItem.style.overflow = 'hidden';
+                    listItem.style.textOverflow = 'ellipsis';
+                    fileList.appendChild(listItem);
+                });
+            }
+
+            modal.style.display = 'block';
+        }
+
+        function closeBuildIndexModal() {
+            const modal = document.getElementById('buildIndexModal');
+            modal.style.display = 'none';
+        }
+
+        function confirmBuildIndex() {
+            // 顯示重建索引Loading並禁用控制項
+            showBuildIndexLoading();
+            disableBuildIndexModalControls(true);
+
+            // 執行重建索引功能
+            rebuildIndex();
+        }
+
+        function rebuildIndex() {
+            // 先清除現有索引，再建立新索引
+            clearIndexForRebuild().then(() => {
+                // 執行原本的準備檔案邏輯
+                executeOriginalPrepareSelected();
+            }).catch(error => {
+                console.error('清除索引時發生錯誤:', error);
+                alert('清除索引時發生錯誤，請重試');
+                // 發生錯誤時也要隱藏Loading並恢復控制項
+                hideBuildIndexLoading();
+                disableBuildIndexModalControls(false);
+            });
+        }
+
+        function clearIndexForRebuild() {
+            if (!currentKBId) {
+                return Promise.reject(new Error('請先選擇知識庫'));
+            }
+
+            const formData = new FormData();
+            formData.append("kb_id", currentKBId);
+
+            return fetch('/api/vector/index/clear', {
+                method: 'POST',
+                body: formData,
+                credentials: 'include'
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (!data.success) {
+                        throw new Error(data.error || data.message || '清除索引失敗');
+                    }
+                    console.log(`知識庫 ${currentKBId} 索引清除成功`);
+                });
+        }
+
+        async function executeOriginalPrepareSelected() {
+            // 執行原本建立索引的邏輯
+            const selected = Array.from(fileCheckboxList.querySelectorAll(".file-checkbox:checked")).map(cb => cb.value);
+            if (selected.length === 0) {
+                alert("請選擇檔案後再建立索引");
+                // 隱藏Loading並恢復控制項
+                hideBuildIndexLoading();
+                disableBuildIndexModalControls(false);
+                return;
+            }
+
+            showSpinner();
+            indexSummaryDiv.innerHTML = "索引建立中...";
+            try {
+                const formData = new FormData();
+                selected.forEach(f => formData.append("filenames", f));
+                formData.append("kb_id", currentKBId);
+                const res = await fetch("/api/vector/index/prepare/file", { method: "POST", body: formData });
+
+                // 嘗試先檢查回應的 content-type
+                const contentType = res.headers.get("content-type") || "";
+                let data;
+                if (contentType.includes("application/json")) {
+                    data = await res.json();
+                } else {
+                    // 不是 JSON，可能是 HTML（如 500 error 頁面），直接顯示原始內容
+                    const text = await res.text();
+                    indexSummaryDiv.innerHTML = `<p style='color:red;'>伺服器回傳非 JSON 格式：<br><pre>${escapeHtml(text)}</pre></p>`;
+                    return;
+                }
+
+                if (res.ok && data.results) {
+                    indexSummaryDiv.innerHTML = data.results.map(r => {
+                        if (r.status === "success") {
+                            return `<p style='color:green;'>${r.filename}：已擷取並建索引，分割成 ${r.chunks} 個區塊。</p>`;
+                        } else {
+                            return `<p style='color:red;'>${r.filename}：${r.message}</p>`;
+                        }
+                    }).join("");
+                } else {
+                    indexSummaryDiv.innerHTML = `<p style='color:red;'>錯誤：${JSON.stringify(data)}</p>`;
+                }
+            } catch (err) {
+                indexSummaryDiv.innerHTML = `<p style='color:red;'>發生錯誤：${err.message}</p>`;
+            } finally {
+                stopSpinner();
+                // 不調用stopSpinner()，因為已經有專用的重建索引Loading
+                await loadFileList();
+                // 隱藏重建索引Loading並關閉Dialog
+                hideBuildIndexLoading();
+                disableBuildIndexModalControls(false);
+                closeBuildIndexModal();
+            }
+        }
+        /** 建立索引 Modal 處理 End */
+
+        /** LLM 問題處理  */
+        let enableThink = false;  // 預設關閉
+        function toggleThinkResponse() {
+            enableThink = !enableThink;
+            const icon = document.getElementById("thinkResponseToggleIcon");
+            if (enableThink) {
+                icon.classList.remove("fa-toggle-off");
+                icon.classList.add("fa-toggle-on");
+                icon.title = "關閉推理";
+                thinkResponseDiv.innerHTML = "己啟用推理";
+            } else {
+                icon.classList.remove("fa-toggle-on");
+                icon.classList.add("fa-toggle-off");
+                icon.title = "開啟推理";
+                thinkResponseDiv.innerHTML = "己關閉推理";
+            }
+        }
+
+        let enableNounAnalysis = false;  // 預設關閉
+        function toggleNounAnalysis() {
+            enableNounAnalysis = !enableNounAnalysis;
+            const icon = document.getElementById("nounAnalysisToggleIcon");
+            if (enableNounAnalysis) {
+                icon.classList.remove("fa-toggle-off");
+                icon.classList.add("fa-toggle-on");
+                icon.title = "關閉名詞分析";
+                nounAnalysisDiv.innerHTML = "己啟用名詞分析功能";
+            } else {
+                icon.classList.remove("fa-toggle-on");
+                icon.classList.add("fa-toggle-off");
+                icon.title = "開啟名詞分析";
+                nounAnalysisDiv.innerHTML = "己關閉名詞分析功能";
+            }
+        }
+
+        async function nounAnalysis() {
+            const q = questionInput.value.trim();
+            try {
+                const res = await fetch("/api/query/noun/analysis", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ question: q, conv_id: currentConvId })
+                });
+
+                const reader = res.body.getReader();
+                const decoder = new TextDecoder("utf-8");
+                let title
+                let fullRespone = parserTitleStr + "\n";
+                nounAnalysisDiv.innerHTML = marked.parse(fullRespone);
+                let buffer = "";
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value, { stream: true });
+                    buffer += chunk;
+                    try {
+                        fullRespone += buffer;
+                    } catch (e) {
+                        // 解析失敗就繼續等
+                        continue;
+                    }
+                    buffer = "";
+                    nounAnalysisDiv.innerHTML = marked.parse(fullRespone);
+                    nounAnalysisDiv.scrollTop = nounAnalysisDiv.scrollHeight;
+                }
+
+            } catch (err) {
+                nounAnalysisDiv.innerHTML = `<p style="color:red;">出現錯誤：${err.message}</p>`;
+            }
+        }
+
+
+        async function sendQuestion() {
+            thinkResponseDiv.innerHTML = "";
+            nounAnalysisDiv.innerHTML = "";
+            actualpromptDiv.innerHTML = "";
+
+            const q = questionInput.value.trim();
+            if (!q) {
+                alert("請建立新對話");
+                return;
+            }
+
+            if (!currentConvId) {
+                const title = q.slice(0, 10);
+                const id = `conv-${Date.now()}`;
+                conversations[id] = { title: title, messages: [] };
+                currentConvId = id;
+                updateConversationList();
+            }
+
+            hideSpinner();
+            setButtonLoading(true); // 啟用 loading 狀態
+            if (enableNounAnalysis) {
+                await nounAnalysis();
+            }
+
+            // 1. 先渲染使用者問題到答案欄
+            const userBlock = document.createElement("div");
+            userBlock.innerHTML = `<i class="fa-solid fa-user-minus"></i> ${q}`;
+            userBlock.style.background = "#e8f0fe";
+            userBlock.style.padding = "8px";
+            userBlock.style.marginBottom = "10px";
+            userBlock.style.textAlign = "right";
+            answerDiv.appendChild(userBlock);
+
+            // 2. 預留 answerBlock 並顯示處理中訊息
+            const answerBlock = document.createElement("div");
+            answerBlock.className = "markdown-body";
+            answerBlock.style.background = "#f4f4f4";
+            answerBlock.style.padding = "8px";
+            answerBlock.style.marginBottom = "20px";
+            answerDiv.appendChild(answerBlock);
+            if (enableThink) {
+                fullAnswer += '<i class="fa-solid fa-robot"> 推理中...</i><BR/>';
+            } else {
+                fullAnswer += '<i class="fa-solid fa-robot"> 分析中...</i><BR/>';
+            }
+            answerBlock.innerHTML = marked.parse(fullAnswer);
+            // 3. 捲動到底部顯示新問題
+            answerDiv.scrollTop = answerDiv.scrollHeight;
+            try {
+                const keyword = nounAnalysisDiv.textContent.trim().replace(parserTitleStr, "");
+                answerDiv.scrollTop = answerDiv.scrollHeight;
+                userScrolled = false; // 重置滾動狀態，允許自動滾動
+                // 檢查是否選擇了知識庫
+                if (!selectedQAKBId) {
+                    alert("請選擇知識庫");
+                    setButtonLoading(false);
+                    return;
+                }
+
+                const res = await fetch("/api/query", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        question: q,
+                        keyword: keyword,
+                        conv_id: currentConvId,
+                        think: enableThink,
+                        kb_id: selectedQAKBId
+                    })
+                });
+                //let fullAnswer = "";
+                let thinkResponse = "";
+                const reader = res.body.getReader();
+                const decoder = new TextDecoder("utf-8");
+                let promptExtracted = false;
+                let promptValue = "";
+                let buffer = "";
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+
+                    // 嘗試從 buffer 中拆出完整 JSON 物件
+                    while (true) {
+                        const startIdx = buffer.indexOf('{');
+                        if (startIdx === -1) {
+                            // buffer 裡沒有 JSON 開頭，等下一筆資料
+                            break;
+                        }
+
+                        // 尋找完整 JSON 結尾（括號配對）
+                        let bracketCount = 0;
+                        let endIdx = -1;
+                        for (let i = startIdx; i < buffer.length; i++) {
+                            if (buffer[i] === '{') bracketCount++;
+                            else if (buffer[i] === '}') bracketCount--;
+                            if (bracketCount === 0) {
+                                endIdx = i;
+                                break;
+                            }
+                        }
+
+                        if (endIdx === -1) {
+                            // 尚未收到完整 JSON，繼續等待更多資料
+                            break;
+                        }
+
+                        const jsonStr = buffer.slice(startIdx, endIdx + 1);
+                        try {
+                            const data = JSON.parse(jsonStr);
+
+                            if (!promptExtracted && data.prompt !== undefined) {
+                                // 提取 prompt
+                                promptExtracted = true;
+                                actualpromptDiv.innerHTML = `<pre style="white-space:pre-wrap">${data.prompt}</pre>`;
+                                // answer 在第一筆可能是空字串，無需動作
+                            } else {
+                                // 後續串流是 content/thinking
+                                if (data.thinking) {
+                                    thinkResponse += data.thinking;
+                                    thinkResponseDiv.innerHTML = marked.parse(thinkResponse);
+                                    thinkResponseDiv.scrollTop = thinkResponseDiv.scrollHeight;
+                                }
+                                if (data.content) {
+                                    fullAnswer += data.content;
+                                }
+                                answerBlock.innerHTML = marked.parse(fullAnswer);
+
+                                if (!userScrolled) {
+                                    answerDiv.scrollTop = answerDiv.scrollHeight;
+                                }
+                            }
+
+                            // 移除已解析的 JSON
+                            buffer = buffer.slice(endIdx + 1).trimStart();
+                        } catch (e) {
+                            // JSON 解析錯誤，可能不完整，等待更多資料
+                            break;
+                        }
+                    } // end while 拆 JSON
+                }
+                // 記錄對話
+                if (currentConvId) {
+                    conversations[currentConvId].messages.push({ q, a: fullAnswer });
+                } else {
+                    // 若沒有 conversation，創一個
+                    const newId = `conv-${Date.now()}`;
+                    conversations[newId] = {
+                        title: q.slice(0, 10),
+                        messages: [{ q, a: fullAnswer }]
+                    };
+                    currentConvId = newId;
+                }
+            } catch (err) {
+                answerDiv.innerHTML = `<p style="color:red;">出現錯誤：${err.message}</p>`;
+            } finally {
+                await loadConversations();
+                await switchConversation(currentConvId);
+                setButtonLoading(false); // 關閉 loading 狀態
+            }
+        }
+
+        /** Index 處理 Start */
+        const uploadInput = document.getElementById("uploadInput");
+        const uploadBtn = document.getElementById("uploadBtn");
+        const uploadResult = document.getElementById("uploadResult");
+        const fileCheckboxList = document.getElementById("fileCheckboxList");
+        const prepareSelectedBtn = document.getElementById("prepareSelectedBtn");
+
+        async function loadFileList() {
+            fileCheckboxList.innerHTML = "";
+            const selectAllCheckbox = document.getElementById('selectAllUploadedFilesCheckbox');
+
+            if (!currentKBId) {
+                fileCheckboxList.innerHTML = "<p style='color: #666; text-align: center; padding: 1rem;'>請先選擇知識庫</p>";
+                selectAllCheckbox.style.display = 'none';
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append("kb_id", currentKBId);
+                const res = await fetch(`/api/document/list/files`, { method: "POST", body: formData });
+                if (!res.ok) {
+                    const text = await res.text();
+                    throw new Error("伺服器錯誤：" + text);
+                }
+                const data = await res.json();
+                if (!data.files || !Array.isArray(data.files)) {
+                    throw new Error("伺服器回傳格式錯誤：" + JSON.stringify(data));
+                }
+
+                if (data.files.length === 0) {
+                    fileCheckboxList.innerHTML = "<p style='color: #666; text-align: center; padding: 1rem;'>此知識庫尚無檔案</p>";
+                    selectAllCheckbox.style.display = 'none';
+                    return;
+                }
+
+                selectAllCheckbox.style.display = 'inline-block';
+
+                data.files.forEach(f => {
+                    const div = document.createElement("div");
+                    div.style.display = "flex";
+                    div.style.alignItems = "center";
+                    div.style.justifyContent = "space-between";
+                    div.style.padding = "0.8rem";
+                    div.style.borderBottom = "1px solid #eee";
+                    div.style.backgroundColor = "#fafafa";
+                    div.style.marginBottom = "0.5rem";
+                    div.style.borderRadius = "4px";
+
+                    // 左侧：复选框和文件信息
+                    const leftDiv = document.createElement("div");
+                    leftDiv.style.display = "flex";
+                    leftDiv.style.alignItems = "center";
+                    leftDiv.style.flex = "1";
+
+                    const cb = document.createElement("input");
+                    cb.type = "checkbox";
+                    cb.value = f.name;  // 使用文件名作为值
+                    cb.className = "file-checkbox";
+                    cb.onchange = updateUploadedFilesSelectAllState;
+                    cb.style.marginRight = "0.8rem";
+                    leftDiv.appendChild(cb);
+
+                    // 文件信息容器
+                    const fileInfoDiv = document.createElement("div");
+                    fileInfoDiv.style.display = "flex";
+                    fileInfoDiv.style.flexDirection = "column";
+                    fileInfoDiv.style.flex = "1";
+
+                    // 文件名链接
+                    const link = document.createElement("a");
+                    link.href = `/md_viewer?file=${encodeURIComponent(f.name)}.md&kb_id=${encodeURIComponent(currentKBId)}`;
+                    link.target = "_blank";
+                    link.textContent = f.name;
+                    link.style.textDecoration = "none";
+                    link.style.color = "#007bff";
+                    link.style.fontWeight = "500";
+                    link.style.fontSize = "0.95rem";
+                    link.style.marginBottom = "0.3rem";
+                    link.onmouseover = function () { this.style.textDecoration = "underline"; };
+                    link.onmouseout = function () { this.style.textDecoration = "none"; };
+                    fileInfoDiv.appendChild(link);
+
+                    // 文件详细信息
+                    const detailsDiv = document.createElement("div");
+                    detailsDiv.style.display = "flex";
+                    detailsDiv.style.gap = "1rem";
+                    detailsDiv.style.fontSize = "0.8rem";
+                    detailsDiv.style.color = "#666";
+
+                    // 文件大小
+                    const sizeSpan = document.createElement("span");
+                    const sizeInKB = (f.size / 1024).toFixed(1);
+                    const sizeInMB = (f.size / (1024 * 1024)).toFixed(2);
+                    const displaySize = f.size > 1024 * 1024 ? `${sizeInMB} MB` : `${sizeInKB} KB`;
+                    sizeSpan.textContent = `📄 ${displaySize}`;
+                    sizeSpan.style.color = "#28a745";
+                    detailsDiv.appendChild(sizeSpan);
+
+                    // 文件类型
+                    const typeSpan = document.createElement("span");
+                    typeSpan.textContent = `🏷️ ${f.extension.toUpperCase()}`;
+                    typeSpan.style.color = "#6f42c1";
+                    detailsDiv.appendChild(typeSpan);
+
+                    // 上传时间
+                    const timeSpan = document.createElement("span");
+                    const uploadDate = new Date(f.upload_time);
+                    const now = new Date();
+                    const timeDiff = now - uploadDate;
+                    const daysDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+
+                    let timeText;
+                    if (daysDiff === 0) {
+                        timeText = `🕒 今天 ${uploadDate.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })}`;
+                    } else if (daysDiff === 1) {
+                        timeText = `🕒 昨天 ${uploadDate.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })}`;
+                    } else if (daysDiff < 7) {
+                        timeText = `🕒 ${daysDiff} 天前`;
+                    } else {
+                        timeText = `🕒 ${uploadDate.toLocaleDateString('zh-TW')}`;
+                    }
+                    timeSpan.textContent = timeText;
+                    timeSpan.style.color = "#dc3545";
+                    detailsDiv.appendChild(timeSpan);
+
+                    fileInfoDiv.appendChild(detailsDiv);
+                    leftDiv.appendChild(fileInfoDiv);
+
+                    div.appendChild(leftDiv);
+                    fileCheckboxList.appendChild(div);
+                });
+                updateUploadedFilesSelectAllState();
+            } catch (err) {
+                fileCheckboxList.innerHTML = `<span style="color:red;">載入失敗：${err.message}</span>`;
+                selectAllCheckbox.style.display = 'none';
+            }
+        }
+
+        prepareSelectedBtn.onclick = function () {
+            if (!currentKBId) {
+                alert("請先選擇知識庫");
+                return;
+            }
+
+            const selected = Array.from(fileCheckboxList.querySelectorAll(".file-checkbox:checked")).map(cb => cb.value);
+            if (selected.length === 0) {
+                alert("請先勾選檔案");
+                return;
+            }
+
+            // 開啟建立索引確認Modal
+            openBuildIndexModal();
+        };
+
+        // 修改上傳按鈕的點擊事件，打開新的Dialog
+        uploadBtn.onclick = function () {
+            if (!currentKBId) {
+                alert("請先選擇知識庫");
+                return;
+            }
+            openUploadModal();
+        };
+
+        // 上傳Dialog的相關函數
+        let selectedFiles = [];
+
+        function openUploadModal() {
+            selectedFiles = [];
+            updatePendingFilesList();
+            clearUploadError();
+            document.getElementById('uploadFileModal').style.display = 'block';
+        }
+
+        function closeUploadModal() {
+            selectedFiles = [];
+            updatePendingFilesList();
+            clearUploadError();
+            document.getElementById('uploadFileModal').style.display = 'none';
+            // 刷新檔案列表
+            loadFileList();
+        }
+
+        function selectFiles() {
+            const hiddenInput = document.getElementById('hiddenFileInput');
+            hiddenInput.onchange = function (e) {
+                const files = Array.from(e.target.files);
+                // 檢查檔案大小
+                const validFiles = [];
+                for (let file of files) {
+                    if (file.size > 10 * 1024 * 1024) { // 10MB
+                        showUploadError(`檔案 ${file.name} 大小超過10MB限制，已跳過`);
+                        continue;
+                    }
+                    validFiles.push(file);
+                }
+                selectedFiles = validFiles;
+                updatePendingFilesList();
+                // 清空input以允許重複選擇同一個檔案
+                hiddenInput.value = '';
+            };
+            hiddenInput.click();
+        }
+
+        function clearSelectedFiles() {
+            // 取得勾選的檔案
+            const checkedCheckboxes = document.querySelectorAll('#pendingFilesList input[type="checkbox"]:checked');
+            const filesToRemove = Array.from(checkedCheckboxes).map(cb => parseInt(cb.dataset.index));
+
+            // 從selectedFiles中移除這些檔案
+            selectedFiles = selectedFiles.filter((file, index) => !filesToRemove.includes(index));
+            updatePendingFilesList();
+            clearUploadError();
+        }
+
+        function updatePendingFilesList() {
+            const listContainer = document.getElementById('pendingFilesList');
+            const selectAllCheckbox = document.getElementById('selectAllFilesCheckbox');
+
+            if (selectedFiles.length === 0) {
+                listContainer.innerHTML = '<p style="color: #666; text-align: center; margin: 50px 0;">尚未選擇任何檔案</p>';
+                selectAllCheckbox.style.display = 'none';
+                return;
+            }
+
+            selectAllCheckbox.style.display = 'inline-block';
+
+            let html = '';
+            selectedFiles.forEach((file, index) => {
+                html += `
+                    <div style="display: flex; align-items: center; padding: 5px 0; border-bottom: 1px solid #eee;">
+                        <input type="checkbox" data-index="${index}" style="margin-right: 10px;" class="file-item-checkbox" onchange="updateSelectAllState()">
+                        <span style="font-weight: bold; margin-right: 10px;">${file.name}</span>
+                        <span style="color: #666; font-size: 0.9em;">(${formatFileSize(file.size)})</span>
+                    </div>
+                `;
+            });
+            listContainer.innerHTML = html;
+            updateSelectAllState();
+        }
+
+        function toggleSelectAllFiles() {
+            const selectAllCheckbox = document.getElementById('selectAllFilesCheckbox');
+            const fileCheckboxes = document.querySelectorAll('#pendingFilesList .file-item-checkbox');
+            const isChecked = selectAllCheckbox.checked;
+
+            fileCheckboxes.forEach(checkbox => {
+                checkbox.checked = isChecked;
+            });
+        }
+
+        function updateSelectAllState() {
+            const selectAllCheckbox = document.getElementById('selectAllFilesCheckbox');
+            const fileCheckboxes = document.querySelectorAll('#pendingFilesList .file-item-checkbox');
+
+            if (fileCheckboxes.length === 0) {
+                selectAllCheckbox.checked = false;
+                selectAllCheckbox.indeterminate = false;
+                return;
+            }
+
+            const checkedCount = Array.from(fileCheckboxes).filter(cb => cb.checked).length;
+
+            if (checkedCount === 0) {
+                selectAllCheckbox.checked = false;
+                selectAllCheckbox.indeterminate = false;
+            } else if (checkedCount === fileCheckboxes.length) {
+                selectAllCheckbox.checked = true;
+                selectAllCheckbox.indeterminate = false;
+            } else {
+                selectAllCheckbox.checked = false;
+                selectAllCheckbox.indeterminate = true;
+            }
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return Math.round(bytes / 1024) + ' KB';
+            return Math.round(bytes / (1024 * 1024)) + ' MB';
+        }
+
+        async function startUpload() {
+            if (selectedFiles.length === 0) {
+                showUploadError('請先選擇檔案');
+                return;
+            }
+
+            // 取得勾選的檔案
+            const checkedCheckboxes = document.querySelectorAll('#pendingFilesList .file-item-checkbox:checked');
+            if (checkedCheckboxes.length === 0) {
+                showUploadError('請先勾選要上傳的檔案');
+                return;
+            }
+
+            const checkedIndexes = Array.from(checkedCheckboxes).map(cb => parseInt(cb.dataset.index));
+            const filesToUpload = selectedFiles.filter((file, index) => checkedIndexes.includes(index));
+
+            clearUploadError();
+
+            try {
+                // 檢查檔案是否已存在
+                const files = filesToUpload.map(f => f.name);
+                let exists = {};
+                try {
+                    const formData = new FormData();
+                    formData.append("kb_id", currentKBId);
+                    files.forEach(f => formData.append("files", f));
+                    const res = await fetch("/api/document/check/file/exists", { method: "POST", body: formData });
+                    exists = await res.json();
+                } catch (e) { exists = {}; }
+
+                const duplicated = Object.entries(exists).filter(([k, v]) => v).map(([k]) => k);
+                let overwrite = false;
+                if (duplicated.length > 0) {
+                    overwrite = confirm(`以下檔案已存在，上傳會覆蓋檔案，是否繼續上傳？\\n${duplicated.join("\\n")}`);
+                    if (!overwrite) {
+                        showUploadError('已取消上傳（檔案重複）');
+                        return;
+                    }
+                }
+
+                showSpinner('上傳檔案中...');
+
+                const formData = new FormData();
+                filesToUpload.forEach(f => formData.append("files", f));
+                formData.append("overwrite", overwrite ? "true" : "false");
+                formData.append("kb_id", currentKBId);
+
+                const res = await fetch("/api/document/upload", { method: "POST", body: formData });
+                const data = await res.json();
+
+                if (res.ok && data.results) {
+                    // 檢查是否有失敗的上傳
+                    const errors = data.results.filter(r => r.status === 'error');
+                    if (errors.length > 0) {
+                        const errorMessages = errors.map(e => `${e.filename}: ${e.message}`).join('\\n');
+                        showUploadError(`上傳過程中出現異常，請通知系統管理員處理：\\n${errorMessages}`);
+                    } else {
+                        // 上傳成功，從列表中移除已上傳的檔案
+                        selectedFiles = selectedFiles.filter((file, index) => !checkedIndexes.includes(index));
+                        updatePendingFilesList();
+                        if (selectedFiles.length === 0) {
+                            setTimeout(() => {
+                                closeUploadModal();
+                            }, 1000);
+                        }
+                    }
+                } else {
+                    showUploadError(`上傳失敗：${JSON.stringify(data)}`);
+                }
+
+            } catch (err) {
+                showUploadError(`上傳過程中出現異常，請通知系統管理員處理：${err.message}`);
+            } finally {
+                stopSpinner();
+            }
+        }
+
+        function showUploadError(message) {
+            const errorDiv = document.getElementById('uploadErrorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function clearUploadError() {
+            const errorDiv = document.getElementById('uploadErrorMessage');
+            errorDiv.style.display = 'none';
+            errorDiv.textContent = '';
+        }
+
+        // 檔案刪除功能 - 打開確認對話框
+        function removeSelectedFiles() {
+            if (!currentKBId) {
+                alert("請先選擇知識庫");
+                return;
+            }
+
+            const selected = Array.from(fileCheckboxList.querySelectorAll(".file-checkbox:checked")).map(cb => cb.value);
+            if (selected.length === 0) {
+                alert("請先勾選要刪除的檔案");
+                return;
+            }
+
+            // 顯示要刪除的檔案列表
+            const filesToRemoveList = document.getElementById('filesToRemoveList');
+            let html = '';
+            selected.forEach(filename => {
+                html += `<div style="padding: 5px 0; border-bottom: 1px solid #eee;">
+                    <i class="fa-solid fa-file" style="margin-right: 8px; color: #666;"></i>
+                    <span style="font-weight: bold;">${filename}</span>
+                </div>`;
+            });
+            filesToRemoveList.innerHTML = html;
+
+            // 顯示確認對話框
+            document.getElementById('removeFileModal').style.display = 'block';
+        }
+
+        // 關閉移除檔案對話框
+        function closeRemoveFileModal() {
+            document.getElementById('removeFileModal').style.display = 'none';
+        }
+
+        // 確認刪除檔案
+        async function confirmRemoveFiles() {
+            const selected = Array.from(fileCheckboxList.querySelectorAll(".file-checkbox:checked")).map(cb => cb.value);
+
+            if (selected.length === 0) {
+                closeRemoveFileModal();
+                return;
+            }
+
+            // 關閉對話框
+            closeRemoveFileModal();
+
+            showSpinner('刪除檔案中...');
+            try {
+                const formData = new FormData();
+                selected.forEach(f => formData.append("files", f));
+                formData.append("kb_id", currentKBId);
+
+                const res = await fetch("/api/document/delete/files", { method: "DELETE", body: formData });
+                const data = await res.json();
+
+                if (res.ok && data.results) {
+                    const successCount = data.results.filter(r => r.status === "success").length;
+                    const errorCount = data.results.filter(r => r.status === "error").length;
+
+                    let message = "";
+                    if (successCount > 0) {
+                        message += `成功刪除 ${successCount} 個檔案`;
+                    }
+                    if (errorCount > 0) {
+                        message += (message ? "，" : "") + `${errorCount} 個檔案刪除失敗`;
+                    }
+
+                    alert(message);
+
+                    // 重新載入檔案列表
+                    await loadFileList();
+                } else {
+                    alert(`刪除失敗：${data.message || JSON.stringify(data)}`);
+                }
+            } catch (err) {
+                alert(`刪除檔案時發生錯誤：${err.message}`);
+            } finally {
+                stopSpinner();
+            }
+        }
+
+
+        async function showIndexSummary100() {
+            if (!currentKBId) {
+                indexSummaryDiv.innerHTML = "<p style='color: #666;'>請先選擇知識庫</p>";
+                return;
+            }
+
+            indexSummaryDiv.innerHTML = "載入中...";
+            try {
+                const res = await fetch(`/api/vector/index/summary/100?kb_id=${currentKBId}`, { method: "GET" });
+                if (!res.ok) {
+                    const err = await res.text();
+                    throw new Error(err);
+                }
+                const data = await res.json();
+                indexSummaryDiv.innerHTML = `<p>總共 <b>${data.count}</b> 個區塊：</p><ul>` +
+                    data.chunks.map((c, i) => `<li><pre>${c.slice(0, 200).replace(/</g, "&lt;")}</pre></li>`).join("") +
+                    "</ul>";
+            } catch (err) {
+                indexSummaryDiv.innerHTML = `<span style="color:red;">載入失敗：${err.message}</span>`;
+            }
+        }
+
+        async function clearIndex() {
+            if (!currentKBId) {
+                alert("請先選擇知識庫");
+                return;
+            }
+
+            // 移除原本的confirm對話框，改由Modal處理確認
+            showSpinner();
+            indexSummaryDiv.innerHTML = "";
+            try {
+                const formData = new FormData();
+                formData.append("kb_id", currentKBId);
+
+                const res = await fetch("/api/vector/index/clear", { method: "POST", body: formData });
+                const data = await res.json();
+                if (res.ok && data.status === "cleared") {
+                    indexSummaryDiv.innerHTML = `<p style="color:green;">知識庫 ${currentKBId} 的索引資料已清除。</p>`;
+                } else {
+                    indexSummaryDiv.innerHTML = `<p style="color:red;">錯誤：${data.error || JSON.stringify(data)}</p>`;
+                }
+            } catch (err) {
+                indexSummaryDiv.innerHTML = `<p style="color:red;">發生錯誤：${err.message}</p>`;
+            } finally {
+                stopSpinner();
+            }
+        }
+        /** Index 處理 End */
+        /** 參數處理 Start */
+        async function updateConfig() {
+            showSpinner();
+            try {
+                const form = document.getElementById("paramForm");
+                const formData = Object.fromEntries(new FormData(form).entries());
+                const res = await fetch("/api/config/update", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(formData)
+                });
+                if (res.ok) console.log("參數已儲存");
+            } catch (err) {
+                //console.log("發生錯誤：${err.message}"+${err.message})
+                alert("發生錯誤：" + err.message);
+                //!@#.innerHTML = `<p style="color:red;">發生錯誤：${err.message}</p>`;
+            } finally {
+                stopSpinner();
+            }
+        }
+
+        document.querySelectorAll(".tab-button").forEach(button => {
+            button.addEventListener("click", () => {
+                const targetTabId = button.getAttribute("data-tab");
+                // 顯示目標 tab
+                document.querySelectorAll(".tab-content").forEach(tab => {
+                    tab.style.display = (tab.id === targetTabId) ? "block" : "none";
+                });
+
+                // 如果是切到 paramTab，就觸發更新
+                if (targetTabId === "paramTab") {
+                    updateConfig();
+                }
+            });
+        });
+
+        window.addEventListener("DOMContentLoaded", async () => {
+            const res = await fetch("/api/config/get");
+            if (!res.ok) return alert("載入參數失敗");
+            const config = await res.json();
+
+            // 把每個欄位的值設成後端傳來的值
+            for (const [key, value] of Object.entries(config)) {
+                const input = document.querySelector(`[name="${key}"]`);
+                if (input) input.value = value;
+            }
+        });
+        /** 參數處理 END */
+        /** 事件綁定 */
+        window.addEventListener("load", () => {
+            loadConversations();
+            loadFileList();
+            sendBtn.addEventListener("click", sendQuestion);
+            updateConfigBtn.addEventListener("click", updateConfig);
+
+            // 移除檔案按鈕已改用onclick屬性，不需要額外事件綁定
+            // 監聽答案區域的滾動事件
+            answerDiv.addEventListener('scroll', () => {
+                const isNearBottom = answerDiv.scrollHeight - answerDiv.scrollTop - answerDiv.clientHeight < 10;
+                if (!isNearBottom) {
+                    userScrolled = true;
+                } else {
+                    userScrolled = false;
+                }
+            });
+
+            // 載入用戶資訊
+            loadUserInfo();
+
+            // 綁定個人功能按鈕事件
+            //document.getElementById('userMenuBtn').addEventListener('mouseenter', openUserMenu);
+        });
+
+        // 載入用戶資訊
+        async function loadUserInfo() {
+            try {
+                const response = await fetch('/api/user/current-user');
+                if (response.ok) {
+                    const userData = await response.json();
+                    const username = userData.username;
+                    const initial = username.charAt(0).toUpperCase();
+                    document.getElementById('userInitial').textContent = initial;
+                    document.getElementById('userMenuUsername').textContent = username;
+                }
+            } catch (error) {
+                console.error('Error loading user info:', error);
+            }
+        }
+
+        // 新增：按鈕 loading 狀態切換 function
+        function setButtonLoading(isLoading) {
+            const btn = document.getElementById("sendBtn");
+            if (!btn) return;
+            if (isLoading) {
+                btn.dataset.originalText = btn.innerHTML;
+                btn.innerHTML = '<span class="btn-loader"></span>';
+                btn.classList.add("btn-loading");
+                btn.disabled = true;
+            } else {
+                if (btn.dataset.originalText) {
+                    btn.innerHTML = btn.dataset.originalText;
+                    delete btn.dataset.originalText;
+                }
+                btn.classList.remove("btn-loading");
+                btn.innerHTML = '送出問題';
+                btn.disabled = false;
+            }
+        }
+
+        function logout() {
+            const confirmed = window.confirm("確定要登出嗎？");
+            if (confirmed) {
+                fetch('/api/user/logout', {
+                    method: 'GET',
+                    credentials: 'same-origin'
+                }).then(response => {
+                    if (response.redirected) {
+                        window.location.href = response.url;
+                    }
+                });
+            }
+        }
+
+        // 個人功能抽屜相關函數
+        function openUserMenu() {
+            document.getElementById('userMenuDrawer').classList.add('open');
+        }
+
+        function closeUserMenu() {
+            document.getElementById('userMenuDrawer').classList.remove('open');
+        }
+
+        function showChangePasswordModal() {
+            document.getElementById('changePasswordModal').style.display = 'block';
+        }
+
+        function closeChangePasswordModal() {
+            document.getElementById('changePasswordModal').style.display = 'none';
+        }
+
+        async function changePassword() {
+            const oldPassword = document.getElementById('oldPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmNewPassword = document.getElementById('confirmNewPassword').value;
+
+            // 驗證輸入
+            if (!oldPassword || !newPassword || !confirmNewPassword) {
+                alert('請填寫所有欄位！');
+                return;
+            }
+
+            if (newPassword !== confirmNewPassword) {
+                alert('新密碼與確認密碼不一致！');
+                return;
+            }
+
+            if (newPassword.length < 6) {
+                alert('新密碼長度至少需要6個字符！');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/user/change-password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        old_password: oldPassword,
+                        new_password: newPassword
+                    })
+                });
+
+                if (response.ok) {
+                    alert('密碼變更成功！');
+                    closeChangePasswordModal();
+                } else {
+                    const errorData = await response.json();
+                    alert(`密碼變更失敗：${errorData.detail || '未知錯誤'}`);
+                }
+            } catch (error) {
+                alert(`密碼變更失敗：${error.message}`);
+            }
+        }
+
+        // 滑鼠離開抽屜外部關閉抽屜
+        document.getElementById('userMenuDrawer').addEventListener('mouseleave', function () {
+            closeUserMenu();
+        });
+
+        // ===== 帳號管理功能 =====
+        const accountTab = document.getElementById('accountTab');
+        const accountManagerContainer = document.getElementById('accountManagerContainer');
+        let allUsers = [];
+        let userPageSize = 10;
+        let userPage = 1;
+        const userPageSizes = [10, 50, 100, 200];
+
+        async function loadUsers() {
+            showSpinner('載入帳號資料...');
+            try {
+                const res = await fetch('/api/admin/users');
+                if (!res.ok) throw new Error('權限不足或伺服器錯誤');
+                allUsers = await res.json();
+                userPage = 1;
+                renderUserTable();
+            } catch (e) {
+                accountManagerContainer.innerHTML = `<div style='color:red;font-weight:bold;'>無權限存取帳號管理功能，僅限管理員</div>`;
+            } finally {
+                stopSpinner();
+            }
+        }
+
+        function renderUserTable() {
+            if (!Array.isArray(allUsers) || allUsers.length === 0) {
+                accountManagerContainer.innerHTML = '<div>查無帳號資料</div>';
+                return;
+            }
+            // 分頁
+            const startIdx = (userPage - 1) * userPageSize;
+            const endIdx = Math.min(startIdx + userPageSize, allUsers.length);
+            const pageUsers = allUsers.slice(startIdx, endIdx);
+
+            let html = `<h3>帳號管理</h3>`;
+            html += `<table style="width:100%;border-collapse:collapse;margin-bottom:1em;">
+            <thead>
+              <tr style="background:#f0f0f0;">
+                <th style="padding:8px;border:1px solid #ccc;">ID</th>
+                <th style="padding:8px;border:1px solid #ccc;">帳號</th>
+                <th style="padding:8px;border:1px solid #ccc;">角色</th>
+                <th style="padding:8px;border:1px solid #ccc;">狀態</th>
+                <th style="padding:8px;border:1px solid #ccc;">建立時間</th>
+                <th style="padding:8px;border:1px solid #ccc;">操作</th>
+              </tr>
+            </thead>
+            <tbody>`;
+            for (const user of pageUsers) {
+                const isActive = user.is_active;
+                html += `<tr>
+              <td style='border:1px solid #ccc;padding:8px;'>${user.id}</td>
+              <td style='border:1px solid #ccc;padding:8px;'>${user.username}</td>
+              <td style='border:1px solid #ccc;padding:8px;'>
+                <select onchange="changeUserRole(${user.id}, this.value)" style="padding:4px 8px;">
+                  <option value="user" ${user.role === 'user' ? 'selected' : ''}>user</option>
+                  <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>admin</option>
+                </select>
+              </td>
+              <td style='border:1px solid #ccc;padding:8px;'>
+                <span style="color:${isActive ? '#27ae60' : '#e74c3c'};font-weight:bold;">${isActive ? '啟用' : '停用'}</span>
+              </td>
+              <td style='border:1px solid #ccc;padding:8px;'>${user.created_at ? user.created_at.replace('T', ' ').slice(0, 19) : ''}</td>
+              <td style='border:1px solid #ccc;padding:8px;'>
+                ${isActive
+                        ? `<button onclick="deactivateUser(${user.id})" style="background:#e74c3c;color:white;padding:4px 10px;border-radius:4px;">停用</button>`
+                        : `<button onclick="activateUser(${user.id})" style="background:#27ae60;color:white;padding:4px 10px;border-radius:4px;">啟用</button>`}
+                <button onclick="openAdminChangePasswordModal(${user.id}, '${user.username}')" style="background:#3498db;color:white;padding:4px 10px;border-radius:4px;">變更密碼</button>
+              </td>
+            </tr>`;
+            }
+            html += `</tbody></table>`;
+            // 分頁與顯示筆數
+            html += `<div style="display:flex;align-items:center;gap:2em;margin-bottom:1em;width:100%;">
+                <div style="display:flex;align-items:center;gap:0.5em;">
+                    <span>顯示筆數：</span>
+                    <select id="userPageSizeSelect" style="padding:4px 8px;min-width:60px;">
+                      ${userPageSizes.map(size => `<option value="${size}" ${userPageSize === size ? 'selected' : ''}>${size}</option>`).join('')}
+                    </select>
+                </div>
+                <div style="display:flex;align-items:center;gap:0.5em;">
+                    <span>頁數：</span>
+                    <button onclick="gotoUserPage(1)" ${userPage === 1 ? 'disabled' : ''}>首頁</button>
+                    <button onclick="gotoUserPage(${userPage - 1})" ${userPage === 1 ? 'disabled' : ''}>上一頁</button>
+                    <span>第 ${userPage} / ${Math.ceil(allUsers.length / userPageSize)} 頁</span>
+                    <button onclick="gotoUserPage(${userPage + 1})" ${userPage === Math.ceil(allUsers.length / userPageSize) ? 'disabled' : ''}>下一頁</button>
+                    <button onclick="gotoUserPage(${Math.ceil(allUsers.length / userPageSize)})" ${userPage === Math.ceil(allUsers.length / userPageSize) ? 'disabled' : ''}>末頁</button>
+                </div>
+            </div>`;
+            accountManagerContainer.innerHTML = html;
+            // 插入管理員變更密碼 modal（如尚未存在）
+            if (!document.getElementById('adminChangePasswordModal')) {
+                const modalHtml = `
+                <div id="adminChangePasswordModal" class="modal">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h3>管理員變更密碼</h3>
+                      <i class="fa-solid fa-key"></i>
+                    </div>
+                    <div class="modal-body">
+                      <div class="form-group">
+                        <label id="adminChangePasswordUsernameLabel"></label>
+                      </div>
+                      <div class="form-group">
+                        <label for="adminNewPassword">新密碼</label>
+                        <input type="password" id="adminNewPassword" required minlength="6">
+                      </div>
+                      <div class="form-group">
+                        <label for="adminConfirmNewPassword">確認新密碼</label>
+                        <input type="password" id="adminConfirmNewPassword" required minlength="6">
+                      </div>
+                    </div>
+                    <div class="modal-footer">
+                      <button onclick="closeAdminChangePasswordModal()" class="btn-secondary">取消</button>
+                      <button onclick="adminChangePasswordSubmit()" class="btn-primary">確認變更</button>
+                    </div>
+                  </div>
+                </div>
+              `;
+                document.body.insertAdjacentHTML('beforeend', modalHtml);
+            }
+            document.getElementById('userPageSizeSelect').onchange = function () {
+                userPageSize = parseInt(this.value);
+                userPage = 1;
+                renderUserTable();
+            };
+        }
+
+        window.activateUser = async function (userId) {
+            if (!confirm('確定要啟用此帳號？')) return;
+            showSpinner('啟用帳號...');
+            try {
+                const res = await fetch(`/api/admin/users/${userId}/activate`, { method: 'PUT' });
+                if (!res.ok) throw new Error('啟用失敗');
+                // 更新本地資料
+                const idx = allUsers.findIndex(u => u.id === userId);
+                if (idx !== -1) allUsers[idx].is_active = true;
+                renderUserTable();
+            } catch (e) {
+                alert('帳號啟用失敗：' + e.message);
+            } finally {
+                stopSpinner();
+            }
+        };
+
+        window.deactivateUser = async function (userId) {
+            if (!confirm('確定要停用此帳號？')) return;
+            showSpinner('停用帳號...');
+            try {
+                const res = await fetch(`/api/admin/users/${userId}/deactivate`, { method: 'PUT' });
+                if (!res.ok) throw new Error('停用失敗');
+                // 更新本地資料
+                const idx = allUsers.findIndex(u => u.id === userId);
+                if (idx !== -1) allUsers[idx].is_active = false;
+                renderUserTable();
+            } catch (e) {
+                alert('帳號停用失敗：' + e.message);
+            } finally {
+                stopSpinner();
+            }
+        };
+
+        window.changeUserRole = async function (userId, newRole) {
+            showSpinner('更新角色...');
+            try {
+                const res = await fetch(`/api/admin/users/${userId}/admin`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ role: newRole })
+                });
+                if (!res.ok) throw new Error('更新失敗');
+                // 更新本地資料
+                const idx = allUsers.findIndex(u => u.id === userId);
+                if (idx !== -1) allUsers[idx].role = newRole;
+                renderUserTable();
+            } catch (e) {
+                alert('角色更新失敗：' + e.message);
+            } finally {
+                stopSpinner();
+            }
+        };
+
+        // tab 切換時自動載入帳號
+        const origSwitchTab = window.switchTab;
+        window.switchTab = function (tabId) {
+            origSwitchTab(tabId);
+            if (tabId === 'accountTab') {
+                loadUsers();
+            }
+        };
+
+        // 管理員變更密碼功能
+        window.openAdminChangePasswordModal = function (userId, username) {
+            window._adminChangePasswordUserId = userId;
+            document.getElementById('adminChangePasswordUsernameLabel').textContent = `帳號：${username}`;
+            document.getElementById('adminNewPassword').value = '';
+            document.getElementById('adminConfirmNewPassword').value = '';
+            document.getElementById('adminChangePasswordModal').style.display = 'block';
+        };
+        window.closeAdminChangePasswordModal = function () {
+            document.getElementById('adminChangePasswordModal').style.display = 'none';
+        };
+        window.adminChangePasswordSubmit = async function () {
+            const userId = window._adminChangePasswordUserId;
+            const newPassword = document.getElementById('adminNewPassword').value;
+            const confirmNewPassword = document.getElementById('adminConfirmNewPassword').value;
+            if (!newPassword || !confirmNewPassword) {
+                alert('請填寫所有欄位！');
+                return;
+            }
+            if (newPassword !== confirmNewPassword) {
+                alert('新密碼與確認密碼不一致！');
+                return;
+            }
+            if (newPassword.length < 6) {
+                alert('新密碼長度至少需要6個字符！');
+                return;
+            }
+            showSpinner('變更密碼中...');
+            try {
+                const response = await fetch(`/api/admin/users/${userId}/change-password`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ new_password: newPassword })
+                });
+                if (response.ok) {
+                    alert('密碼變更成功！');
+                    closeAdminChangePasswordModal();
+                } else {
+                    const errorData = await response.json();
+                    alert(`密碼變更失敗：${errorData.detail || '未知錯誤'}`);
+                }
+            } catch (error) {
+                alert(`密碼變更失敗：${error.message}`);
+            } finally {
+                stopSpinner();
+            }
+        };
+
+        // 控制推理功能是否渲染
+        async function checkThinkFeature() {
+            try {
+                const res = await fetch('/api/user/is/enable/think');
+                const isEnabled = await res.json();
+
+                if (!isEnabled) {
+                    const section = document.getElementById("thinkToggleSection");
+                    if (section) section.style.display = "none";
+                }
+            } catch (error) {
+                console.error("讀取推理開關狀態失敗：", error);
+            }
+        }
+        window.addEventListener("DOMContentLoaded", checkThinkFeature);
+
+        // 知識庫管理相關變數
+        let currentKBId = null;
+        let knowledgeBases = [];
+
+        // 知識庫管理模式
+        const KB_MODES = {
+            PREVIEW: 'preview',     // 預覽模式 - 所有欄位唯讀
+            CREATE: 'create',       // 新增模式 - 所有欄位可編輯
+            EDIT: 'edit'           // 編輯模式 - ID不可編輯，其他可編輯
+        };
+        let currentKBMode = KB_MODES.PREVIEW;
+
+        // 知識庫管理功能
+        async function loadKnowledgeBases() {
+            try {
+                const response = await fetch('/api/knowledge-bases', {
+                    credentials: 'include'
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    knowledgeBases = data.knowledge_bases;
+                    updateKnowledgeBaseSelect();
+                } else {
+                    console.error('載入知識庫列表失敗');
+                }
+            } catch (error) {
+                console.error('載入知識庫列表錯誤：', error);
+            }
+        }
+
+        function updateKnowledgeBaseSelect() {
+            const select = document.getElementById('knowledgeBaseSelect');
+            if (select) {
+                select.innerHTML = '<option value="">請選擇知識庫</option>';
+
+                knowledgeBases.forEach(kb => {
+                    if (kb.status !== 'deleted') {
+                        const option = document.createElement('option');
+                        option.value = kb.id;
+                        option.textContent = `${kb.name} (${kb.status === 'enable' ? '啟用' : '停用'})`;
+                        select.appendChild(option);
+                    }
+                });
+            }
+
+            // 更新空狀態的select
+            const emptySelect = document.getElementById('emptyKnowledgeBaseSelect');
+            if (emptySelect) {
+                emptySelect.innerHTML = '<option value="">請選擇知識庫</option>';
+
+                knowledgeBases.forEach(kb => {
+                    if (kb.status !== 'deleted') {
+                        const option = document.createElement('option');
+                        option.value = kb.id;
+                        option.textContent = `${kb.name} (${kb.status === 'enable' ? '啟用' : '停用'})`;
+                        emptySelect.appendChild(option);
+                    }
+                });
+            }
+        }
+
+        function updateKnowledgeBaseNameSelect() {
+            const select = document.getElementById('kbName');
+            if (select && select.tagName === 'SELECT') {
+                // 保存當前選中的值
+                const currentValue = select.value;
+                select.innerHTML = '<option value="">請選擇知識庫</option>';
+
+                knowledgeBases.forEach(kb => {
+                    if (kb.status !== 'deleted') {
+                        const option = document.createElement('option');
+                        option.value = kb.id;
+                        option.textContent = kb.name;
+                        select.appendChild(option);
+                    }
+                });
+
+                // 恢復選中值
+                if (currentValue) {
+                    select.value = currentValue;
+                }
+            }
+        }
+
+        // 設置知識庫管理模式
+        function setKBMode(mode) {
+            currentKBMode = mode;
+
+            // 更新標題
+            const title = document.getElementById('kbManagementTitle');
+            switch (mode) {
+                case KB_MODES.CREATE:
+                    title.textContent = '新增知識庫管理';
+                    break;
+                case KB_MODES.EDIT:
+                    title.textContent = '知識庫管理';
+                    break;
+                case KB_MODES.PREVIEW:
+                default:
+                    title.textContent = '知識庫管理';
+                    break;
+            }
+
+            // 控制界面元素顯示 - 更新為新的結構
+            const selectionSection = document.getElementById('kbSelectionSection');
+            const previewButtons = document.getElementById('kbPreviewButtons');
+            const formButtons = document.getElementById('kbFormButtons');
+
+            // 控制新的狀態顯示
+            const emptyKBState = document.getElementById('emptyKBState');
+            const selectedKBState = document.getElementById('selectedKBState');
+            const indexSummarySection = document.getElementById('indexSummarySection');
+            const fileOperationsSection = document.getElementById('fileOperationsSection');
+
+            if (currentKBId || mode === KB_MODES.CREATE) {
+                // 已選擇知識庫或新增模式 - 顯示工作區域
+                emptyKBState.style.display = 'none';
+                selectedKBState.style.display = 'flex';
+
+                if (mode === KB_MODES.CREATE) {
+                    // 創建模式：隱藏檔案上傳和索引摘要功能
+                    fileOperationsSection.style.display = 'none';
+                    indexSummarySection.style.display = 'none';
+                } else {
+                    // 預覽/編輯模式：顯示所有功能
+                    fileOperationsSection.style.display = 'block';
+                    indexSummarySection.style.display = 'block';
+                }
+
+                if (mode === KB_MODES.PREVIEW) {
+                    selectionSection.style.display = 'none';
+                    previewButtons.style.display = 'block';
+                    formButtons.style.display = 'none';
+                } else {
+                    selectionSection.style.display = 'none';
+                    previewButtons.style.display = 'none';
+                    formButtons.style.display = 'block';
+                }
+            } else {
+                // 未選擇知識庫 - 顯示空狀態
+                emptyKBState.style.display = 'block';
+                selectedKBState.style.display = 'none';
+                indexSummarySection.style.display = 'none';
+            }
+
+            // 控制表單欄位的可編輯狀態
+            updateFormFieldsState(mode);
+
+            // 更新按鈕狀態
+            updateButtonStates();
+        }
+
+        // 更新表單欄位狀態
+        function updateFormFieldsState(mode) {
+            const kbIdField = document.getElementById('kbId');
+            const kbNameField = document.getElementById('kbName');
+            const kbStatusField = document.getElementById('kbStatus');
+            const kbNoteField = document.getElementById('kbNote');
+            const kbPromptField = document.getElementById('kbSystemPrompt');
+
+            switch (mode) {
+                case KB_MODES.CREATE:
+                    // 新增模式：所有欄位可編輯
+                    kbIdField.readOnly = false;
+                    kbNameField.readOnly = false;
+                    document.getElementById('kbStatus').disabled = false;
+                    kbNoteField.readOnly = false;
+                    kbPromptField.readOnly = false;
+                    break;
+                case KB_MODES.EDIT:
+                    // 編輯模式：ID不可編輯，其他欄位可編輯
+                    kbIdField.readOnly = true;
+                    kbNameField.readOnly = false;
+                    document.getElementById('kbStatus').disabled = false;
+                    kbNoteField.readOnly = false;
+                    kbPromptField.readOnly = false;
+                    break;
+                case KB_MODES.PREVIEW:
+                default:
+                    // 預覽模式：所有欄位唯讀
+                    kbIdField.readOnly = true;
+                    kbNameField.readOnly = true;
+                    document.getElementById('kbStatus').disabled = true;
+                    kbNoteField.readOnly = true;
+                    kbPromptField.readOnly = true;
+                    break;
+            }
+        }
+
+        // 更新按鈕狀態
+        function updateButtonStates() {
+            const editBtn = document.getElementById('editKBModeBtn');
+            const deleteBtn = document.getElementById('deleteKBBtn');
+
+            // 編輯和刪除按鈕只在有選中知識庫時啟用
+            const hasSelectedKB = currentKBId != null;
+            editBtn.disabled = !hasSelectedKB;
+            deleteBtn.disabled = !hasSelectedKB;
+        }
+
+        // 知識庫選擇聯動 - 當下拉選單變更時自動觸發 (空狀態)
+        async function onEmptyKnowledgeBaseSelectionChange() {
+            const select = document.getElementById('emptyKnowledgeBaseSelect');
+            const kbId = select.value;
+
+            if (!kbId) {
+                // 未選擇知識庫，維持空狀態
+                currentKBId = null;
+                setKBMode(KB_MODES.PREVIEW);
+                return;
+            }
+
+            await loadKnowledgeBaseData(kbId);
+        }
+
+        // 知識庫名稱選擇聯動 - 當名稱欄位的select變更時觸發
+        async function onKnowledgeBaseNameSelectionChange() {
+            const select = document.getElementById('kbName');
+            const kbId = select.value;
+
+            if (!kbId) {
+                // 選擇"請選擇知識庫"，回到空狀態
+                currentKBId = null;
+                clearKnowledgeBaseForm();
+                setKBMode(KB_MODES.PREVIEW);
+                return;
+            }
+
+            await loadKnowledgeBaseData(kbId);
+        }
+
+        // 載入知識庫資料並切換到預覽模式
+        async function loadKnowledgeBaseData(kbId) {
+            try {
+                const response = await fetch(`/api/knowledge-bases/${kbId}`, {
+                    credentials: 'include'
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    const kb = data.knowledge_base;
+
+                    currentKBId = kbId;
+
+                    // 填入表單資料
+                    fillKnowledgeBaseForm(kb);
+
+                    // 切換到預覽模式
+                    setKBMode(KB_MODES.PREVIEW);
+
+                    // 顯示檔案操作區域
+                    document.getElementById('fileOperationsSection').style.display = 'block';
+                    if (document.getElementById('noKBSelected')) {
+                        document.getElementById('noKBSelected').style.display = 'none';
+                    }
+
+                    // 重新載入檔案列表
+                    await loadFileList();
+                } else {
+                    alert('載入知識庫詳情失敗');
+                }
+            } catch (error) {
+                console.error('載入知識庫詳情錯誤：', error);
+                alert('載入知識庫詳情失敗');
+            }
+        }
+
+        // 填入知識庫表單資料
+        function fillKnowledgeBaseForm(kb) {
+            document.getElementById('kbId').value = kb.id || '';
+
+            // 檢查名稱欄位是否為select，如果是則設定選中值，否則設定value
+            const kbNameField = document.getElementById('kbName');
+            if (kbNameField.tagName === 'SELECT') {
+                kbNameField.value = kb.id || ''; // 使用kb.id作為選擇值
+            } else {
+                kbNameField.value = kb.name || '';
+            }
+
+            document.getElementById('kbStatus').value = kb.status || 'enable';
+            document.getElementById('kbNote').value = kb.note || '';
+            document.getElementById('kbSystemPrompt').value = kb.system_prompt || '';
+            updateCharCount();
+        }
+
+        // 清空知識庫表單
+        function clearKnowledgeBaseForm() {
+            document.getElementById('kbId').value = '';
+
+            // 檢查名稱欄位的類型
+            const kbNameField = document.getElementById('kbName');
+            if (kbNameField) {
+                if (kbNameField.tagName === 'SELECT') {
+                    kbNameField.value = ''; // 設定為預設選項
+                } else {
+                    kbNameField.value = '';
+                }
+            }
+
+            document.getElementById('kbStatus').value = 'enable';
+            document.getElementById('kbNote').value = '';
+            document.getElementById('kbSystemPrompt').value = '';
+            updateCharCount();
+        }
+
+        // 模式控制函數
+        function enterCreateMode() {
+            clearKnowledgeBaseForm();
+            currentKBId = null; // 清除當前選擇，但保持在已載入狀態以顯示表單
+            setKBMode(KB_MODES.CREATE);
+        }
+
+        function enterEditMode() {
+            if (!currentKBId) {
+                alert('請先選擇知識庫');
+                return;
+            }
+            setKBMode(KB_MODES.EDIT);
+        }
+
+        function enterPreviewMode() {
+            setKBMode(KB_MODES.PREVIEW);
+        }
+
+        // 返回未載入知識庫狀態
+        function returnToEmptyState() {
+            if (confirm('返回到知識庫主畫面？')) {
+                // 清除當前知識庫ID
+                currentKBId = null;
+
+                // 清空表單資料
+                clearKnowledgeBaseForm();
+
+                // 重置空狀態下拉選單
+                const emptySelect = document.getElementById('emptyKnowledgeBaseSelect');
+                if (emptySelect) {
+                    emptySelect.value = '';
+                }
+
+                // 重置問答頁面的知識庫選擇
+                const qaSelect = document.getElementById('qaKnowledgeBaseSelect');
+                if (qaSelect) {
+                    qaSelect.value = '';
+                    // 觸發變更事件以更新問答按鈕狀態
+                    if (typeof onQAKnowledgeBaseChange === 'function') {
+                        onQAKnowledgeBaseChange();
+                    }
+                }
+
+                // 切換到預覽模式並顯示空狀態
+                setKBMode(KB_MODES.PREVIEW);
+            }
+        }
+
+        // 取消操作
+        function cancelKBOperation() {
+            if (currentKBMode === KB_MODES.CREATE || currentKBMode === KB_MODES.EDIT) {
+                if (confirm('確定要取消嗎？未儲存的變更將會遺失。')) {
+                    if (currentKBMode === KB_MODES.CREATE) {
+                        // 新增模式取消，回到空狀態
+                        currentKBId = null;
+                        clearKnowledgeBaseForm();
+                        setKBMode(KB_MODES.PREVIEW);
+                    } else if (currentKBId) {
+                        // 編輯模式取消，重新載入原資料
+                        loadKnowledgeBaseData(currentKBId);
+                    }
+                }
+            }
+        }
+
+        // 驗證表單資料
+        function validateKBForm(mode) {
+            const kbId = document.getElementById('kbId').value.trim();
+            const kbName = document.getElementById('kbName').value.trim();
+
+            if (mode === KB_MODES.CREATE) {
+                if (!kbId) {
+                    alert('請填入知識庫 ID');
+                    return false;
+                }
+                // 驗證 ID 格式
+                if (!/^[a-zA-Z0-9_-]{1,36}$/.test(kbId)) {
+                    alert('知識庫 ID 只能包含英文、數字、底線和連字符，長度不超過36字元');
+                    return false;
+                }
+            }
+
+            if (!kbName) {
+                alert('請填入知識庫名稱');
+                return false;
+            }
+
+            return true;
+        }
+
+        // 統一的保存函數
+        async function saveKnowledgeBase() {
+            if (!validateKBForm(currentKBMode)) {
+                return;
+            }
+
+            const kbData = {
+                name: document.getElementById('kbName').value.trim(),
+                status: document.getElementById('kbStatus').value,
+                note: document.getElementById('kbNote').value.trim(),
+                system_prompt: document.getElementById('kbSystemPrompt').value
+            };
+
+            try {
+                let response;
+                if (currentKBMode === KB_MODES.CREATE) {
+                    kbData.id = document.getElementById('kbId').value.trim();
+                    response = await fetch('/api/knowledge-bases', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify(kbData)
+                    });
+                } else if (currentKBMode === KB_MODES.EDIT && currentKBId) {
+                    response = await fetch(`/api/knowledge-bases/${currentKBId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify(kbData)
+                    });
+                }
+
+                if (response && response.ok) {
+                    const message = currentKBMode === KB_MODES.CREATE ? '知識庫創建成功' : '知識庫更新成功';
+                    alert(message);
+
+                    // 重新載入列表
+                    await loadKnowledgeBases();
+
+                    // 創建成功後自動選中新建的知識庫，編輯成功後保持當前選中
+                    if (currentKBMode === KB_MODES.CREATE) {
+                        const newKBId = kbData.id;
+                        currentKBId = newKBId;
+                        document.getElementById('emptyKnowledgeBaseSelect').value = newKBId;
+                        await loadKnowledgeBaseData(newKBId);
+                    } else {
+                        await loadKnowledgeBaseData(currentKBId);
+                    }
+                } else {
+                    const error = await response.json();
+                    alert(`操作失敗：${error.detail}`);
+                }
+            } catch (error) {
+                console.error('保存知識庫錯誤：', error);
+                alert('保存知識庫失敗');
+            }
+        }
+
+        async function createKnowledgeBase() {
+            const kbId = document.getElementById('newKBId').value.trim();
+            const kbName = document.getElementById('newKBName').value.trim();
+            const kbNote = document.getElementById('newKBNote').value.trim();
+
+            if (!kbId || !kbName) {
+                alert('請填入知識庫 ID 和名稱');
+                return;
+            }
+
+            // 驗證 ID 格式
+            if (!/^[a-zA-Z0-9_-]{1,36}$/.test(kbId)) {
+                alert('知識庫 ID 只能包含英文、數字、底線和連字符，長度不超過36字元');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/knowledge-bases', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        id: kbId,
+                        name: kbName,
+                        note: kbNote,
+                        system_prompt: ''
+                    })
+                });
+
+                if (response.ok) {
+                    alert('知識庫創建成功');
+                    // 清空表單
+                    document.getElementById('newKBId').value = '';
+                    document.getElementById('newKBName').value = '';
+                    document.getElementById('newKBNote').value = '';
+                    // 重新載入列表
+                    await loadKnowledgeBases();
+                } else {
+                    const error = await response.json();
+                    alert(`創建失敗：${error.detail}`);
+                }
+            } catch (error) {
+                console.error('創建知識庫錯誤：', error);
+                alert('創建知識庫失敗');
+            }
+        }
+
+        async function updateKnowledgeBase() {
+            if (!currentKBId) {
+                alert('請先選擇知識庫');
+                return;
+            }
+
+            const systemPrompt = document.getElementById('kbSystemPrompt').value;
+            const status = document.getElementById('kbStatus').value;
+
+            try {
+                const response = await fetch(`/api/knowledge-bases/${currentKBId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        system_prompt: systemPrompt,
+                        status: status
+                    })
+                });
+
+                if (response.ok) {
+                    alert('知識庫更新成功');
+                    await loadKnowledgeBases();
+                } else {
+                    const error = await response.json();
+                    alert(`更新失敗：${error.detail}`);
+                }
+            } catch (error) {
+                console.error('更新知識庫錯誤：', error);
+                alert('更新知識庫失敗');
+            }
+        }
+
+        async function deleteKnowledgeBase() {
+            if (!currentKBId) {
+                alert('請先選擇知識庫');
+                return;
+            }
+
+            const confirmDelete = confirm('確定要刪除此知識庫嗎？');
+            if (!confirmDelete) return;
+
+            const deleteFiles = confirm('是否一併刪除相關文件與索引資料？\n（選擇「取消」僅進行邏輯刪除，選擇「確定」將完全刪除所有相關檔案）');
+
+            try {
+                const response = await fetch(`/api/knowledge-bases/${currentKBId}?delete_files=${deleteFiles}`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    alert(`知識庫刪除成功${deleteFiles ? '（包含檔案）' : '（僅邏輯刪除）'}`);
+
+                    // 清空當前選擇並回到預設狀態
+                    currentKBId = null;
+                    document.getElementById('knowledgeBaseSelect').value = '';
+                    clearKnowledgeBaseForm();
+                    setKBMode(KB_MODES.PREVIEW);
+                    document.getElementById('fileOperationsSection').style.display = 'none';
+                    if (document.getElementById('noKBSelected')) {
+                        document.getElementById('noKBSelected').style.display = 'block';
+                    }
+
+                    // 重新載入列表
+                    await loadKnowledgeBases();
+                } else {
+                    const error = await response.json();
+                    alert(`刪除失敗：${error.detail}`);
+                }
+            } catch (error) {
+                console.error('刪除知識庫錯誤：', error);
+                alert('刪除知識庫失敗');
+            }
+        }
+
+        function updateCharCount() {
+            const textarea = document.getElementById('kbSystemPrompt');
+            const counter = document.getElementById('promptCharCount');
+            counter.textContent = textarea.value.length;
+        }
+
+        function validateCurrentKBIndex() {
+            if (!currentKBId) {
+                alert('請先選擇知識庫');
+                return;
+            }
+            window.open(`/api/vector/index/validate?kb_id=${currentKBId}`, '_blank');
+        }
+
+        function showCurrentKBIndex() {
+            if (!currentKBId) {
+                alert('請先選擇知識庫');
+                return;
+            }
+            window.open(`/showindex?kb_id=${currentKBId}`, '_blank');
+        }
+
+        // 問答頁面知識庫選擇
+        let selectedQAKBId = null;
+
+        async function loadAvailableKnowledgeBases() {
+            try {
+                const response = await fetch('/api/knowledge-bases', {
+                    credentials: 'include'
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    updateQAKnowledgeBaseSelect(data.knowledge_bases);
+                } else {
+                    console.error('載入可用知識庫列表失敗');
+                }
+            } catch (error) {
+                console.error('載入可用知識庫列表錯誤：', error);
+            }
+        }
+
+        function updateQAKnowledgeBaseSelect(knowledgeBases) {
+            const select = document.getElementById('qaKnowledgeBaseSelect');
+            select.innerHTML = '<option value="">請選擇知識庫</option>';
+
+            if (knowledgeBases.length === 0) {
+                select.innerHTML = '<option value="">無可用知識庫</option>';
+                select.disabled = true;
+                disableQAButton(true, '請通知系統管理者建立知識庫');
+                return;
+            }
+
+            select.disabled = false;
+            knowledgeBases.forEach(kb => {
+                const option = document.createElement('option');
+                option.value = kb.id;
+                option.textContent = kb.name;
+                select.appendChild(option);
+            });
+
+            // 如果沒有選擇知識庫，禁用問答按鈕
+            if (!selectedQAKBId) {
+                disableQAButton(true, '請選擇知識庫');
+            }
+        }
+
+        function onQAKnowledgeBaseChange() {
+            const select = document.getElementById('qaKnowledgeBaseSelect');
+            selectedQAKBId = select.value;
+
+            if (selectedQAKBId) {
+                disableQAButton(false);
+            } else {
+                disableQAButton(true, '請選擇知識庫');
+            }
+        }
+
+        function disableQAButton(disabled, message = '') {
+            const sendBtn = document.getElementById('sendBtn');
+            sendBtn.disabled = disabled;
+            if (disabled) {
+                sendBtn.style.backgroundColor = '#ccc';
+                sendBtn.style.cursor = 'not-allowed';
+                if (message) {
+                    sendBtn.title = message;
+                }
+            } else {
+                sendBtn.style.backgroundColor = '';
+                sendBtn.style.cursor = '';
+                sendBtn.title = '';
+            }
+        }
+
+        // 事件監聽器
+        document.addEventListener('DOMContentLoaded', function () {
+            // 載入知識庫列表
+            loadKnowledgeBases();
+            loadAvailableKnowledgeBases();
+
+            // 綁定新的事件
+            document.getElementById('emptyKnowledgeBaseSelect').addEventListener('change', onEmptyKnowledgeBaseSelectionChange);
+
+            // 空狀態的按鈕事件
+            document.getElementById('emptyCreateKBBtn').addEventListener('click', enterCreateMode);
+
+            // 已載入狀態的按鈕事件
+            document.getElementById('editKBModeBtn').addEventListener('click', enterEditMode);
+            document.getElementById('deleteKBBtn').addEventListener('click', deleteKnowledgeBase);
+            document.getElementById('returnToEmptyBtn').addEventListener('click', returnToEmptyState);
+            document.getElementById('saveKBBtn').addEventListener('click', saveKnowledgeBase);
+            document.getElementById('cancelKBBtn').addEventListener('click', cancelKBOperation);
+
+            document.getElementById('kbSystemPrompt').addEventListener('input', updateCharCount);
+            document.getElementById('qaKnowledgeBaseSelect').addEventListener('change', onQAKnowledgeBaseChange);
+
+            // 初始設置為預覽模式
+            setKBMode(KB_MODES.PREVIEW);
+
+            // 初始化可調整大小的分隔條
+            initializeResizer();
+        });
+
+        // 可調整大小的分隔條功能
+        function initializeResizer() {
+            const resizer = document.getElementById('resizer');
+            const fileUploadPanel = document.getElementById('fileUploadPanel');
+            const indexToolsPanel = document.getElementById('indexToolsPanel');
+            const container = document.getElementById('resizableContainer');
+            
+            let isResizing = false;
+            let startX = 0;
+            let startFileWidth = 0;
+            let startIndexWidth = 0;
+
+            // 鼠標懸停效果
+            resizer.addEventListener('mouseenter', function() {
+                this.style.backgroundColor = '#bbb';
+            });
+            
+            resizer.addEventListener('mouseleave', function() {
+                if (!isResizing) {
+                    this.style.backgroundColor = '#ddd';
+                }
+            });
+
+            resizer.addEventListener('mousedown', function(e) {
+                isResizing = true;
+                startX = e.clientX;
+                
+                // 獲取當前寬度
+                const containerRect = container.getBoundingClientRect();
+                const fileRect = fileUploadPanel.getBoundingClientRect();
+                const indexRect = indexToolsPanel.getBoundingClientRect();
+                
+                startFileWidth = fileRect.width;
+                startIndexWidth = indexRect.width;
+                
+                resizer.style.backgroundColor = '#999';
+                document.body.style.cursor = 'col-resize';
+                document.body.style.userSelect = 'none';
+                
+                e.preventDefault();
+            });
+
+            document.addEventListener('mousemove', function(e) {
+                if (!isResizing) return;
+                
+                const deltaX = e.clientX - startX;
+                const containerRect = container.getBoundingClientRect();
+                const totalWidth = containerRect.width - 6; // 減去分隔條寬度
+                
+                let newFileWidth = startFileWidth + deltaX;
+                let newIndexWidth = startIndexWidth - deltaX;
+                
+                // 設置最小寬度限制
+                const minFileWidth = 300;
+                const minIndexWidth = 250;
+                
+                if (newFileWidth < minFileWidth) {
+                    newFileWidth = minFileWidth;
+                    newIndexWidth = totalWidth - newFileWidth;
+                } else if (newIndexWidth < minIndexWidth) {
+                    newIndexWidth = minIndexWidth;
+                    newFileWidth = totalWidth - newIndexWidth;
+                }
+                
+                // 計算 flex 比例
+                const fileFlexRatio = newFileWidth / totalWidth;
+                const indexFlexRatio = newIndexWidth / totalWidth;
+                
+                fileUploadPanel.style.flex = fileFlexRatio;
+                indexToolsPanel.style.flex = indexFlexRatio;
+                
+                e.preventDefault();
+            });
+
+            document.addEventListener('mouseup', function() {
+                if (isResizing) {
+                    isResizing = false;
+                    resizer.style.backgroundColor = '#ddd';
+                    document.body.style.cursor = '';
+                    document.body.style.userSelect = '';
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>

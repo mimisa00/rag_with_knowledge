@@ -1,0 +1,635 @@
+/* ========================================
+   Dashboard 頁面專用樣式
+   使用新的 CSS 架構
+   ======================================== */
+
+/* ==================== 頁面特定覆蓋 ==================== */
+.page-wrapper {
+    background-color: var(--bg-section);
+}
+
+/* ==================== Dashboard 佈局 ==================== */
+.dashboard-layout {
+    display: flex;
+    gap: var(--spacing-xs);
+    height: calc(100vh - var(--navbar-height, 60px));
+    overflow: hidden;
+}
+
+.dashboard-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    overflow: hidden;
+    height: 100%;
+}
+
+/* ==================== 抽屜系統 ==================== */
+#drawerContainer {
+    position: relative;
+    background-color: var(--bg-light);
+    border-right: 1px solid var(--border-color);
+    transition: width var(--transition-normal);
+    width: 50px; /* 預設收合 */
+    display: flex; /* 設為 flex 容器 */
+    flex-direction: column; /* 垂直排列 */
+    height: calc(100vh - var(--navbar-height, 60px)); /* 使用固定高度而非相對高度 */
+    overflow: hidden; /* 防止內容溢出 */
+}
+
+#drawerContainer.drawer-open {
+    width: 300px !important; /* 展開寬度，加強優先級 */
+}
+
+#drawerContainer.drawer-closed {
+    width: 50px;
+}
+
+#drawerContainer.drawer-open #drawerContent {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+#drawerContainer.drawer-closed #drawerToggleButtons {
+    width: 50px;
+}
+
+/* 抽屜展開時，按鈕靠左對齊 */
+#drawerContainer.drawer-open #drawerToggleButtons {
+    justify-content: flex-start; /* 靠左對齊 */
+}
+
+#drawerToggleButtons {
+    display: flex;
+    flex-direction: row; /* 保持水平排列 */
+    justify-content: center; /* 預設置中 */
+    align-items: center;
+    padding: var(--spacing-sm);
+    gap: var(--spacing-xs);
+    flex-wrap: nowrap; /* 不允許換行 */
+}
+
+.drawer-toggle-btn {
+    width: 35px;
+    height: 35px;
+    border: none;
+    background-color: var(--bg-main);
+    color: var(--text-secondary);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    margin-bottom: 10px;
+}
+
+.drawer-toggle-btn:hover {
+    background-color: var(--primary);
+    color: white;
+    transform: scale(1.1);
+}
+
+#drawerContent {
+    padding: var(--spacing-md);
+    opacity: 1;
+    transition: opacity var(--transition-normal);
+    flex: 1; /* 讓內容區域可以伸展 */
+    min-height: 0; /* 允許收縮到比內容小 */
+    overflow: hidden; /* 防止內容溢出 */
+    display: flex; /* 設為 flex 容器 */
+    flex-direction: column;
+    max-height: calc(100% - 70px); /* 扣除按鈕區域的高度 */
+}
+
+.drawer-closed #drawerContent {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.drawer-panel {
+    display: none;
+    height: 100%; /* 確保隱藏的 panel 也有高度設定 */
+    overflow: hidden; /* 防止內容溢出 */
+}
+
+.drawer-panel.active {
+    display: flex; /* 改為 flex 而非 block */
+    flex-direction: column;
+    height: 100%; /* 確保 active 的 panel 也有完整高度 */
+}
+
+/* ==================== 對話列表 ==================== */
+/* memoryDrawer 需要是 flex 容器讓列表能滾動 */
+#memoryDrawer {
+    display: none; /* 預設隱藏，由 .drawer-panel.active 控制顯示 */
+    flex-direction: column;
+    height: 100%;
+}
+
+#memoryDrawer.active {
+    display: flex; /* active 時顯示為 flex */
+}
+
+.conversation-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    overflow-y: auto; /* 允許垂直滾動 */
+    overflow-x: hidden; /* 防止水平滾動 */
+    flex: 1 1 auto; /* 填滿可用空間 */
+    min-height: 0; /* 允許收縮 */
+    max-height: 100%; /* 限制最大高度 */
+}
+
+.conversation-list li {
+    padding: var(--spacing-sm) var(--spacing-md);
+    margin-bottom: var(--spacing-xs);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* 最後一個項目特殊處理，確保可見 */
+.conversation-list li:last-child {
+    margin-bottom: var(--spacing-md);
+}
+
+.conversation-list li:hover {
+    background-color: var(--bg-hover);
+}
+
+.conversation-list li.active-conversation {
+    background-color: var(--primary);
+    color: white;
+}
+
+.conversation-list li .delete-btn {
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+    color: var(--danger);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: var(--spacing-xs);
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border-radius: var(--radius-sm);
+}
+
+.conversation-list li .delete-btn:hover {
+    background-color: rgba(var(--danger-rgb, 231, 76, 60), 0.1);
+}
+
+.conversation-list li:hover .delete-btn {
+    opacity: 1;
+}
+
+.conversation-list li.active-conversation .delete-btn {
+    color: white;
+}
+
+/* ==================== QA 內容區 ==================== */
+.qa-layout {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* ==================== 名詞分析和推理區塊 ==================== */
+#nounAnalysis,
+#thinkResponse {
+    /* 明確設定為塊級元素，確保內容垂直排列 */
+    display: block !important;
+    
+    /* Flex 設定 - 關鍵修正：使用 0% 而非 auto */
+    flex: 1 1 0% !important;    /* 與 flex-1 class 一致，基礎寬度為 0 */
+    min-width: 0;               /* 關鍵：允許 flex 項目縮小到比內容更小 */
+    
+    /* 高度控制 */
+    max-height: 100px;
+    min-height: 30px;
+    
+    /* 溢出處理 */
+    overflow-y: auto;           /* 垂直滾動 */
+    overflow-x: hidden;         /* 防止水平滾動 */
+    scrollbar-width: none;      /* Firefox 隱藏滾動條 */
+    
+    /* 文字換行 */
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;        /* 確保正常換行 */
+    
+    /* 樣式 */
+    padding: 0.5em;
+    background: #f4f4f4;
+    border-radius: 8px;
+    box-sizing: border-box;
+    color: var(--text-primary);
+    line-height: 1.5;
+    transition: all var(--transition-normal);
+}
+
+/* 針對 marked 生成的內容樣式 */
+#nounAnalysis p,
+#thinkResponse p,
+#nounAnalysis ul,
+#thinkResponse ul,
+#nounAnalysis ol,
+#thinkResponse ol {
+    margin: 0.25rem 0;        /* 減少段落間距 */
+    word-break: break-word;   /* 確保文字換行 */
+}
+
+#nounAnalysis li,
+#thinkResponse li {
+    word-break: break-word;
+    margin: 0.125rem 0;
+    list-style-position: inside;  /* 列表符號在內部，避免溢出 */
+}
+
+/* 防止程式碼和內聯元素過長 */
+#nounAnalysis code,
+#thinkResponse code,
+#nounAnalysis pre,
+#thinkResponse pre {
+    word-break: break-all;
+    white-space: pre-wrap;    /* 程式碼區塊保留格式但允許換行 */
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+/* 確保第一個和最後一個元素沒有多餘間距 */
+#nounAnalysis > :first-child,
+#thinkResponse > :first-child {
+    margin-top: 0;
+}
+
+#nounAnalysis > :last-child,
+#thinkResponse > :last-child {
+    margin-bottom: 0;
+}
+
+/* 關閉時的樣式優化 */
+#nounAnalysis:not(.active),
+#thinkResponse:not(.active) {
+    min-height: 30px;
+    display: flex;
+    align-items: center;
+    color: var(--text-secondary);  /* 使用更清晰的文字顏色 */
+    font-size: 0.95rem;            /* 稍微調整字體大小 */
+    opacity: 0.9;                  /* 輕微透明度 */
+}
+
+/* Webkit 瀏覽器隱藏滾動條 */
+#nounAnalysis::-webkit-scrollbar,
+#thinkResponse::-webkit-scrollbar {
+    display: none;  /* 配合 scrollbar-width: none 完全隱藏滾動條 */
+}
+
+.qa-header {
+    display: flex;
+    align-items: center;
+    padding: var(--spacing-sm);
+    background: var(--bg-light);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    margin: var(--spacing-xs);
+}
+
+.qa-content {
+    flex: 1;
+    padding: var(--spacing-md);
+    background: var(--bg-section);
+    overflow-y: auto;
+    margin: var(--spacing-xs);
+    min-height: 0;
+    max-height: calc(100% - 140px); /* 調整為更合理的高度，給 qa-input 留 120px + 間距 */
+}
+
+.qa-input {
+    flex-shrink: 0;
+    padding: 0; /* 移除 padding，讓 textarea 切齊邊界 */
+    min-height: 120px; /* 確保輸入區域不會消失 */
+    display: flex;
+    flex-direction: column;
+}
+
+/* 為 textarea 和按鈕添加特定樣式 */
+.qa-input textarea {
+    border-radius: 0px; /* 移除圓角，與邊界更齊 */
+    border: none; /* 移除邊框 */
+    flex: 1; /* 佔據可用空間 */
+    margin: 0; /* 確保沒有外邊距 */
+}
+
+.qa-input button {
+    margin: 0 0 var(--spacing-md) 0; /* 只在左邊和底部留間距 */
+    align-self: flex-start; /* 左對齊 */
+    width: auto; /* 保持按鈕原本寬度 */
+    flex-shrink: 0; /* 防止按鈕被壓縮 */
+}
+
+/* ==================== 訊息樣式 ==================== */
+.user-message {
+    background-color: var(--info-bg);
+    border-left: 4px solid var(--info);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    border-radius: var(--radius-md);
+    text-align: right;
+}
+
+.assistant-message {
+    background-color: var(--bg-main);
+    border-left: 4px solid var(--primary);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    border-radius: var(--radius-md);
+}
+
+.thinking-message {
+    background-color: var(--warning-bg);
+    border-left: 4px solid var(--warning);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    border-radius: var(--radius-md);
+    font-style: italic;
+    color: var(--text-muted);
+}
+
+/* ==================== 切換開關 ==================== */
+.fa-toggle-on,
+.fa-toggle-off {
+    transition: all var(--transition-fast);
+    cursor: pointer;
+}
+
+.fa-toggle-on:hover,
+.fa-toggle-off:hover {
+    transform: scale(1.1);
+}
+
+/* 開關時的旋轉效果 */
+.fa-toggle-off {
+    opacity: 0.6;
+    transform: rotate(0deg);
+}
+
+.fa-toggle-on {
+    color: var(--success) !important;
+    transform: rotate(360deg);
+}
+
+/* ==================== Markdown 內容樣式 ==================== */
+#answer h1, #answer h2, #answer h3, #answer h4, #answer h5, #answer h6 {
+    margin-top: var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
+    color: var(--text-primary);
+    font-weight: var(--font-weight-semibold);
+}
+
+#answer h1 { font-size: var(--font-size-xxl); }
+#answer h2 { font-size: var(--font-size-xl); }
+#answer h3 { font-size: var(--font-size-lg); }
+
+#answer p {
+    margin-bottom: var(--spacing-sm);
+    line-height: var(--line-height-relaxed);
+}
+
+#answer ul, #answer ol {
+    margin-bottom: var(--spacing-md);
+    padding-left: var(--spacing-lg);
+}
+
+#answer li {
+    margin-bottom: var(--spacing-xs);
+}
+
+#answer pre {
+    background-color: var(--bg-section);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    overflow-x: auto;
+}
+
+#answer code {
+    background-color: var(--bg-light);
+    padding: 2px 4px;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-family-mono);
+    font-size: var(--font-size-sm);
+}
+
+#answer pre code {
+    background-color: transparent;
+    padding: 0;
+}
+
+#answer blockquote {
+    border-left: 4px solid var(--primary);
+    padding-left: var(--spacing-md);
+    margin: var(--spacing-md) 0;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+#answer table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: var(--spacing-md);
+}
+
+#answer table th,
+#answer table td {
+    padding: var(--spacing-sm);
+    border: 1px solid var(--border-color);
+}
+
+#answer table th {
+    background-color: var(--bg-light);
+    font-weight: var(--font-weight-semibold);
+}
+
+#answer table tr:nth-child(even) {
+    background-color: var(--bg-light);
+}
+
+/* ==================== 使用者資訊 ==================== */
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: var(--bg-light);
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+}
+
+.user-info:hover {
+    background: var(--bg-hover);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+/* ==================== 個人功能抽屜 ==================== */
+.user-menu-drawer {
+    position: fixed;
+    top: 0;
+    right: -300px;
+    width: 300px;
+    height: 100%;
+    background-color: var(--bg-main);
+    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+    transition: right var(--transition-normal);
+    z-index: var(--z-drawer);
+}
+
+.user-menu-drawer.open {
+    right: 0;
+}
+
+.user-menu-header {
+    padding: var(--spacing-lg);
+    background: var(--gradient-primary);
+    color: white;
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+}
+
+.user-menu-content {
+    padding: var(--spacing-md);
+}
+
+.menu-item {
+    width: 100%;
+    padding: var(--spacing-md);
+    background: transparent;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: var(--font-size-base);
+    color: var(--text-primary);
+}
+
+.menu-item:hover {
+    background-color: var(--bg-light);
+}
+
+.menu-item i {
+    width: 20px;
+    text-align: center;
+}
+
+/* ==================== 深色模式調整 ==================== */
+[data-theme="dark"] .qa-content {
+    background-color: var(--bg-section);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .user-message {
+    background-color: rgba(var(--primary-rgb), 0.1);
+}
+
+[data-theme="dark"] .assistant-message {
+    background-color: var(--bg-light);
+}
+
+[data-theme="dark"] #answer pre {
+    background-color: var(--bg-main);
+    border-color: var(--border-dark);
+}
+
+[data-theme="dark"] #answer code {
+    background-color: rgba(var(--primary-rgb), 0.1);
+    color: var(--primary-light);
+}
+
+/* ==================== 響應式設計 ==================== */
+@media (max-width: 768px) {
+    #drawerContainer {
+        position: fixed;
+        left: -300px;
+        z-index: var(--z-drawer);
+        height: 100%;
+    }
+    
+    #drawerContainer.drawer-open {
+        left: 0;
+    }
+    
+    .dashboard-layout {
+        flex-direction: column;
+    }
+    
+    .dashboard-content {
+        width: 100%;
+    }
+}
+
+/* ==================== 載入動畫 ==================== */
+@keyframes typing {
+    from { width: 0; }
+    to { width: 100%; }
+}
+
+.typing-indicator::after {
+    content: '...';
+    animation: typing 1s steps(3, end) infinite;
+}
+
+/* ==================== 自訂捲軸 ==================== */
+/* QA 內容區保持原有捲軸 */
+.qa-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.qa-content::-webkit-scrollbar-track {
+    background: var(--bg-light);
+}
+
+.qa-content::-webkit-scrollbar-thumb {
+    background: var(--text-muted);
+    border-radius: var(--radius-sm);
+}
+
+.qa-content::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+}
+
+/* 滾動時才顯示的捲軸 - 對話列表 */
+.conversation-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.conversation-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.conversation-list::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0);
+    border-radius: 3px;
+    transition: background 0.3s ease;
+}
+
+.conversation-list:hover::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.conversation-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.5);
+}

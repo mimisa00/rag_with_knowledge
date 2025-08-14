@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>知識庫管理 - E-Helper</title>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- 引入 admin.css 作為基礎樣式（導航欄等） -->
+    <link rel="stylesheet" href="../css/admin.css">
+    <!-- 引入獨立的載入器樣式 -->
+    <link rel="stylesheet" href="../css/spinner-loader.css">
+    <!-- 引入知識庫管理頁面專用樣式 -->
+    <link rel="stylesheet" href="../css/knowledge-base-main.css">
+</head>
+
+<body>
+    <!-- 載入指示器 -->
+    <div id="loader-overlay" class="loader-overlay">
+        <div class="loader"></div>
+        <div class="loader-text">系統載入中...</div>
+    </div>
+
+    <!-- 頂部導航欄 -->
+    <nav class="admin-navbar">
+        <div class="navbar-brand">
+            <i class="fas fa-database"></i>
+            <span>知識庫管理</span>
+        </div>
+        <div class="navbar-info">
+            <span id="userInfo" class="user-info" onclick="openUserMenu()">
+                <i class="fas fa-user-circle"></i>
+                <span id="username">載入中...</span>
+                <span id="userRole" class="user-role"></span>
+            </span>
+        </div>
+    </nav>
+
+    <!-- 麵包屑導航 -->
+    <div class="breadcrumb">
+        <div class="breadcrumb-items">
+            <div class="breadcrumb-item">
+                <a href="/dashboard" class="breadcrumb-link">
+                    <i class="fas fa-home"></i>
+                    <span>首頁</span>
+                </a>
+            </div>
+            <span class="breadcrumb-separator">
+                <i class="fas fa-chevron-right"></i>
+            </span>
+            <div class="breadcrumb-item">
+                <a href="/admin" class="breadcrumb-link">
+                    <span>系統管理中心</span>
+                </a>
+            </div>
+            <span class="breadcrumb-separator">
+                <i class="fas fa-chevron-right"></i>
+            </span>
+            <div class="breadcrumb-item">
+                <span class="breadcrumb-current">知識庫管理</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 個人功能抽屜 -->
+    <div id="userMenuDrawer" onclick="closeUserMenu()" class="user-menu-drawer">
+        <div class="user-menu-header">
+            <span id="userMenuUsername"></span>
+        </div>
+        <div class="user-menu-content">
+            <button onclick="showChangePasswordModal()" class="menu-item">
+                <i class="fa-solid fa-key"></i>
+                <span>變更密碼</span>
+            </button>
+            <hr>
+            <button onclick="logout()" class="menu-item">
+                <i class="fa-solid fa-sign-out-alt"></i>
+                <span>登出</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 變更密碼模態框 -->
+    <div id="changePasswordModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>變更密碼</h3>
+                <i class="fa-solid fa-key"></i>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="oldPassword">舊密碼</label>
+                    <input type="password" id="oldPassword" required>
+                </div>
+                <div class="form-group">
+                    <label for="newPassword">新密碼</label>
+                    <input type="password" id="newPassword" required minlength="6">
+                </div>
+                <div class="form-group">
+                    <label for="confirmNewPassword">確認新密碼</label>
+                    <input type="password" id="confirmNewPassword" required minlength="6">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeChangePasswordModal()" class="btn-secondary">取消</button>
+                <button onclick="changePassword()" class="btn-primary">確認變更</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主要內容區 -->
+    <main class="admin-main">
+        <div class="admin-container">
+            <!-- 未選擇知識庫時的狀態 -->
+            <div id="emptyKBState" style="text-align: center; padding: 4rem 2rem; display: none;">
+                <i class="fas fa-info-circle" style="font-size: 3rem; margin-bottom: 2rem; color: #95a5a6;"></i>
+                <h3 style="color: #666; margin-bottom: 1rem;">知識庫管理</h3>
+                <div style="max-width: 600px; margin: 0 auto;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <button type="button" id="emptyCreateKBBtn" style="width: 100%; background-color: #27ae60; padding: 0.8rem; font-size: 1rem;">創建新知識庫</button>
+                    </div>
+                    <div style="margin-bottom: 2rem;">
+                        <select id="emptyKnowledgeBaseSelect" style="width: 100%; padding: 0.8rem; font-size: 1.1rem; margin-bottom: 1rem;">
+                            <option value="">請選擇知識庫</option>
+                        </select>
+                    </div>
+                    <p style="color: #999; font-size: 1.1rem; margin-bottom: 0;">請選擇或創建知識庫以進行檔案與索引操作</p>
+                </div>
+            </div>
+
+            <!-- 已選擇知識庫時的布局 -->
+            <div id="selectedKBState" style="display: flex; gap: 2rem; align-items: flex-start;">
+                <!-- 左側：知識庫管理 -->
+                <div style="flex: 1; min-width: 350px;">
+                    <h3 id="kbManagementTitle">知識庫管理</h3>
+
+                    <!-- 知識庫選擇區 (僅在預覽模式顯示) -->
+                    <div id="kbSelectionSection" style="margin-bottom: 1rem; display: none;">
+                        <select id="knowledgeBaseSelect" style="width: 100%; padding: 0.5rem; margin-bottom: 0.5rem;">
+                            <option value="">請選擇知識庫</option>
+                        </select>
+                    </div>
+
+                    <!-- 操作按鈕區 (預覽模式) -->
+                    <div id="kbPreviewButtons" style="margin-bottom: 1rem;">
+                        <button type="button" id="editKBModeBtn" style="width: 30%; background-color: #3498db; margin-right: 2%;">編輯</button>
+                        <button type="button" id="deleteKBBtn" style="width: 30%; background-color: #e74c3c; margin-right: 2%;">刪除</button>
+                        <button type="button" id="returnToEmptyBtn" style="width: 30%; background-color: #95a5a6;">返回</button>
+                    </div>
+
+                    <!-- 表單操作按鈕區 (新增/編輯模式) -->
+                    <div id="kbFormButtons" style="margin-bottom: 1rem; display: none;">
+                        <button type="button" id="saveKBBtn" style="width: 45%; background-color: #27ae60; margin-right: 5%;">存檔</button>
+                        <button type="button" id="cancelKBBtn" style="width: 45%; background-color: #95a5a6;">取消</button>
+                    </div>
+
+                    <HR>
+
+                    <!-- 統一的知識庫表單 -->
+                    <div id="kbFormSection" style="margin-bottom: 1rem;">
+                        <div style="margin-bottom: 0.5rem;">
+                            <label for="kbId" style="display: block; margin-bottom: 0.3rem;">ID：</label>
+                            <input type="text" id="kbId" placeholder="例：hr-manual-2024" maxlength="36" pattern="[a-zA-Z0-9_-]+" style="width: 100%; padding: 0.5rem;" readonly>
+                        </div>
+                        <div style="margin-bottom: 0.5rem;">
+                            <label for="kbName" style="display: block; margin-bottom: 0.3rem;">名稱：</label>
+                            <input type="text" id="kbName" placeholder="請輸入知識庫名稱" style="width: 100%; padding: 0.5rem;" readonly>
+                        </div>
+                        <div style="margin-bottom: 0.5rem;">
+                            <label for="kbStatus" style="display: block; margin-bottom: 0.3rem;">狀態：</label>
+                            <select id="kbStatus" style="width: 100%; padding: 0.5rem;" disabled>
+                                <option value="enable">啟用</option>
+                                <option value="disable">停用</option>
+                            </select>
+                        </div>
+                        <div style="margin-bottom: 0.5rem;">
+                            <label for="kbNote" style="display: block; margin-bottom: 0.3rem;">備註：</label>
+                            <input type="text" id="kbNote" placeholder="可選" style="width: 100%; padding: 0.5rem;" readonly>
+                        </div>
+                        <div style="margin-bottom: 0.5rem;">
+                            <label for="kbSystemPrompt" style="display: block; margin-bottom: 0.3rem;">提示詞 (最大1024字)：</label>
+                            <textarea id="kbSystemPrompt" rows="8" maxlength="1024" placeholder="請輸入針對此知識庫的系統提示詞..." style="width: 100%; padding: 0.5rem; resize: vertical;" readonly></textarea>
+                            <div style="font-size: 0.8em; color: #666; text-align: right;">
+                                <span id="promptCharCount">0</span>/1024
+                            </div>
+                        </div>
+
+                        <!-- 權限設定區塊（預留） -->
+                        <div style="margin-top: 1rem; padding: 1rem; background: #f5f5f5; border: 1px dashed #ccc; border-radius: 6px;">
+                            <h4 style="color: #999; margin-top: 0;">
+                                <i class="fa-solid fa-lock"></i> 存取權限設定
+                            </h4>
+                            <p style="color: #999; font-style: italic; margin-bottom: 0;">
+                                權限管理功能開發中，敬請期待...
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 中間：檔案與索引操作 - 使用可調整大小的容器 -->
+                <div id="resizableContainer" style="display: flex; flex: 2; min-width: 700px; gap: 0;">
+                    <!-- 檔案上傳區塊 -->
+                    <div id="fileUploadPanel" style="flex: 2; min-width: 300px; padding-right: 1rem;">
+                        <div id="fileOperationsSection" style="display: none;">
+                            <H3>檔案上傳</H3>
+                            <!-- 檔案操作按鈕區 - 比照知識庫管理區塊排版 -->
+                            <div style="margin-bottom: 1rem;">
+                                <button type="button" id="uploadBtn" style="width: 45%; background-color: #27ae60; margin-right: 2%;">上傳檔案</button>
+                                <button type="button" id="removeFilesBtn" onclick="removeSelectedFiles()" style="width: 45%; background-color: #e74c3c;">移除己上傳檔案</button>
+                            </div>
+                            <div id="uploadResult" style="margin-top: 0.5rem; font-size: 0.9em;"></div>
+
+                            <HR>
+
+                            <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                                <input type="checkbox" id="selectAllUploadedFilesCheckbox" onclick="toggleSelectAllUploadedFiles()" style="margin-right: 8px; cursor: pointer;" title="全選/取消全選所有檔案">
+                                <H3 style="margin: 0;">選擇檔案</H3>
+                            </div>
+                            <div id="fileCheckboxList" style="height: calc(100vh - 400px); min-height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 0.5em; background: #f9f9f9;"></div>
+                        </div>
+
+                        <div id="noKBSelected" style="text-align: center; padding: 2rem; color: #666;">
+                            <i class="fas fa-info-circle" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+                            <p>創建知識庫後，此區塊將可以進行檔案上傳與索引建立操作</p>
+                        </div>
+                    </div>
+                    
+                    <!-- 可拖拽的分割條 -->
+                    <div id="resizer" style="
+                        width: 6px; 
+                        background-color: #ddd; 
+                        cursor: col-resize; 
+                        user-select: none;
+                        position: relative;
+                        transition: background-color 0.2s;
+                    ">
+                        <div style="
+                            position: absolute;
+                            top: 50%;
+                            left: 50%;
+                            transform: translate(-50%, -50%);
+                            width: 3px;
+                            height: 30px;
+                            background-color: #999;
+                            border-radius: 2px;
+                        "></div>
+                    </div>
+
+                    <!-- 索引工具區塊 -->
+                    <div id="indexToolsPanel" style="flex: 3; min-width: 400px; padding-left: 1rem;">
+                        <div id="indexSummarySection" style="display: none;">
+                            <H3>索引工具</H3>
+                            <!-- 索引工具按鈕區 - 第一行 -->
+                            <div style="margin-bottom: 0.5rem; display: flex; gap: 10px;">
+                                <button type="button" id="prepareSelectedBtn" style="flex: 1; background-color: #27ae60;">建立索引</button>
+                                <button type="button" onclick="document.getElementById('indexSummary').innerText = '';" style="flex: 1; background-color: #95a5a6;">清空摘要</button>
+                            </div>
+                            <!-- 索引工具按鈕區 - 第二行 -->
+                            <div style="margin-bottom: 0.5rem; display: flex; gap: 10px;">
+                                <button type="button" onclick="showIndexSummary100()" style="flex: 1; background-color: #3498db;">顯示索引摘要(前100筆)</button>
+                                <button type="button" onclick="showCurrentKBIndex()" style="flex: 1; background-color: #f39c12;">顯示索引摘要完整內容</button>
+                            </div>
+                            <!-- 索引工具按鈕區 - 第三行 -->
+                            <div style="margin-bottom: 1rem;">
+                                <button type="button" onclick="validateCurrentKBIndex()" style="width: 100%; background-color: #9b59b6;">檢核索引是否有效</button>
+                            </div>
+                            <div id="indexSummary" style="
+                            font-size: 0.9em;
+                            min-height: 400px;
+                            overflow-y: auto;
+                            background: #f4f4f4;
+                            border: 1px solid #ccc;
+                            padding: 1em;
+                            white-space: pre-wrap;
+                            ">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 上傳檔案模態框（從 dashboard_admin.html 複製） -->
+    <div id="uploadFileModal" class="modal">
+        <div class="modal-content" style="max-width: 600px; width: 90%; position: relative;">
+            <!-- 上傳Loading覆蓋層 -->
+            <div id="uploadLoadingOverlay" class="upload-loading-overlay">
+                <div class="loader"></div>
+                <div class="loading-text">檔案內容分析處理中</div>
+                <div class="loading-detail">系統正在分析並處理您選擇的檔案，請耐心等待處理完成。此過程可能需要幾分鐘時間，請勿關閉此視窗。</div>
+            </div>
+
+            <div class="modal-header" style="background-color: #3498db; color: white; margin: -20px -20px 20px -20px; padding: 15px 20px; border-radius: 10px 10px 0 0;">
+                <h3 style="margin: 0; color: white;">上傳檔案</h3>
+            </div>
+            <div class="modal-body" style="padding: 0 5px;">
+                <!-- 按鈕區域 -->
+                <div style="display: flex; gap: 10px; margin-bottom: 20px; justify-content: center;">
+                    <button type="button" id="selectFilesBtn" onclick="selectFiles()" style="background-color: #3498db; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">選擇檔案</button>
+                    <button type="button" id="clearFilesBtn" onclick="clearSelectedFiles()" style="background-color: #95a5a6; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">清除檔案</button>
+                    <button type="button" id="startUploadBtn" onclick="startUpload()" style="background-color: #27ae60; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">上傳</button>
+                    <button type="button" id="returnBtn" onclick="closeUploadModal()" style="background-color: #e74c3c; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">返回</button>
+                </div>
+
+                <!-- 待上傳檔案清單 -->
+                <div style="margin-bottom: 20px;">
+                    <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                        <input type="checkbox" id="selectAllFilesCheckbox" onclick="toggleSelectAllFiles()" style="margin-right: 8px; cursor: pointer;" title="全選/取消全選所有檔案">
+                        <h4 style="margin: 0; color: #333;">待上傳檔案清單</h4>
+                    </div>
+                    <div id="pendingFilesList" style="min-height: 150px; max-height: 300px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; background: #f9f9f9; border-radius: 4px;">
+                        <p style="color: #666; text-align: center; margin: 50px 0;">尚未選擇任何檔案</p>
+                    </div>
+                </div>
+
+                <!-- 錯誤訊息區域 -->
+                <div id="uploadErrorMessage" style="color: red; font-size: 0.9em; margin-top: 10px; display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 移除檔案確認模態框 -->
+    <div id="removeFileModal" class="modal">
+        <div class="modal-content" style="max-width: 500px; width: 90%;">
+            <div class="modal-header">
+                <h3>確認移除檔案</h3>
+            </div>
+            <div class="modal-body">
+                <p style="color: #e74c3c; font-weight: bold; margin-bottom: 15px;">
+                    <i class="fa-solid fa-triangle-exclamation" style="margin-right: 8px;"></i>
+                    警告：此操作無法復原！
+                </p>
+                <p style="margin-bottom: 15px;">您確定要刪除以下檔案嗎？</p>
+                <div id="filesToRemoveList" style="max-height: 200px; overflow-y: auto; background: #f9f9f9; border: 1px solid #ddd; padding: 10px; border-radius: 4px;">
+                    <!-- 檔案列表會動態填入 -->
+                </div>
+                <p style="color: #666; font-size: 0.9em; margin-top: 10px;">
+                    <i class="fa-solid fa-info-circle" style="margin-right: 5px;"></i>
+                    刪除檔案後，檔案的索引資料仍會存在，需重新建立索引。
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeRemoveFileModal()" class="btn-secondary">取消</button>
+                <button onclick="confirmRemoveFiles()" class="btn-primary" style="background-color: #e74c3c;">
+                    <i class="fa-solid fa-trash" style="margin-right: 5px;"></i>
+                    確認刪除
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 建立索引確認模態框 -->
+    <div id="buildIndexModal" class="modal">
+        <div class="modal-content" style="max-width: 600px; width: 90%; position: relative;">
+            <!-- 重建索引Loading覆蓋層 -->
+            <div id="buildIndexLoadingOverlay" class="build-index-loading-overlay">
+                <div class="loader"></div>
+                <div class="loading-text">索引重建處理中</div>
+                <div class="loading-detail">系統正在清除舊索引並重新建立索引，請耐心等待處理完成。此過程可能需要數分鐘時間，請勿關閉此視窗。</div>
+            </div>
+
+            <div class="modal-header">
+                <h3>確認重建索引</h3>
+            </div>
+            <div class="modal-body">
+                <p style="color: #f39c12; font-weight: bold; margin-bottom: 15px;">
+                    <i class="fa-solid fa-exclamation-triangle" style="margin-right: 8px;"></i>
+                    重要提醒：重建索引操作說明
+                </p>
+                <div style="background: #fff3cd; padding: 15px; border-radius: 6px; border-left: 4px solid #ffc107; margin-bottom: 15px;">
+                    <p style="margin: 0; color: #856404;">
+                        <strong>本操作將執行以下步驟：</strong><br>
+                        1. 清除知識庫中現有的所有索引資料<br>
+                        2. 根據您勾選的檔案重新建立索引<br>
+                        3. 此過程可能需要數分鐘時間，請耐心等待
+                    </p>
+                </div>
+                <p style="margin-bottom: 15px; font-weight: bold;">將要重建索引的檔案：</p>
+                <div id="filesToIndexList" style="max-height: 200px; overflow-y: auto; background: #f8f9fa; border: 1px solid #dee2e6; padding: 15px; border-radius: 4px;">
+                    <!-- 檔案列表會動態填入 -->
+                </div>
+                <p style="color: #6c757d; font-size: 0.9em; margin-top: 15px;">
+                    <i class="fa-solid fa-info-circle" style="margin-right: 5px;"></i>
+                    處理期間請勿關閉此頁面，系統將自動顯示處理進度。
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeBuildIndexModal()" class="btn-secondary">取消</button>
+                <button onclick="confirmBuildIndex()" class="btn-primary" style="background-color: #007bff;">
+                    <i class="fa-solid fa-cogs" style="margin-right: 5px;"></i>
+                    確認重建索引
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 隱藏的檔案輸入元素 -->
+    <input type="file" id="hiddenFileInput" multiple style="display: none;" accept=".pdf,.doc,.docx,.txt,.md">
+
+    <!-- 載入腳本 -->
+    <script>
+        // 臨時的全域函數，等待模組載入
+        window.returnToAdmin = function() {
+            window.location.href = '/admin';
+        };
+                
+        // 內嵌簡單的載入函數（避免快取問題）
+        function loadWithTimestamp(src) {
+            const script = document.createElement('script');
+            script.src = `${src}?_t=${Date.now()}`;
+            return new Promise((resolve, reject) => {
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+        
+        // 依序載入模組
+        (async function() {
+            try {
+                // 基礎模組
+                await loadWithTimestamp('/js/modules/script-loader.js');
+                
+                // 載入公共模組
+                await ScriptLoader.loadModulesInOrder([
+                    '/js/modules/common-ui.js',
+                    '/js/modules/user-menu-module.js'
+                ]);
+                
+                // 載入受保護的管理員模組
+                await ScriptLoader.loadProtectedAdminScriptsInOrder([
+                    'knowledge-base-module.js',
+                    'index-module.js',
+                    'knowledge-base-page.js'        // 頁面初始化腳本
+                ]);
+                
+                // 初始化模組
+                CommonUI.hideSpinner();
+                IndexModule.init();
+                KnowledgeBaseModule.init();
+                UserMenu.init();                
+                
+                // knowledge-base-page.js 會處理所有初始化工作
+                console.log('知識庫管理頁面模組載入完成');
+            } catch (error) {
+                console.error('模組載入失敗:', error);
+                // 如果是權限問題，可能需要重新登入
+                if (error.message && error.message.includes('無權限')) {
+                    alert('您沒有權限存取管理員功能，請重新登入');
+                    window.location.href = '/login';
+                }
+            }
+        })();
+    </script>
+</body>
+
+</html>

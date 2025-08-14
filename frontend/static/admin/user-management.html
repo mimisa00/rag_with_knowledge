@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>帳號管理 - E-Helper</title>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- 引入 admin.css 作為基礎樣式（導航欄等） -->
+    <link rel="stylesheet" href="../css/admin.css">
+    <!-- 引入獨立的載入器樣式 -->
+    <link rel="stylesheet" href="../css/spinner-loader.css">
+    <!-- 引入帳號管理頁面專用樣式 -->
+    <link rel="stylesheet" href="../css/user-management.css">
+</head>
+
+<body>
+    <!-- 載入指示器 -->
+    <div id="loader-overlay" class="loader-overlay">
+        <div class="loader"></div>
+        <div class="loader-text">系統載入中...</div>
+    </div>
+
+    <!-- 頂部導航欄 -->
+    <nav class="admin-navbar">
+        <div class="navbar-brand">
+            <i class="fas fa-users"></i>
+            <span>帳號管理</span>
+        </div>
+        <div class="navbar-info">
+            <span id="userInfo" class="user-info" onclick="openUserMenu()">
+                <i class="fas fa-user-circle"></i>
+                <span id="username">載入中...</span>
+                <span id="userRole" class="user-role"></span>
+            </span>
+        </div>
+    </nav>
+
+    <!-- 麵包屑導航 -->
+    <div class="breadcrumb">
+        <div class="breadcrumb-items">
+            <div class="breadcrumb-item">
+                <a href="/dashboard" class="breadcrumb-link">
+                    <i class="fas fa-home"></i>
+                    <span>首頁</span>
+                </a>
+            </div>
+            <span class="breadcrumb-separator">
+                <i class="fas fa-chevron-right"></i>
+            </span>
+            <div class="breadcrumb-item">
+                <a href="/admin" class="breadcrumb-link">
+                    <span>系統管理中心</span>
+                </a>
+            </div>
+            <span class="breadcrumb-separator">
+                <i class="fas fa-chevron-right"></i>
+            </span>
+            <div class="breadcrumb-item">
+                <span class="breadcrumb-current">帳號管理</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 個人功能抽屜 -->
+    <div id="userMenuDrawer" onclick="closeUserMenu()" class="user-menu-drawer">
+        <div class="user-menu-header">
+            <span id="userMenuUsername"></span>
+        </div>
+        <div class="user-menu-content">
+            <button onclick="showChangePasswordModal()" class="menu-item">
+                <i class="fa-solid fa-key"></i>
+                <span>變更密碼</span>
+            </button>
+            <hr>
+            <button onclick="logout()" class="menu-item">
+                <i class="fa-solid fa-sign-out-alt"></i>
+                <span>登出</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 變更密碼模態框 -->
+    <div id="changePasswordModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>變更密碼</h3>
+                <i class="fa-solid fa-key"></i>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="oldPassword">舊密碼</label>
+                    <input type="password" id="oldPassword" required>
+                </div>
+                <div class="form-group">
+                    <label for="newPassword">新密碼</label>
+                    <input type="password" id="newPassword" required minlength="6">
+                </div>
+                <div class="form-group">
+                    <label for="confirmNewPassword">確認新密碼</label>
+                    <input type="password" id="confirmNewPassword" required minlength="6">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeChangePasswordModal()" class="btn-secondary">取消</button>
+                <button onclick="changePassword()" class="btn-primary">確認變更</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主要內容區 -->
+    <main class="admin-main">
+        <div class="admin-container">
+            <div id="accountManagerContainer" style="padding: 1em;"></div>
+        </div>
+    </main>
+
+    <!-- 載入腳本 -->
+    <script>
+        // 臨時的全域函數，等待模組載入
+        window.returnToAdmin = function() {
+            window.location.href = '/admin';
+        };
+                
+        // 內嵌簡單的載入函數（避免快取問題）
+        function loadWithTimestamp(src) {
+            const script = document.createElement('script');
+            script.src = `${src}?_t=${Date.now()}`;
+            return new Promise((resolve, reject) => {
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+        
+        // 依序載入模組
+        (async function() {
+            try {
+                // 基礎模組
+                await loadWithTimestamp('/js/modules/script-loader.js');
+                
+                // 載入公共模組
+                await ScriptLoader.loadModulesInOrder([
+                    '/js/modules/common-ui.js',
+                    '/js/modules/user-menu-module.js'
+                ]);
+                
+                // 載入受保護的管理員模組
+                await ScriptLoader.loadProtectedAdminScriptsInOrder([
+                    'account-module.js',
+                    'user-management-page.js'        // 頁面初始化腳本
+                ]);
+                
+                // 初始化模組
+                CommonUI.hideSpinner();
+                AccountModule.init();
+                UserMenu.init();
+                
+                console.log('帳號管理頁面模組載入完成');
+            } catch (error) {
+                console.error('模組載入失敗:', error);
+                // 如果是權限問題，可能需要重新登入
+                if (error.message && error.message.includes('無權限')) {
+                    alert('您沒有權限存取管理員功能，請重新登入');
+                    window.location.href = '/login';
+                }
+            }
+        })();
+    </script>
+</body>
+
+</html>

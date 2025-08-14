@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>系統管理 - E-Helper</title>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- 核心 CSS 架構已經包含在 admin.css 中 -->
+    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="css/spinner-loader.css">
+</head>
+
+<body class="admin-layout">
+    <!-- 載入指示器 -->
+    <div id="loader-overlay" class="loader-overlay">
+        <div class="loader"></div>
+        <div class="loader-text">系統載入中...</div>
+    </div>
+
+    <!-- 頂部導航欄 -->
+    <nav class="admin-navbar">
+        <div class="navbar-brand">
+            <i class="fas fa-cogs"></i>
+            <span>E-Helper</span>
+        </div>
+        <div class="navbar-info">
+            <span id="userInfo" class="user-info" onclick="openUserMenu()">
+                <i class="fas fa-user-circle"></i>
+                <span id="username">載入中...</span>
+                <span id="userRole" class="user-role"></span>
+            </span>
+        </div>
+    </nav>
+
+    <!-- 麵包屑導航 -->
+    <div class="breadcrumb">
+        <div class="breadcrumb-items">
+            <div class="breadcrumb-item">
+                <a href="/dashboard" class="breadcrumb-link">
+                    <i class="fas fa-home"></i>
+                    <span>首頁</span>
+                </a>
+            </div>
+            <span class="breadcrumb-separator">
+                <i class="fas fa-chevron-right"></i>
+            </span>
+            <div class="breadcrumb-item">
+                <span class="breadcrumb-current">系統管理中心</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 個人功能抽屜 -->
+    <div id="userMenuDrawer" onclick="closeUserMenu()" class="user-menu-drawer">
+        <div class="user-menu-header">
+            <span id="userMenuUsername"></span>
+        </div>
+        <div class="user-menu-content">
+            <button onclick="showChangePasswordModal()" class="menu-item">
+                <i class="fa-solid fa-key"></i>
+                <span>變更密碼</span>
+            </button>
+            <hr>
+            <button onclick="logout()" class="menu-item">
+                <i class="fa-solid fa-sign-out-alt"></i>
+                <span>登出</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 變更密碼模態框 -->
+    <div id="changePasswordModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>變更密碼</h3>
+                <i class="fa-solid fa-key"></i>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="oldPassword">舊密碼</label>
+                    <input type="password" id="oldPassword" required>
+                </div>
+                <div class="form-group">
+                    <label for="newPassword">新密碼</label>
+                    <input type="password" id="newPassword" required minlength="6">
+                </div>
+                <div class="form-group">
+                    <label for="confirmNewPassword">確認新密碼</label>
+                    <input type="password" id="confirmNewPassword" required minlength="6">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeChangePasswordModal()" class="btn-secondary">取消</button>
+                <button onclick="changePassword()" class="btn-primary">確認變更</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主要內容區 -->
+    <main class="admin-main">
+        <div class="admin-container">
+            <!-- 歡迎訊息 -->
+            <div class="welcome-section">
+                <h1>系統管理中心</h1>
+                <p>請選擇您要管理的功能模組</p>
+            </div>
+
+            <!-- 功能卡片區 -->
+            <div class="function-grid" id="functionGrid">
+                <!-- 知識庫管理 -->
+                <div class="function-card" data-function="knowledge-base" data-roles="admin,org_admin">
+                    <div class="card-icon">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>知識庫管理</h3>
+                        <p>創建、編輯知識庫，管理檔案與索引</p>
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn-enter" onclick="navigateToFunction('knowledge-base')">
+                            進入管理
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 索引管理（已整合至知識庫管理，故隱藏） -->
+                <div class="function-card hidden" data-function="index" data-roles="admin,org_admin">
+                    <div class="card-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>索引管理</h3>
+                        <p>上傳文檔、建立索引、管理向量資料庫</p>
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn-enter" onclick="navigateToFunction('index')">
+                            進入管理
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 系統參數 -->
+                <div class="function-card" data-function="system-params" data-roles="admin">
+                    <div class="card-icon">
+                        <i class="fas fa-sliders-h"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>系統參數</h3>
+                        <p>配置 LLM 模型、調整系統參數和提示詞</p>
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn-enter" onclick="navigateToFunction('system-params')">
+                            進入管理
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 帳號管理 -->
+                <div class="function-card" data-function="user-management" data-roles="admin">
+                    <div class="card-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>帳號管理</h3>
+                        <p>管理使用者帳號、設定角色和權限</p>
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn-enter" onclick="navigateToFunction('user-management')">
+                            進入管理
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 數據匯入（未來功能） -->
+                <div class="function-card disabled" data-function="data-import" data-roles="admin">
+                    <div class="card-icon">
+                        <i class="fas fa-file-import"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>數據匯入</h3>
+                        <p>批量匯入 SQL 或 Excel 資料（即將推出）</p>
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn-enter" disabled>
+                            即將推出
+                            <i class="fas fa-lock"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 監控報表（未來功能） -->
+                <div class="function-card disabled" data-function="reports" data-roles="admin,org_admin">
+                    <div class="card-icon">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>監控報表</h3>
+                        <p>系統使用統計和效能監控（即將推出）</p>
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn-enter" disabled>
+                            即將推出
+                            <i class="fas fa-lock"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 底部資訊 -->
+    <footer class="admin-footer">
+        <p>&copy; E-Help 知識庫智能管理系統. All rights reserved.</p>
+    </footer>
+
+    <!-- 載入腳本 -->
+    <script>
+        // 臨時的全域函數，等待模組載入
+        window.returnToDashboard = function() {
+            window.location.href = '/dashboard';
+        };
+        
+        window.navigateToFunction = function(functionName) {
+            console.log('等待模組載入完成...');
+        };
+
+        // 內嵌簡單的載入函數
+        function loadWithTimestamp(src) {
+            const script = document.createElement('script');
+            script.src = `${src}?_t=${Date.now()}`;
+            return new Promise((resolve, reject) => {
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+        
+        // 依序載入模組
+        (async function() {
+            try {
+                // 先載入 ScriptLoader
+                await loadWithTimestamp('/js/modules/script-loader.js');
+                
+                // 載入公共模組
+                await ScriptLoader.loadModulesInOrder([
+                    '/js/modules/common-ui.js',
+                    '/js/modules/user-menu-module.js'
+                ]);
+                
+                // 載入受保護的管理員模組
+                await ScriptLoader.loadProtectedAdminScriptsInOrder([
+                    'admin-router.js',      // 路由管理
+                    'admin.js'    // 管理首頁邏輯
+                ]);
+                
+                // 初始化模組
+                CommonUI.hideSpinner();
+                UserMenu.init();
+                
+                console.log('所有模組載入完成');
+            } catch (error) {
+                console.error('模組載入失敗:', error);
+                // 如果是權限問題，重新導向到登入頁
+                if (error.message && error.message.includes('無權限')) {
+                    alert('您沒有權限存取管理功能');
+                    window.location.href = '/login';
+                }
+            }
+        })();
+    </script>
+</body>
+
+</html>

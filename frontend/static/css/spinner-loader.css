@@ -1,0 +1,62 @@
+#loader-overlay {
+    position: fixed;
+    top: 94%;
+    right: 20px;
+    width: auto;
+    height: auto;
+    background-color: rgba(0, 0, 0, 0.01);
+    padding: 10px;
+    border-radius: 8px;
+    display: flex !important;
+    flex-direction: row;
+    /* 水平排列 */
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.loader {
+    border: 6px solid rgba(179, 217, 217, 0.2);
+    border-top: 6px solid #B3D9D9;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin-right: 12px;
+    /* 與文字間隔 */
+    transition: transform 2s ease-out, opacity 2s ease-out;
+    /* 加上 opacity 來做淡出淡入 */
+}
+
+.loader-text {
+    font-size: 1.5em;
+    /* h1 大小接近效果 */
+    color: #B3D9D9;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+/* 持續旋轉動畫 */
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* 平滑停止的動畫 */
+@keyframes slow-stop {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}

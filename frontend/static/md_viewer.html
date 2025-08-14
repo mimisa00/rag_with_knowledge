@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Markdown Viewer</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="css/md_viewer.css">
+</head>
+
+<body>
+    <h1>Markdown Viewer</h1>
+    <div class="status" id="status">載入中...</div>
+    <div class="markdown-block" id="content"></div>
+    <script>
+        function getQueryParam(name) {
+            const url = new URL(window.location.href);
+            return url.searchParams.get(name);
+        }
+        async function loadMarkdown() {
+            const status = document.getElementById('status');
+            const content = document.getElementById('content');
+            const filename = getQueryParam('file');
+            const kb_id = getQueryParam('kb_id');
+            if (!filename) {
+                status.textContent = '錯誤：未指定檔案名稱 (file)';
+                return;
+            }
+            if (!kb_id) {
+                status.textContent = '錯誤：未指定知識庫ID (kb_id)';
+                return;
+            }
+            try {
+                const formData = new FormData();
+                formData.append("kb_id", kb_id);
+                formData.append("filename", filename);
+                const response = await fetch(`/api/document/markdown`, {
+                    method: 'POST',
+                    body: formData,
+                });
+                if (!response.ok) throw new Error('API 載入失敗');
+                const text = await response.text();
+                status.textContent = `檔案：${filename}`;
+                content.innerHTML = marked.parse(text);
+            } catch (error) {
+                status.textContent = '錯誤：' + error.message;
+            }
+        }
+        window.onload = loadMarkdown;
+    </script>
+</body>
+
+</html>

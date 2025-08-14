@@ -1,0 +1,222 @@
+/* ========================================
+   主題變數系統
+   支援多主題切換
+   ======================================== */
+
+/* 預設主題（淺色） */
+:root {
+  /* 主色調 */
+  --primary: #667eea;
+  --primary-dark: #5a67d8;
+  --primary-light: #818cf8;
+  --primary-rgb: 102, 126, 234;
+  
+  --secondary: #764ba2;
+  --secondary-dark: #5e3a81;
+  --secondary-light: #9f6cc7;
+  --secondary-rgb: 118, 75, 162;
+  
+  /* 中性色 */
+  --text-primary: #2c3e50;
+  --text-secondary: #555;
+  --text-muted: #999;
+  --text-light: #666;
+  
+  --bg-main: #ffffff;
+  --bg-light: #f8f9fa;
+  --bg-section: #f4f4f4;
+  --bg-hover: #f0f0f0;
+  --bg-input: #ffffff;
+  
+  --border-color: #dee2e6;
+  --border-light: #e9ecef;
+  --border-dark: #ced4da;
+  
+  /* 狀態色 */
+  --success: #27ae60;
+  --success-dark: #219a52;
+  --success-light: #2ecc71;
+  --success-bg: #d4edda;
+  --success-border: #c3e6cb;
+  
+  --danger: #e74c3c;
+  --danger-dark: #c0392b;
+  --danger-light: #ec7063;
+  --danger-bg: #f8d7da;
+  --danger-border: #f5c6cb;
+  
+  --warning: #f39c12;
+  --warning-dark: #d68910;
+  --warning-light: #f5b041;
+  --warning-bg: #fff3cd;
+  --warning-border: #ffeeba;
+  
+  --info: #3498db;
+  --info-dark: #2980b9;
+  --info-light: #5dade2;
+  --info-bg: #d1ecf1;
+  --info-border: #bee5eb;
+  
+  /* 間距系統 */
+  --spacing-xs: 0.25rem;  /* 4px */
+  --spacing-sm: 0.5rem;   /* 8px */
+  --spacing-md: 1rem;     /* 16px */
+  --spacing-lg: 1.5rem;   /* 24px */
+  --spacing-xl: 2rem;     /* 32px */
+  --spacing-xxl: 3rem;    /* 48px */
+  
+  /* 圓角系統 */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-xxl: 20px;
+  --radius-full: 50%;
+  
+  /* 陰影系統 */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 2px 10px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.15);
+  --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.2);
+  
+  /* 動畫系統 */
+  --transition-fast: 0.2s ease;
+  --transition-normal: 0.3s ease;
+  --transition-slow: 0.5s ease;
+  
+  /* Z-index 層級 */
+  --z-base: 0;
+  --z-dropdown: 100;
+  --z-sticky: 150;
+  --z-drawer: 200;
+  --z-modal-backdrop: 290;
+  --z-modal: 300;
+  --z-loader: 400;
+  --z-notification: 500;
+  --z-tooltip: 600;
+  
+  /* 字體系統 */
+  --font-family-base: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans TC", sans-serif;
+  --font-family-mono: Consolas, "Courier New", monospace;
+  
+  --font-size-xs: 0.75rem;   /* 12px */
+  --font-size-sm: 0.875rem;  /* 14px */
+  --font-size-base: 1rem;    /* 16px */
+  --font-size-lg: 1.125rem;  /* 18px */
+  --font-size-xl: 1.25rem;   /* 20px */
+  --font-size-xxl: 1.5rem;   /* 24px */
+  --font-size-xxxl: 2rem;    /* 32px */
+  
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  
+  --line-height-tight: 1.25;
+  --line-height-base: 1.5;
+  --line-height-relaxed: 1.75;
+  
+  /* 佈局變數 */
+  --navbar-height: 60px;
+  --sidebar-width: 250px;
+  --container-max-width: 1200px;
+  
+  /* 特殊效果 */
+  --gradient-primary: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  --gradient-light: linear-gradient(135deg, var(--primary) 0%, #ffffff 100%);
+  
+  /* 載入器顏色 */
+  --loader-primary: #B3D9D9;
+  --loader-secondary: rgba(179, 217, 217, 0.2);
+  
+  /* 灰階系統 */
+  --gray-500: #6c757d;
+  --gray-600: #5a6268;
+  --gray-700: #495057;
+}
+
+/* 深色主題 */
+[data-theme="dark"] {
+  /* 主色調（深色模式下稍微調亮） */
+  --primary: #818cf8;
+  --primary-dark: #667eea;
+  --primary-light: #a5b4fc;
+  
+  --secondary: #9f6cc7;
+  --secondary-dark: #764ba2;
+  --secondary-light: #c084fc;
+  
+  /* 中性色（深色模式） */
+  --text-primary: #e2e8f0;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --text-light: #cbd5e1;
+  
+  --bg-main: #1a1a1a;
+  --bg-light: #2d2d2d;
+  --bg-section: #262626;
+  --bg-hover: #404040;
+  --bg-input: #2d2d2d;
+  
+  --border-color: #404040;
+  --border-light: #525252;
+  --border-dark: #171717;
+  
+  /* 狀態色（深色模式下調整） */
+  --success: #34d399;
+  --success-dark: #10b981;
+  --success-light: #6ee7b7;
+  --success-bg: rgba(52, 211, 153, 0.1);
+  --success-border: rgba(52, 211, 153, 0.3);
+  
+  --danger: #f87171;
+  --danger-dark: #ef4444;
+  --danger-light: #fca5a5;
+  --danger-bg: rgba(248, 113, 113, 0.1);
+  --danger-border: rgba(248, 113, 113, 0.3);
+  
+  --warning: #fbbf24;
+  --warning-dark: #f59e0b;
+  --warning-light: #fcd34d;
+  --warning-bg: rgba(251, 191, 36, 0.1);
+  --warning-border: rgba(251, 191, 36, 0.3);
+  
+  --info: #60a5fa;
+  --info-dark: #3b82f6;
+  --info-light: #93c5fd;
+  --info-bg: rgba(96, 165, 250, 0.1);
+  --info-border: rgba(96, 165, 250, 0.3);
+  
+  /* 陰影系統（深色模式） */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 2px 10px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.6);
+  
+  /* 載入器顏色（深色模式） */
+  --loader-primary: #60a5fa;
+  --loader-secondary: rgba(96, 165, 250, 0.2);
+  
+  /* 深色模式灰階 */
+  --gray-500: #adb5bd;
+  --gray-600: #6c757d;
+  --gray-700: #495057;
+}
+
+/* 企業主題 */
+[data-theme="corporate"] {
+  /* 主色調（企業藍） */
+  --primary: #0066cc;
+  --primary-dark: #0052a3;
+  --primary-light: #3385ff;
+  
+  --secondary: #00a86b;
+  --secondary-dark: #008855;
+  --secondary-light: #33c490;
+  
+  /* 其他變數保持與預設主題相似，只調整主色調 */
+  --gradient-primary: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+}

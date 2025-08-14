@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>系統參數管理 - E-Helper</title>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- 引入 admin.css 作為基礎樣式（導航欄等） -->
+    <link rel="stylesheet" href="../css/admin.css">
+    <!-- 引入獨立的載入器樣式 -->
+    <link rel="stylesheet" href="../css/spinner-loader.css">
+    <!-- 引入系統參數管理頁面專用樣式 -->
+    <link rel="stylesheet" href="../css/system-params.css">
+</head>
+
+<body>
+    <!-- 載入指示器 -->
+    <div id="loader-overlay" class="loader-overlay">
+        <div class="loader"></div>
+        <div class="loader-text">系統載入中...</div>
+    </div>
+
+    <!-- 頂部導航欄 -->
+    <nav class="admin-navbar">
+        <div class="navbar-brand">
+            <i class="fas fa-sliders-h"></i>
+            <span>系統參數管理</span>
+        </div>
+        <div class="navbar-info">
+            <span id="userInfo" class="user-info" onclick="openUserMenu()">
+                <i class="fas fa-user-circle"></i>
+                <span id="username">載入中...</span>
+                <span id="userRole" class="user-role"></span>
+            </span>
+        </div>
+    </nav>
+
+    <!-- 麵包屑導航 -->
+    <div class="breadcrumb">
+        <div class="breadcrumb-items">
+            <div class="breadcrumb-item">
+                <a href="/dashboard" class="breadcrumb-link">
+                    <i class="fas fa-home"></i>
+                    <span>首頁</span>
+                </a>
+            </div>
+            <span class="breadcrumb-separator">
+                <i class="fas fa-chevron-right"></i>
+            </span>
+            <div class="breadcrumb-item">
+                <a href="/admin" class="breadcrumb-link">
+                    <span>系統管理中心</span>
+                </a>
+            </div>
+            <span class="breadcrumb-separator">
+                <i class="fas fa-chevron-right"></i>
+            </span>
+            <div class="breadcrumb-item">
+                <span class="breadcrumb-current">系統參數管理</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 個人功能抽屜 -->
+    <div id="userMenuDrawer" onclick="closeUserMenu()" class="user-menu-drawer">
+        <div class="user-menu-header">
+            <span id="userMenuUsername"></span>
+        </div>
+        <div class="user-menu-content">
+            <button onclick="showChangePasswordModal()" class="menu-item">
+                <i class="fa-solid fa-key"></i>
+                <span>變更密碼</span>
+            </button>
+            <hr>
+            <button onclick="logout()" class="menu-item">
+                <i class="fa-solid fa-sign-out-alt"></i>
+                <span>登出</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 變更密碼模態框 -->
+    <div id="changePasswordModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>變更密碼</h3>
+                <i class="fa-solid fa-key"></i>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="oldPassword">舊密碼</label>
+                    <input type="password" id="oldPassword" required>
+                </div>
+                <div class="form-group">
+                    <label for="newPassword">新密碼</label>
+                    <input type="password" id="newPassword" required minlength="6">
+                </div>
+                <div class="form-group">
+                    <label for="confirmNewPassword">確認新密碼</label>
+                    <input type="password" id="confirmNewPassword" required minlength="6">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeChangePasswordModal()" class="btn-secondary">取消</button>
+                <button onclick="changePassword()" class="btn-primary">確認變更</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主要內容區 -->
+    <main class="admin-main">
+        <div class="admin-container">
+            <form id="paramForm">
+                <div style="max-width: 100%; overflow-x: hidden;">
+                    <div style="display: flex; gap: 2rem; align-items: flex-start;">
+                        <div style="flex: 2; min-width: 300px;">
+                            <label for="noun_analysis_prompt" title="用途 : 分析使用者問題裡名詞並產生多種同義詞<BR/>注意事項 : 實際系統送出給 LLM 的 prompt，{query.question} 是使用者的問題，該變數不可以調整，因為程式會參考，其它都可以修改。">名詞分析提示 : noun_analysis_prompt</label>
+                            <textarea id="noun_analysis_prompt" name="noun_analysis_prompt" rows="45" style="max-width: 100%;">### Task:...</textarea>
+
+                            <div style="margin-top: 2rem; padding: 1rem; background-color: #f8f9fa; border-radius: 6px; border: 1px solid #dee2e6;">
+                                <h4 style="margin-top: 0; color: #495057;">
+                                    <i class="fa-solid fa-info-circle" style="color: #17a2b8; margin-right: 0.5rem;"></i>
+                                    系統提示詞設定
+                                </h4>
+                                <p style="margin-bottom: 0; color: #6c757d; font-size: 0.9em;">
+                                    系統提示詞現在可以在「RAG 索引」頁籤中為每個知識庫單獨設定。<br>
+                                    這樣可以針對不同的知識庫使用不同的提示詞，提供更精準的回答。
+                                </p>
+                            </div>
+                        </div>
+
+                        <div style="flex: 1; min-width: 400px;">
+                            <button type="button" id="updateConfigBtn" style="margin-top: 1rem; background-color: #e74c3c;">儲存參數</button>
+                            <H3>request control setting</H3>
+                            <div class="formparam-group">
+                                <label for="llm_req_limit_total" title="控制系統整體同時最多只能被請求的次數，超過次數將被系統拒絕">llm_req_limit_total</label>
+                                <input id="llm_req_limit_total" type="number" name="llm_req_limit_total" value="3">
+                            </div>
+                            <div class="formparam-group">
+                                <label for="llm_req_limit_user" title="控制使用者同時最多只能請求的次數，超過次數將被系統拒絕">llm_req_limit_user</label>
+                                <input id="llm_req_limit_user" type="number" name="llm_req_limit_user" value="1">
+                            </div>
+                            <H3>file content fetching setting</H3>
+                            <div class="formparam-group">
+                                <label for="docling_image_export_mode" title="截取圖案的內容如果有圖片透過什麼方式呈現 placeholder embedded referenced">docling_image_export_mode</label>
+                                <input id="docling_image_export_mode" type="text" name="docling_image_export_mode" value="placeholder">
+                            </div>
+                            <H3>embedding setting</H3>
+                            <div class="formparam-group">
+                                <label for="embedding_model" title="文件分詞模型">embedding_model</label>
+                                <input id="embedding_model" type="text" name="embedding_model" value="intfloat/multilingual-e5-large">
+                            </div>
+                            <div class="formparam-group">
+                                <label for="chunk_size" title="文件切割大小，單位 token">chunk_size</label>
+                                <input id="chunk_size" type="number" name="chunk_size" value="500">
+                            </div>
+                            <div class="formparam-group">
+                                <label for="chunk_overlap" title="文件切割後可容許每個文重疊的內容，單位 token">chunk_overlap</label>
+                                <input id="chunk_overlap" type="number" name="chunk_overlap" value="50">
+                            </div>
+                            <div class="formparam-group">
+                                <label for="idx_result_count" title="透過向量資料庫查詢跟問題有關的 chunk 總數，之後會用這些 chunk 排序後組織 question prompt 時需要參考的 context 內容">idx_result_count</label>
+                                <input id="idx_result_count" type="number" name="idx_result_count" value="3">
+                            </div>
+                            <div class="formparam-group">
+                                <label for="rerank_top_k_final" title="透過向量資料庫查詢出來的 chunk 經過BGE重新排序後，取出最相關 rerank_top_k_final 個，並組織 question prompt 時需要參考的 context 內容">rerank_top_k_final</label>
+                                <input id="rerank_top_k_final" type="number" name="rerank_top_k_final" value="3">
+                            </div>
+
+                            <H3>ollama setting</H3>
+                            <div class="formparam-group">
+                                <label for="llm_model_select" title="執行LLM模型">LLM Model</label>
+                                <select id="llm_model_select" name="llm_model">
+                                    <option value="gpt-oss:20b">gpt-oss:20b</option>
+                                    <option value="gemma3:4b">gemma3:4b</option>
+                                    <option value="gemma3:12b">gemma3:12b</option>
+                                    <option value="gemma3:27b">gemma3:27b</option>
+                                    <option value="qwen3:4b">qwen3:4b thinking</option>
+                                    <option value="qwen3:8b">qwen3:8b thinking</option>
+                                    <option value="qwen3:14b">qwen3:14b thinking</option>
+                                    <option value="mistral:latest">mistral</option>
+                                    <option value="llama3.1:8b">llama3.1:8b</option>
+                                </select>
+                            </div>
+                            <div class="formparam-group">
+                                <label for="is_enable_think" title="啟用推理(有些模型才支援)">is_enable_think</label>
+                                <select id="is_enable_think" name="is_enable_think">
+                                    <option value="False">off</option>
+                                    <option value="True">on</option>
+                                </select>
+                            </div>
+                            <div class="formparam-group">
+                                <label for="num_ctx" style="color: red;" title="設定用於生成下一個詞元（token）的上下文視窗大小。（預設值：4096）">num_ctx</label>
+                                <input id="num_ctx" type="number" name="num_ctx" value="4096">
+                            </div>
+                            <div class="formparam-group">
+                                <label for="repeat_last_n" title="設定模型回看多遠的文字，以避免重複生成。（預設值：64，0 表示停用，-1 表示回看整個上下文長度 num_ctx）">repeat_last_n</label>
+                                <input id="repeat_last_n" type="number" name="repeat_last_n" value="64">
+                            </div>
+                            <div class="formparam-group">
+                                <label for="repeat_penalty" title="設定對重複內容施加懲罰的強度。較高的數值（例如 1.5）會更嚴格地懲罰重複，而較低的數值（例如 0.9）則較為寬鬆。（預設值：1.1）">repeat_penalty</label>
+                                <input id="repeat_penalty" type="number" name="repeat_penalty" value="1.1">
+                            </div>
+                            <div class="formparam-group">
+                                <label for="temperature" style="color: red;" title="模型的溫度參數。提高溫度會讓模型的回答更具創意。（預設值：0.8）">temperature</label>
+                                <input id="temperature" type="number" name="temperature" value="0.5">
+                            </div>
+                            <div class="formparam-group">
+                                <label for="seed" title="設定用於生成的隨機數種子。將此參數設為特定數值，可以讓模型在相同提示詞下產生相同的文字。（預設值：0）">seed</label>
+                                <input id="seed" type="number" name="seed" value="0">
+                            </div>
+                            <div class="formparam-group">
+                                <label for="stop" title="設定要使用的停止字串（stop sequences）。當模型產生文字時遇到這些模式，將會停止生成並返回結果。若要設定多個停止模式，可以在模型檔（modelfile）中分別指定多個 stop 參數。">stop</label>
+                                <input id="stop" type="text" name="stop" value="<|endoftext|>">
+                            </div>
+                            <div class="formparam-group">
+                                <label for="num_predict" style="color: red;" title="生成文字時，預測的最大詞元（token）數量。（預設值：-1，表示無限生成）">num_predict</label>
+                                <input id="num_predict" type="number" name="num_predict" value="1024">
+                            </div>
+                            <div class="formparam-group">
+                                <label for="top_k" style="color: red;" title="降低產生無意義內容的機率。較高的數值（例如 100）會產生更多樣化的回答，而較低的數值（例如 10）則會較保守。（預設值：40）">top_k</label>
+                                <input id="top_k" type="number" name="top_k" value="10">
+                            </div>
+                            <div class="formparam-group">
+                                <label for="top_p" style="color: red;" title="與 top-k 搭配使用。較高的數值（例如 0.95）會產生更多樣化的文字，而較低的數值（例如 0.5）則會產生更集中且保守的文字。（預設值：0.9）">top_p</label>
+                                <input id="top_p" type="number" name="top_p" value="0.9">
+                            </div>
+                            <div class="formparam-group">
+                                <label for="min_p" title="作為 top_p 的替代方案，旨在在品質與多樣性之間取得平衡。參數 p 表示某個詞元被考慮納入的最低機率，這個值是相對於機率最高的詞元而言。例如，若 p=0.05，而最可能的詞元機率為 0.9，則機率低於 0.045 的 logits 會被過濾掉。（預設值：0.0）">min_p</label>
+                                <input id="min_p" type="number" name="min_p" value="0.0">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <!-- 載入腳本 -->
+    <script>
+        // 臨時的全域函數，等待模組載入
+        window.returnToAdmin = function() {
+            window.location.href = '/admin';
+        };
+        
+        // 個人功能抽屜相關的臨時全域函數
+        window.openUserMenu = function() {
+            console.log('等待 UserMenu 模組載入...');
+        };
+        window.closeUserMenu = function() {
+            console.log('等待 UserMenu 模組載入...');
+        };
+        window.showChangePasswordModal = function() {
+            console.log('等待 UserMenu 模組載入...');
+        };
+        window.closeChangePasswordModal = function() {
+            console.log('等待 UserMenu 模組載入...');
+        };
+        window.changePassword = function() {
+            console.log('等待 UserMenu 模組載入...');
+        };
+        window.logout = function() {
+            console.log('等待 UserMenu 模組載入...');
+        };
+        
+        // 內嵌簡單的載入函數（避免快取問題）
+        function loadWithTimestamp(src) {
+            const script = document.createElement('script');
+            script.src = `${src}?_t=${Date.now()}`;
+            return new Promise((resolve, reject) => {
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+        
+        // 依序載入模組
+        (async function() {
+            try {
+                // 基礎模組
+                await loadWithTimestamp('/js/modules/script-loader.js');
+                
+                // 載入公共模組
+                await ScriptLoader.loadModulesInOrder([
+                    '/js/modules/common-ui.js',
+                    '/js/modules/user-menu-module.js'
+                ]);
+                
+                // 載入受保護的管理員模組
+                await ScriptLoader.loadProtectedAdminScriptsInOrder([
+                    'param-module.js',
+                    'system-params-page.js'        // 頁面初始化腳本
+                ]);
+                
+                // 初始化模組
+                CommonUI.hideSpinner();
+                ParamModule.init();
+                UserMenu.init();
+                
+                console.log('系統參數管理頁面模組載入完成');
+            } catch (error) {
+                console.error('模組載入失敗:', error);
+                // 如果是權限問題，可能需要重新登入
+                if (error.message && error.message.includes('無權限')) {
+                    alert('您沒有權限存取管理員功能，請重新登入');
+                    window.location.href = '/login';
+                }
+            }
+        })();
+    </script>
+</body>
+
+</html>
