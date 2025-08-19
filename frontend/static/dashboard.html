@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>E-Helper</title>
     <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/core/all.min.css">
     <!-- 新的 CSS 架構 -->
     <link rel="stylesheet" href="css/themes/theme-variables.css">
     <link rel="stylesheet" href="css/core/base.css">
@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="css/core/utilities.css">
     <link rel="stylesheet" href="css/core/layouts.css">
     <!-- 頁面專用樣式 -->
-    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/pages/dashboard.css">
 </head>
 
 <body class="page-wrapper">
@@ -22,7 +22,7 @@
     <!-- 頂部導航欄 -->
     <nav class="navbar admin-navbar">
         <div class="navbar-brand">
-            <i class="fa-solid fa-comments" style="margin-right: 8px;"></i>
+            <i class="fa-solid fa-comments mr-sm"></i>
             <span>E-Helper</span>
         </div>
         <div class="navbar-info">
@@ -109,7 +109,7 @@
                 <div class="qa-layout">
                     <!-- 知識庫選擇區 -->
                     <div class="qa-header">
-                        <i class="fa-solid fa-database text-success mr-sm" style="font-size: 1.2em;"></i>
+                        <i class="fa-solid fa-database text-success mr-sm icon-lg"></i>
                         <div class="flex-1">
                             <select id="qaKnowledgeBaseSelect" class="form-control">
                                 <option value="">載入中...</option>
@@ -117,11 +117,9 @@
                         </div>
                     </div>
                     <div class="d-flex align-start p-xs">
-                        <i id="nounAnalysisToggleIcon" title="開啟名詞分析" onclick="QAModule.toggleNounAnalysis()" class="fa-solid fa-toggle-off fa-2x text-info mr-sm cursor-pointer"></i>
                         <div id="nounAnalysis" aria-live="polite" aria-atomic="true" class="flex-1">已關閉名詞分析</div>
                     </div>
-                    <div id="thinkToggleSection" class="d-flex align-start p-xs">
-                        <i id="thinkResponseToggleIcon" title="開啟推理功能" onclick="QAModule.toggleThinkResponse()" class="fa-solid fa-toggle-off fa-2x text-info mr-sm cursor-pointer"></i>
+                    <div id="thinkToggleSection" class="d-none align-start p-xs">
                         <div id="thinkResponse" aria-live="polite" aria-atomic="true" class="flex-1">已關閉推理</div>
                     </div>
                     <div id="answer" aria-live="polite" aria-atomic="true" class="qa-content">
@@ -136,7 +134,7 @@
     </div>
 
     <!-- 引入 marked.js -->
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="js/lib/marked.min.js"></script>
     
     <!-- 載入新的管理器 -->
     <script src="/js/modules/theme-manager.js"></script>

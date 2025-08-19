@@ -39,8 +39,6 @@
                 actualpromptDiv: document.getElementById("actualprompt"),
                 conversationList: document.getElementById("conversationList"),
                 qaKnowledgeBaseSelect: document.getElementById("qaKnowledgeBaseSelect"),
-                nounAnalysisToggleIcon: document.getElementById("nounAnalysisToggleIcon"),
-                thinkResponseToggleIcon: document.getElementById("thinkResponseToggleIcon"),
                 drawerContainer: document.getElementById("drawerContainer"),
                 thinkToggleSection: document.getElementById("thinkToggleSection")
             };
@@ -184,16 +182,10 @@
         // 名詞分析功能
         function toggleNounAnalysis() {
             enableNounAnalysis = !enableNounAnalysis;
-            const icon = elements.nounAnalysisToggleIcon;
+            // 更新狀態顯示
             if (enableNounAnalysis) {
-                icon.classList.remove("fa-toggle-off");
-                icon.classList.add("fa-toggle-on");
-                icon.title = "關閉名詞分析";
                 elements.nounAnalysisDiv.innerHTML = "已啟用名詞分析功能";
             } else {
-                icon.classList.remove("fa-toggle-on");
-                icon.classList.add("fa-toggle-off");
-                icon.title = "開啟名詞分析";
                 elements.nounAnalysisDiv.innerHTML = "已關閉名詞分析功能";
             }
         }
@@ -201,6 +193,9 @@
         async function nounAnalysis() {
             const q = elements.questionInput.value.trim();
             try {
+                // 顯示載入動畫
+                elements.nounAnalysisDiv.innerHTML = '<i class="fa fa-spinner fa-spin"></i> 分析中...';
+                
                 const res = await fetch("/api/query/noun/analysis", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -234,18 +229,40 @@
 
         // 推理功能
         function toggleThinkResponse() {
+            // 獲取系統狀態
+            let systemEnabled = true;
+            if (window.UserMenu && window.UserMenu.getFeatureStates) {
+                const states = window.UserMenu.getFeatureStates();
+                systemEnabled = states.thinkEnabled;
+            }
+            
+            // 如果系統禁用，不允許切換
+            if (!systemEnabled) {
+                enableThink = false;
+                if (elements.thinkResponseDiv) {
+                    elements.thinkResponseDiv.innerHTML = "已關閉推理";
+                }
+                if (elements.thinkToggleSection) {
+                    elements.thinkToggleSection.classList.remove('d-flex');
+                    elements.thinkToggleSection.classList.add('d-none');
+                }
+                return;
+            }
+            
+            // 正常切換
             enableThink = !enableThink;
-            const icon = elements.thinkResponseToggleIcon;
             if (enableThink) {
-                icon.classList.remove("fa-toggle-off");
-                icon.classList.add("fa-toggle-on");
-                icon.title = "關閉推理";
                 elements.thinkResponseDiv.innerHTML = "已啟用推理";
+                if (elements.thinkToggleSection) {
+                    elements.thinkToggleSection.classList.remove('d-none');
+                    elements.thinkToggleSection.classList.add('d-flex');
+                }
             } else {
-                icon.classList.remove("fa-toggle-on");
-                icon.classList.add("fa-toggle-off");
-                icon.title = "開啟推理";
                 elements.thinkResponseDiv.innerHTML = "已關閉推理";
+                if (elements.thinkToggleSection) {
+                    elements.thinkToggleSection.classList.remove('d-flex');
+                    elements.thinkToggleSection.classList.add('d-none');
+                }
             }
         }
 
@@ -253,12 +270,54 @@
             try {
                 const res = await fetch('/api/user/is/enable/think');
                 const isEnabled = await res.json();
-
-                if (!isEnabled && elements.thinkToggleSection) {
-                    elements.thinkToggleSection.style.display = "none";
+                
+                if (!isEnabled) {
+                    // 系統禁用時，強制關閉用戶設定
+                    enableThink = false;
+                    if (elements.thinkToggleSection) {
+                        elements.thinkToggleSection.classList.remove('d-flex');
+                        elements.thinkToggleSection.classList.add('d-none');
+                    }
+                    if (elements.thinkResponseDiv) {
+                        elements.thinkResponseDiv.innerHTML = "已關閉推理";
+                    }
+                }
+                
+                // 通知 UserMenu 更新狀態
+                if (window.UserMenu && window.UserMenu.checkThinkAvailability) {
+                    window.UserMenu.checkThinkAvailability();
                 }
             } catch (error) {
                 console.error("讀取推理開關狀態失敗：", error);
+            }
+        }
+        
+        // 同步 UserMenu 的功能狀態
+        function syncWithUserMenu() {
+            if (window.UserMenu && window.UserMenu.getFeatureStates) {
+                const states = window.UserMenu.getFeatureStates();
+                enableNounAnalysis = states.nounAnalysis;
+                enableThink = states.thinkResponse;
+                
+                // 更新 UI 顯示
+                if (elements.nounAnalysisDiv) {
+                    elements.nounAnalysisDiv.innerHTML = enableNounAnalysis ? "已啟用名詞分析功能" : "已關閉名詞分析功能";
+                }
+                if (elements.thinkResponseDiv) {
+                    elements.thinkResponseDiv.innerHTML = enableThink ? "已啟用推理" : "已關閉推理";
+                }
+                
+                // 處理推理區塊的顯示/隱藏
+                if (elements.thinkToggleSection) {
+                    // 只有在系統允許且用戶開啟時才顯示
+                    if (states.thinkEnabled && enableThink) {
+                        elements.thinkToggleSection.classList.remove('d-none');
+                        elements.thinkToggleSection.classList.add('d-flex');
+                    } else {
+                        elements.thinkToggleSection.classList.remove('d-flex');
+                        elements.thinkToggleSection.classList.add('d-none');
+                    }
+                }
             }
         }
 
@@ -271,11 +330,39 @@
                 if (response.ok) {
                     const data = await response.json();
                     updateQAKnowledgeBaseSelect(data.knowledge_bases);
+                    
+                    // 檢查 URL 參數是否有指定知識庫
+                    checkURLForKnowledgeBase();
                 } else {
                     console.error('載入可用知識庫列表失敗');
                 }
             } catch (error) {
                 console.error('載入可用知識庫列表錯誤：', error);
+            }
+        }
+        
+        // 檢查 URL 參數並自動選擇知識庫
+        function checkURLForKnowledgeBase() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const kbId = urlParams.get('kb_id');
+            
+            if (kbId && elements.qaKnowledgeBaseSelect) {
+                // 檢查該知識庫是否存在於選項中
+                const options = elements.qaKnowledgeBaseSelect.options;
+                for (let i = 0; i < options.length; i++) {
+                    if (options[i].value === kbId) {
+                        elements.qaKnowledgeBaseSelect.value = kbId;
+                        selectedQAKBId = kbId;
+                        
+                        // 顯示提示訊息
+                        Dialog.success(`已自動選擇知識庫：${options[i].text}`);
+                        
+                        // 清除 URL 參數（避免重複提示）
+                        const newUrl = window.location.pathname;
+                        window.history.replaceState({}, document.title, newUrl);
+                        break;
+                    }
+                }
             }
         }
 
@@ -334,12 +421,19 @@
 
         function setButtonLoading(loading) {
             const sendBtn = elements.sendBtn;
+            const questionInput = elements.questionInput;
             if (loading) {
                 sendBtn.disabled = true;
                 sendBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> 處理中...';
+                if (questionInput) {
+                    questionInput.disabled = true;  // 禁用輸入框
+                }
             } else {
                 sendBtn.disabled = false;
                 sendBtn.innerHTML = '送出問題';
+                if (questionInput) {
+                    questionInput.disabled = false;  // 啟用輸入框
+                }
             }
         }
 
@@ -453,7 +547,7 @@
             userBlock.style.textAlign = "right";
             elements.answerDiv.appendChild(userBlock);
 
-            // 預留答案區塊
+            // 預留答案區塊，顯示載入動畫
             const answerBlock = document.createElement("div");
             answerBlock.className = "markdown-body";
             answerBlock.style.background = "#f4f4f4";
@@ -461,12 +555,9 @@
             answerBlock.style.marginBottom = "20px";
             elements.answerDiv.appendChild(answerBlock);
 
-            if (enableThink) {
-                fullAnswer += '<i class="fa-solid fa-robot"> 推理中...</i><BR/>';
-            } else {
-                fullAnswer += '<i class="fa-solid fa-robot"> 分析中...</i><BR/>';
-            }
-            answerBlock.innerHTML = marked.parse(fullAnswer);
+            // 顯示載入動畫
+            answerBlock.innerHTML = '<i class="fa fa-spinner fa-spin"></i> 處理中...';
+            fullAnswer = "";  // 清空 fullAnswer，等待實際內容
             elements.answerDiv.scrollTop = elements.answerDiv.scrollHeight;
 
             try {
@@ -616,8 +707,26 @@
             loadConversations();
             loadAvailableKnowledgeBases();
             checkThinkFeature();
+            
+            // 同步 UserMenu 的功能狀態
+            syncWithUserMenu();
         }
 
+        // 設定選擇的知識庫（供外部呼叫）
+        function setSelectedKnowledgeBase(kbId) {
+            if (elements.qaKnowledgeBaseSelect) {
+                const options = elements.qaKnowledgeBaseSelect.options;
+                for (let i = 0; i < options.length; i++) {
+                    if (options[i].value === kbId) {
+                        elements.qaKnowledgeBaseSelect.value = kbId;
+                        selectedQAKBId = kbId;
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+        
         // 公開 API
         return {
             init,
@@ -630,7 +739,8 @@
             showDrawerContent,
             sendQuestion,
             loadConversations,
-            checkThinkFeature
+            checkThinkFeature,
+            setSelectedKnowledgeBase
         };
     })();
 

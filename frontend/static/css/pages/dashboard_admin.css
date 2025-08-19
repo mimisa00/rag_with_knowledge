@@ -1,0 +1,81 @@
+/* ========================================
+   Dashboard Admin 頁面特有樣式
+   只包含 dashboard.css 沒有的管理員專屬樣式
+   ======================================== */
+
+/* ==================== 管理員特有：Prompt 顯示區域 ==================== */
+/* promptDrawer 作為 drawer-panel 已經有基礎的顯示控制，這裡只定義佈局 */
+#promptDrawer {
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden; /* 防止內容溢出 */
+}
+
+/* 當 promptDrawer 被激活時，確保它是 flex 佈局 */
+#promptDrawer.active {
+    display: flex !important; /* 覆蓋 .drawer-panel.active 的預設 flex */
+}
+
+#actualprompt {
+    border-radius: 8px;
+    font-size: 0.9em;
+    overflow-y: auto;
+    background: transparent; /* 配合背景底色 */
+    padding: 0.1em;
+    white-space: pre-wrap;
+    flex: 1; /* 使用 flex: 1 填滿剩餘空間到底部 */
+    min-height: 0; /* 允許收縮 */
+    margin-bottom: var(--spacing-md); /* 底部留白 */
+}
+
+/* 滾動時才顯示的捲軸 */
+#actualprompt::-webkit-scrollbar {
+    width: 6px;
+}
+
+#actualprompt::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+#actualprompt::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0);
+    border-radius: 3px;
+    transition: background 0.3s ease;
+}
+
+#actualprompt:hover::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+#actualprompt::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.5);
+}
+
+/* ==================== 管理員特有：藍色 H3 標題 ==================== */
+H3 {
+    color: #0000FF;
+    display: block;
+    font-size: 1.17em;
+    margin-block-start: 5px;
+    margin-block-end: 5px;
+    margin-inline-start: 0px;
+    margin-inline-end: 5px;
+    font-weight: bold;
+    unicode-bidi: isolate;
+}
+
+/* ==================== 覆蓋部分樣式以保持向後相容 ==================== */
+
+/* 調整 drawer 預設寬度（管理員版本較寬） */
+#drawerContainer {
+    width: 120px; /* 增加寬度以容納 3 個水平按鈕 */
+}
+
+#drawerContainer.drawer-closed {
+    width: 120px; /* 確保收合時也有足夠寬度 */
+}
+
+/* 覆蓋 dashboard.css 的設定 */
+#drawerContainer.drawer-closed #drawerToggleButtons {
+    width: 120px; /* 配合容器寬度 */
+}

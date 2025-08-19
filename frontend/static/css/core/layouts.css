@@ -233,11 +233,14 @@
   flex: 1;
   padding: var(--spacing-md);
   background-color: var(--bg-section);
-  overflow-y: auto;
+  overflow: auto; /* 一般管理頁面需要正常滾動 */
   min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .admin-container {
+  width: 100%;
   max-width: var(--container-max-width);
   margin: 0 auto;
   background-color: var(--bg-main);

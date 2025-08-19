@@ -6,13 +6,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>帳號管理 - E-Helper</title>
     <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/core/all.min.css">
+    <!-- 新的 CSS 架構 -->
+    <link rel="stylesheet" href="../css/themes/theme-variables.css">
+    <link rel="stylesheet" href="../css/core/base.css">
+    <link rel="stylesheet" href="../css/core/components.css">
+    <link rel="stylesheet" href="../css/core/utilities.css">
+    <link rel="stylesheet" href="../css/core/layouts.css">
     <!-- 引入 admin.css 作為基礎樣式（導航欄等） -->
-    <link rel="stylesheet" href="../css/admin.css">
+    <link rel="stylesheet" href="../css/pages/admin.css">
     <!-- 引入獨立的載入器樣式 -->
-    <link rel="stylesheet" href="../css/spinner-loader.css">
+    <link rel="stylesheet" href="../css/components/spinner-loader.css">
     <!-- 引入帳號管理頁面專用樣式 -->
-    <link rel="stylesheet" href="../css/user-management.css">
+    <link rel="stylesheet" href="../css/pages/user-management.css">
 </head>
 
 <body>
@@ -112,7 +118,7 @@
     <!-- 主要內容區 -->
     <main class="admin-main">
         <div class="admin-container">
-            <div id="accountManagerContainer" style="padding: 1em;"></div>
+            <div id="accountManagerContainer" class="account-container"></div>
         </div>
     </main>
 
@@ -148,8 +154,8 @@
                 
                 // 載入受保護的管理員模組
                 await ScriptLoader.loadProtectedAdminScriptsInOrder([
-                    'account-module.js',
-                    'user-management-page.js'        // 頁面初始化腳本
+                    'user-management.js',               // 頁面初始化腳本
+                    'user-management-module.js',
                 ]);
                 
                 // 初始化模組

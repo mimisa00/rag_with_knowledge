@@ -20,18 +20,36 @@ def get_available_knowledge_bases(
 ):
     """獲取可用的知識庫列表（供用戶選擇）"""
     try:
+        from app.core.rag import indexing
+        
         knowledge_bases = knowledge_base_dao.get_knowledge_bases()
-        # 只返回啟用狀態的知識庫
-        available_kbs = [kb for kb in knowledge_bases if kb["status"] == "enable"]
+        # 只返回啟用狀態且有索引的知識庫
+        available_kbs = []
+        for kb in knowledge_bases:
+            if kb["status"] == "enable":
+                # 檢查索引狀態
+                try:
+                    index_status = indexing.get_index_status(kb["id"])
+                    # 只有索引狀態為 ok 或 valid 的知識庫才會被返回
+                    if index_status.get("status") in ["ok", "valid"]:
+                        available_kbs.append(kb)
+                    elif index_status.get("is_valid") and index_status.get("index_vectors", 0) > 0:
+                        # 備用檢查：如果 status 欄位不存在但 is_valid 為 True 且有向量
+                        available_kbs.append(kb)
+                except Exception as index_error:
+                    # 如果檢查索引失敗，記錄但不加入列表
+                    logger.debug(f"知識庫 {kb['id']} 索引檢查失敗: {index_error}")
+                    continue
+        
         return {"knowledge_bases": available_kbs}
     except Exception as e:
         logger.error(f"獲取知識庫列表失敗: {e}")
         return {"knowledge_bases": []}
 
 
-@router.get("/knowledge-bases")
-def get_knowledge_bases(current_user: Dict[str, Any] = Depends(get_admin_user)):
-    """獲取知識庫列表（管理員專用）"""
+@router.get("/admin/knowledge-bases")
+def get_all_knowledge_bases(current_user: Dict[str, Any] = Depends(get_admin_user)):
+    """獲取所有知識庫列表（管理員專用，包含停用的）"""
     try:
         knowledge_bases = knowledge_base_dao.get_knowledge_bases()
         return {"knowledge_bases": knowledge_bases}
@@ -59,7 +77,8 @@ def create_knowledge_base(
     
     # 檢查 ID 是否已存在
     if knowledge_base_dao.check_kb_id_exists(kb_data.id):
-        raise HTTPException(status_code=400, detail="知識庫 ID 已存在")
+        logger.warning(f"嘗試創建已存在的知識庫 ID: {kb_data.id}")
+        raise HTTPException(status_code=400, detail=f"知識庫 ID '{kb_data.id}' 已存在，請使用不同的 ID")
     
     # 驗證 system_prompt 長度
     if len(kb_data.system_prompt) > 1024:
@@ -71,7 +90,11 @@ def create_knowledge_base(
     )
     
     if not success:
-        raise HTTPException(status_code=500, detail="知識庫創建失敗")
+        # 再次檢查是否因為 ID 重複（可能是並發問題）
+        if knowledge_base_dao.check_kb_id_exists(kb_data.id):
+            raise HTTPException(status_code=400, detail=f"知識庫 ID '{kb_data.id}' 已被其他用戶創建")
+        else:
+            raise HTTPException(status_code=500, detail="知識庫創建失敗，請稍後再試")
     
     # 創建對應的文件目錄
     paths = path_config.get_base_paths()

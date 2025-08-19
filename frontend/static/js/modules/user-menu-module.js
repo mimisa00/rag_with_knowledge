@@ -6,6 +6,12 @@
 const UserMenu = (() => {
     
     let isInitialized = false;
+    let currentUser = null;  // 儲存完整的用戶資訊
+    let featureStates = {
+        nounAnalysis: false,
+        thinkResponse: false,
+        thinkEnabled: true  // 系統是否允許推理
+    };
     
     /**
      * 初始化用戶選單
@@ -19,17 +25,28 @@ const UserMenu = (() => {
         // 綁定事件
         bindEvents();
         
+        // 添加功能開關
+        addFeatureToggles();
+        
+        // 檢查推理功能可用性
+        await checkThinkAvailability();
+        
         isInitialized = true;
     }
     
     /**
      * 載入用戶資訊
+     * @returns {Promise<Object>} 返回用戶資料物件
      */
     async function loadUserInfo() {
         try {
             const response = await fetch('/api/user/current-user');
             if (response.ok) {
                 const userData = await response.json();
+                
+                // 儲存完整的用戶資訊
+                currentUser = userData;
+                
                 const username = userData.username;
                 const initial = username.charAt(0).toUpperCase();
                 
@@ -63,16 +80,20 @@ const UserMenu = (() => {
                     navUserRole.style.display = 'inline-block';
                 }
                 
-                // 儲存用戶角色資訊
+                // 儲存用戶角色資訊（保持向後相容）
                 window.currentUserRole = userData.role;
                 
                 // 如果是管理員，添加系統管理按鈕
                 if (userData.role === 'admin') {
                     addAdminMenuButton();
                 }
+                
+                return userData;
             }
+            return null;
         } catch (error) {
             console.error('Error loading user info:', error);
+            return null;
         }
     }
     
@@ -293,16 +314,157 @@ const UserMenu = (() => {
         }
     }
     
+    /**
+     * 添加功能開關到選單
+     */
+    function addFeatureToggles() {
+        const menuContent = document.querySelector('.user-menu-content');
+        if (!menuContent) return;
+        
+        // 找到變更密碼按鈕
+        const changePasswordBtn = menuContent.querySelector('button[onclick*="showChangePasswordModal"], button[onclick*="UserMenu.showChangePasswordModal"]');
+        if (!changePasswordBtn) return;
+        
+        // 創建功能開關容器
+        const toggleContainer = document.createElement('div');
+        toggleContainer.className = 'feature-toggles-container';
+        toggleContainer.innerHTML = `
+            <div class="menu-item feature-toggle" id="nounAnalysisToggle">
+                <i class="fa-solid fa-brain"></i>
+                <span>名詞分析</span>
+                <i class="toggle-icon fa-solid fa-toggle-off"></i>
+            </div>
+            <div class="menu-item feature-toggle" id="thinkToggleMenuItem">
+                <i class="fa-solid fa-lightbulb"></i>
+                <span>推理功能</span>
+                <i class="toggle-icon fa-solid fa-toggle-off"></i>
+            </div>
+        `;
+        
+        // 插入到變更密碼按鈕之後
+        changePasswordBtn.parentNode.insertBefore(toggleContainer, changePasswordBtn.nextSibling);
+        
+        // 綁定點擊事件
+        const nounToggle = document.getElementById('nounAnalysisToggle');
+        const thinkToggle = document.getElementById('thinkToggleMenuItem');
+        
+        if (nounToggle) {
+            nounToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleNounAnalysis();
+            });
+        }
+        
+        if (thinkToggle) {
+            thinkToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleThinkResponse();
+            });
+        }
+    }
+    
+    /**
+     * 切換名詞分析功能
+     */
+    function toggleNounAnalysis() {
+        featureStates.nounAnalysis = !featureStates.nounAnalysis;
+        updateToggleUI('nounAnalysisToggle', featureStates.nounAnalysis);
+        
+        // 通知 QAModule 更新狀態
+        if (window.QAModule && window.QAModule.toggleNounAnalysis) {
+            window.QAModule.toggleNounAnalysis();
+        }
+    }
+    
+    /**
+     * 切換推理功能
+     */
+    function toggleThinkResponse() {
+        if (!featureStates.thinkEnabled) return;
+        
+        featureStates.thinkResponse = !featureStates.thinkResponse;
+        updateToggleUI('thinkToggleMenuItem', featureStates.thinkResponse);
+        
+        // 通知 QAModule 更新狀態
+        if (window.QAModule && window.QAModule.toggleThinkResponse) {
+            window.QAModule.toggleThinkResponse();
+        }
+    }
+    
+    /**
+     * 更新開關 UI
+     */
+    function updateToggleUI(toggleId, isEnabled) {
+        const toggle = document.getElementById(toggleId);
+        if (!toggle) return;
+        
+        const icon = toggle.querySelector('.toggle-icon');
+        if (icon) {
+            if (isEnabled) {
+                icon.classList.remove('fa-toggle-off');
+                icon.classList.add('fa-toggle-on');
+            } else {
+                icon.classList.remove('fa-toggle-on');
+                icon.classList.add('fa-toggle-off');
+            }
+        }
+    }
+    
+    /**
+     * 檢查推理功能可用性
+     */
+    async function checkThinkAvailability() {
+        try {
+            const res = await fetch('/api/user/is/enable/think');
+            const isEnabled = await res.json();
+            featureStates.thinkEnabled = isEnabled;
+            
+            // 更新 UI 顯示
+            const thinkToggle = document.getElementById('thinkToggleMenuItem');
+            if (thinkToggle) {
+                thinkToggle.style.display = isEnabled ? 'flex' : 'none';
+            }
+            
+            // 如果推理功能被禁用，確保狀態為關閉
+            if (!isEnabled) {
+                featureStates.thinkResponse = false;
+            }
+        } catch (error) {
+            console.error('檢查推理功能狀態失敗:', error);
+        }
+    }
+    
+    /**
+     * 獲取當前用戶資訊
+     * @returns {Object|null} 返回當前用戶資料或 null
+     */
+    function getCurrentUser() {
+        return currentUser;
+    }
+    
+    /**
+     * 獲取功能狀態
+     * @returns {Object} 返回功能狀態物件
+     */
+    function getFeatureStates() {
+        return featureStates;
+    }
+    
     // 公開API
     return {
         init,
         loadUserInfo,
+        getCurrentUser,
+        getFeatureStates,
         openUserMenu,
         closeUserMenu,
         showChangePasswordModal,
         closeChangePasswordModal,
         changePassword,
-        logout
+        logout,
+        checkThinkAvailability,
+        toggleNounAnalysis,
+        toggleThinkResponse
     };
 })();
 

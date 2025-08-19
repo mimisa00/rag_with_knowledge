@@ -15,8 +15,11 @@ const AdminDashboard = (() => {
         if (isInitialized) return;
         
         try {
-            // 載入用戶資訊
-            await loadUserInfo();
+            // 等待 UserMenu 初始化完成並獲取用戶資訊
+            if (window.UserMenu && !window.UserMenu.getCurrentUser()) {
+                await window.UserMenu.loadUserInfo();
+            }
+            currentUser = window.UserMenu.getCurrentUser();
             
             // 檢查管理員權限（只在有功能卡片的頁面檢查）
             const functionGrid = document.getElementById('functionGrid');
@@ -31,13 +34,7 @@ const AdminDashboard = (() => {
             
             // 初始化其他模組（for dashboard_admin.html）
             if (window.AdminUI) {
-                console.log('Initializing AdminUI...');
                 window.AdminUI.init();
-            }
-            
-            // 初始化用戶選單
-            if (window.UserMenu) {
-                window.UserMenu.init();
             }
             
             // 初始化 QA 模組
@@ -52,7 +49,6 @@ const AdminDashboard = (() => {
             hideLoader();
             
             isInitialized = true;
-            console.log('管理介面初始化完成');
             
         } catch (error) {
             console.error('管理介面初始化失敗:', error);
@@ -60,58 +56,6 @@ const AdminDashboard = (() => {
         }
     }
     
-    /**
-     * 載入用戶資訊
-     */
-    async function loadUserInfo() {
-        try {
-            const response = await fetch('/api/user/current-user', {
-                credentials: 'include'
-            });
-            
-            if (!response.ok) {
-                throw new Error('無法獲取用戶資訊');
-            }
-            
-            currentUser = await response.json();
-            
-            // 更新介面顯示
-            updateUserDisplay();
-            
-        } catch (error) {
-            console.error('載入用戶資訊失敗:', error);
-            throw error;
-        }
-    }
-    
-    /**
-     * 更新用戶資訊顯示
-     */
-    function updateUserDisplay() {
-        if (!currentUser) return;
-        
-        const usernameElement = document.getElementById('username');
-        const userRoleElement = document.getElementById('userRole');
-        
-        if (usernameElement) {
-            usernameElement.textContent = currentUser.username;
-        }
-        
-        if (userRoleElement) {
-            let roleText = '';
-            switch (currentUser.role) {
-                case 'admin':
-                    roleText = '系統管理員';
-                    break;
-                case 'org_admin':
-                    roleText = '組織管理員';
-                    break;
-                default:
-                    roleText = '一般用戶';
-            }
-            userRoleElement.textContent = roleText;
-        }
-    }
     
     /**
      * 綁定事件處理器
@@ -163,7 +107,6 @@ const AdminDashboard = (() => {
             
             // 處理 accountTab 特殊邏輯
             if (tabId === 'accountTab' && window.AccountModule) {
-                console.log('切換到帳號管理頁面');
                 window.AccountModule.loadUsers();
             }
         };

@@ -13,6 +13,11 @@ class KnowledgeBaseDAO(BaseDAO):
     def create_knowledge_base(self, kb_id: str, name: str, system_prompt: str = "", note: str = "") -> bool:
         """創建知識庫"""
         try:
+            # 先檢查 ID 是否已存在
+            if self.check_kb_id_exists(kb_id):
+                logger.warning(f"知識庫 ID {kb_id} 已存在")
+                return False
+            
             # 如果沒有提供 system_prompt，從資料庫配置中取得預設值
             if not system_prompt:
                 default_prompt = config_dao.get_config_by_key("system_prompt")
@@ -30,7 +35,9 @@ class KnowledgeBaseDAO(BaseDAO):
             if success:
                 logger.info(f"知識庫 {kb_id} 建立成功")
                 return True
-            return False
+            else:
+                logger.error(f"知識庫 {kb_id} 建立失敗：資料庫操作失敗")
+                return False
         except Exception as e:
             logger.error(f"建立知識庫 {kb_id} 失敗: {e}")
             return False

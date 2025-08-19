@@ -1,0 +1,178 @@
+/* ========================================
+   通用 Dialog 元件樣式
+   ======================================== */
+
+/* Dialog 基礎樣式 */
+.dialog-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+    z-index: var(--z-modal);
+    align-items: center;
+    justify-content: center;
+}
+
+.dialog-overlay.show {
+    display: flex;
+    animation: fadeIn var(--transition-fast);
+}
+
+/* Dialog 容器 */
+.dialog-container {
+    background: var(--bg-main);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow: hidden;
+    animation: slideUp var(--transition-normal);
+}
+
+.dialog-container.dialog-sm {
+    max-width: 400px;
+}
+
+.dialog-container.dialog-md {
+    max-width: 600px;
+}
+
+.dialog-container.dialog-lg {
+    max-width: 800px;
+}
+
+/* Dialog Header */
+.dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-md);
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-light);
+}
+
+.dialog-header h3 {
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.dialog-close {
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-sm);
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    color: var(--text-muted);
+    font-size: var(--font-size-xl);
+}
+
+.dialog-close:hover {
+    color: var(--text-primary);
+}
+
+/* Dialog Body */
+.dialog-body {
+    padding: var(--spacing-lg);
+    overflow-y: auto;
+    max-height: 60vh;
+}
+
+.dialog-message {
+    text-align: center;
+    color: var(--text-primary);
+    line-height: 1.6;
+}
+
+.dialog-message.dialog-warning {
+    color: var(--warning);
+}
+
+.dialog-message.dialog-error {
+    color: var(--danger);
+}
+
+.dialog-message.dialog-success {
+    color: var(--success);
+}
+
+.dialog-message.dialog-info {
+    color: var(--info);
+}
+
+/* Dialog Footer */
+.dialog-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+    border-top: 1px solid var(--border-color);
+    background: var(--bg-light);
+}
+
+/* Dialog 圖標 */
+.dialog-icon {
+    font-size: 3rem;
+    margin-bottom: var(--spacing-md);
+    display: block;
+    text-align: center;
+}
+
+.dialog-icon.icon-success {
+    color: var(--success);
+}
+
+.dialog-icon.icon-warning {
+    color: var(--warning);
+}
+
+.dialog-icon.icon-error {
+    color: var(--danger);
+}
+
+.dialog-icon.icon-info {
+    color: var(--info);
+}
+
+/* 動畫效果 */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    .dialog-container {
+        width: 95%;
+        margin: 10px;
+    }
+    
+    .dialog-body {
+        padding: var(--spacing-md);
+    }
+}

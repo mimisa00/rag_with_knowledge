@@ -64,6 +64,8 @@ CREATE TABLE IF NOT EXISTS knowledge_bases (
     note TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    chunk_size INT DEFAULT NULL COMMENT '知識庫特定的 chunk_size 設定',
+    chunk_overlap INT DEFAULT NULL COMMENT '知識庫特定的 chunk_overlap 設定',
     INDEX idx_status (status),
     INDEX idx_name (name),
     INDEX idx_created_at (created_at)
@@ -81,6 +83,8 @@ CREATE TABLE IF NOT EXISTS index_jobs (
     error_message TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    chunk_size INT DEFAULT NULL COMMENT '建立索引時使用的 chunk_size',
+    chunk_overlap INT DEFAULT NULL COMMENT '建立索引時使用的 chunk_overlap',
     FOREIGN KEY (kb_id) REFERENCES knowledge_bases(id) ON DELETE CASCADE,
     INDEX idx_kb_id (kb_id),
     INDEX idx_status (status),

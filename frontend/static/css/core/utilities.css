@@ -198,6 +198,9 @@
 .text-right { text-align: right !important; }
 .text-justify { text-align: justify !important; }
 
+/* 圖標大小 */
+.icon-lg { font-size: 1.2em !important; }
+
 /* 大小 */
 .text-xs { font-size: var(--font-size-xs) !important; }
 .text-sm { font-size: var(--font-size-sm) !important; }

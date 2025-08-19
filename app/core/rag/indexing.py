@@ -107,16 +107,28 @@ def save_kb_index(kb_id: str = None):
         raise
 
 
-def process_documents_and_update_index(doc_texts: List[Dict[str, Any]]) -> int:
-    """處理文檔並更新索引"""
+def process_documents_and_update_index(doc_texts: List[Dict[str, Any]], chunk_size: Optional[int] = None, chunk_overlap: Optional[int] = None) -> int:
+    """處理文檔並更新索引
+    
+    Args:
+        doc_texts: 文檔文本列表
+        chunk_size: 自訂的 chunk_size，如果為 None 則使用系統預設值
+        chunk_overlap: 自訂的 chunk_overlap，如果為 None 則使用系統預設值
+    
+    Returns:
+        int: 產生的 chunk 數量
+    """
     global texts, index
 
     logger.info("開始處理文檔並更新索引")
     logger.info(f"原始文件數量: {len(doc_texts)}")
 
+    # 優先使用傳入的參數，否則使用系統配置
     config = app_config.all
-    chunk_size = int(config.get("chunk_size", "512"))
-    chunk_overlap = int(config.get("chunk_overlap", "64"))
+    if chunk_size is None:
+        chunk_size = int(config.get("chunk_size", "512"))
+    if chunk_overlap is None:
+        chunk_overlap = int(config.get("chunk_overlap", "64"))
 
     logger.info(f"分割參數 - chunk_size: {chunk_size}, chunk_overlap: {chunk_overlap}")
     
@@ -353,11 +365,11 @@ class IndexingManager:
     def get_index_status(self, kb_id: str = None):
         return get_index_status(kb_id)
     
-    def process_documents_and_update_index(self, doc_texts: List[Dict[str, Any]], kb_id: str = None):
+    def process_documents_and_update_index(self, doc_texts: List[Dict[str, Any]], kb_id: str = None, chunk_size: Optional[int] = None, chunk_overlap: Optional[int] = None):
         # 載入知識庫特定的索引
         load_kb_index(kb_id)
-        # 處理文檔並更新索引
-        chunk_count = process_documents_and_update_index(doc_texts)
+        # 處理文檔並更新索引，傳遞自訂的 chunk 參數
+        chunk_count = process_documents_and_update_index(doc_texts, chunk_size, chunk_overlap)
         # 儲存知識庫特定的索引
         save_kb_index(kb_id)
         return chunk_count

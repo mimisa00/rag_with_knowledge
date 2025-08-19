@@ -1,0 +1,9 @@
+# 解決因為windows和linux的換行符號不同導致git diff 出現很多無意義的變化
+
+# 強制這些檔案使用 LF
+*.py text eol=lf
+*.sh text eol=lf
+*.html text eol=lf
+*.yml text eol=lf
+*.md text eol=lf
+*.json text eol=lf

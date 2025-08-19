@@ -22,13 +22,13 @@ const AdminRouter = (() => {
         'system-params': {
             title: '系統參數',
             url: '/admin/system-params.html',
-            module: 'param-module.js',
+            module: 'system-params-module.js',
             roles: ['admin']
         },
         'user-management': {
             title: '帳號管理',
             url: '/admin/user-management.html',
-            module: 'account-module.js',
+            module: 'user-management-module.js',
             roles: ['admin']
         }
     };
@@ -126,7 +126,7 @@ const AdminRouter = (() => {
             }
         });
         
-        console.log('管理路由初始化完成');
+        // 管理路由初始化完成
     }
     
     /**

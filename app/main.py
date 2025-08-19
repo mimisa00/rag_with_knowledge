@@ -194,6 +194,7 @@ static_dir = path_config.get_base_paths()["STATIC_DIR"]
 static_dirs = {
     "css": os.path.join(static_dir, "css"),
     "js/modules": os.path.join(static_dir, "js", "modules"),  # 只掛載公共模組
+    "js/lib": os.path.join(static_dir, "js", "lib"),  # 第三方函式庫 (marked.js 等)
     "components": os.path.join(static_dir, "components")
 }
 

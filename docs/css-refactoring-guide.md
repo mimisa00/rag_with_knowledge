@@ -22,7 +22,7 @@
 - [x] dashboard.html 和相關檔案 (2025-01-14 完成)
 - [x] dashboard_admin.html 和相關檔案 (2025-01-14 完成)
 - [x] admin.html 和相關檔案 (2025-01-14 第二次重構完成)
-- [x] admin/knowledge-base.html 和相關檔案 (2025-01-14 麵包屑導航更新)
+- [x] admin/knowledge-base.html 和 knowledge-base.css (2025-01-15 第二階段重構完成)
 - [x] admin/system-params.html 和相關檔案 (2025-01-14 麵包屑導航更新)
 - [x] admin/user-management.html 和相關檔案 (2025-01-14 麵包屑導航更新)
 
@@ -450,8 +450,8 @@ select.form-control {
 1. ✅ ~~dashboard.html 修復與重構~~ (2025-01-14 完成)
 2. ✅ ~~dashboard_admin.html 修復與重構~~ (2025-01-14 完成)
 3. ✅ ~~admin.html - 新版管理介面~~ (2025-01-14 完成)
-4. admin/knowledge-base.html - 知識庫管理頁（下一個目標）
-5. admin/system-params.html - 系統參數頁
+4. ✅ ~~admin/knowledge-base.html - 知識庫管理頁~~ (2025-01-15 CSS 進行中)
+5. admin/system-params.html - 系統參數頁（下一個目標）
 6. admin/user-management.html - 使用者管理頁
 
 ### 注意事項（給 compact 後的自己）
@@ -558,6 +558,37 @@ select.form-control {
 
 ---
 
+## knowledge-base.html 第三階段修改（2025-01-15 - 完成）
+
+### 已完成項目
+1. [x] 版面高度固定（添加 admin-layout class）
+2. [x] 添加 Footer 公司標識
+3. [x] 統一變更密碼 Modal 樣式
+4. [x] 按鈕風格統一（改用標準 btn 類別）
+5. [x] alert 改用 Dialog 呈現（覆蓋原生 alert）
+6. [x] 統一現有 Dialog 樣式（添加關閉按鈕）
+7. [x] Dialog/Modal 完全視覺統一
+
+### 主要改動
+- **版面高度**：body 添加 `admin-layout` class
+- **Footer**：添加與 admin.html 相同的公司標識
+- **Modal 統一**：
+  - 所有 Modal 都有關閉按鈕
+  - 變更密碼使用 form-control 和 form-label
+  - 移除藍色 header，統一使用灰色背景
+- **按鈕系統**：
+  - 移除所有 btn-kb-* 自定義類別
+  - 改用標準 btn btn-primary/secondary/success/danger/info/warning
+  - 統一 hover 特效
+- **Dialog 系統完整實施**：
+  - 新增獨立的 dialog.css 和 dialog.js 元件
+  - 實現完整的 Dialog API (show, success, error, warning, info, confirm)
+  - 背景模糊效果 (backdrop-filter: blur(5px))
+  - 關閉按鈕無邊框，大小與 Modal 一致
+  - 標題使用瀏覽器預設 h3 大小
+
+---
+
 ## admin.html 第三階段修改（2025-01-14 - 導航系統優化）
 
 ### 麵包屑導航實施
@@ -596,5 +627,44 @@ select.form-control {
 
 ---
 
-最後更新時間：2025-01-14
-當前狀態：所有管理頁面導航系統已完成重構，明天將繼續處理其他 CSS 優化工作
+## knowledge-base.html 重構記錄（2025-01-15 完成）
+
+### 第一階段修改（CSS 檔案重構）
+1. **CSS 重構成果**
+   - 檔案大小：從 409 行減少到 241 行（減少 168 行，約 41%）
+   - 移除所有重複定義（基礎樣式、表單元素、按鈕、模態框等）
+   - 全面改用 CSS 變數系統
+   - 保留知識庫特有樣式（分割條、檔案列表、索引摘要、載入覆蓋層）
+
+### 第二階段修改（移除內聯樣式）
+1. **HTML 重構成果**
+   - **內聯樣式數量**：從 103 個減少到 0 個（100% 移除）
+   - 新增 70+ 個語義化 CSS 類別
+   - 統一使用工具類別（d-none、mb-sm、flex-1 等）
+
+2. **新增的主要 CSS 類別**
+   - **空狀態類別**：kb-empty-state、kb-empty-icon、kb-empty-title 等
+   - **佈局類別**：kb-selected-layout、kb-management-panel、kb-file-panel 等
+   - **按鈕類別**：btn-kb-primary、btn-kb-danger、btn-kb-info 等
+   - **表單類別**：kb-label、kb-input、kb-select、kb-textarea 等
+   - **模態框類別**：modal-content-md、modal-header-blue、modal-file-list 等
+
+3. **優化重點**
+   - 使用 CSS 變數替代所有硬編碼顏色
+   - 統一使用間距和圓角變數
+   - 保持與其他已重構頁面的一致性
+   - 改善響應式設計
+
+### 測試檢查清單
+- [ ] 頁面正常載入
+- [ ] 知識庫建立、編輯、刪除功能正常
+- [ ] 檔案上傳功能正常
+- [ ] 索引建立功能正常
+- [ ] 模態框顯示正常
+- [ ] 響應式佈局正常
+- [ ] 分割條拖動功能正常
+
+---
+
+最後更新時間：2025-01-15
+當前狀態：knowledge-base.html CSS 重構完成，待測試驗證

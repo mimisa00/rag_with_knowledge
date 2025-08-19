@@ -6,10 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>系統管理 - E-Helper</title>
     <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- 核心 CSS 架構已經包含在 admin.css 中 -->
-    <link rel="stylesheet" href="css/admin.css">
-    <link rel="stylesheet" href="css/spinner-loader.css">
+    <link rel="stylesheet" href="css/core/all.min.css">
+    <!-- 新的 CSS 架構 -->
+    <link rel="stylesheet" href="css/themes/theme-variables.css">
+    <link rel="stylesheet" href="css/core/base.css">
+    <link rel="stylesheet" href="css/core/components.css">
+    <link rel="stylesheet" href="css/core/utilities.css">
+    <link rel="stylesheet" href="css/core/layouts.css">
+    <!-- 頁面專用樣式 -->
+    <link rel="stylesheet" href="css/pages/admin.css">
+    <link rel="stylesheet" href="css/components/spinner-loader.css">
 </head>
 
 <body class="admin-layout">
@@ -75,25 +81,27 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>變更密碼</h3>
-                <i class="fa-solid fa-key"></i>
+                <button class="modal-close" onclick="closeChangePasswordModal()">
+                    <i class="fa-solid fa-times"></i>
+                </button>
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label for="oldPassword">舊密碼</label>
-                    <input type="password" id="oldPassword" required>
+                    <label for="oldPassword" class="form-label">舊密碼</label>
+                    <input type="password" id="oldPassword" class="form-control" required>
                 </div>
                 <div class="form-group">
-                    <label for="newPassword">新密碼</label>
-                    <input type="password" id="newPassword" required minlength="6">
+                    <label for="newPassword" class="form-label">新密碼</label>
+                    <input type="password" id="newPassword" class="form-control" required minlength="6">
                 </div>
                 <div class="form-group">
-                    <label for="confirmNewPassword">確認新密碼</label>
-                    <input type="password" id="confirmNewPassword" required minlength="6">
+                    <label for="confirmNewPassword" class="form-label">確認新密碼</label>
+                    <input type="password" id="confirmNewPassword" class="form-control" required minlength="6">
                 </div>
             </div>
             <div class="modal-footer">
-                <button onclick="closeChangePasswordModal()" class="btn-secondary">取消</button>
-                <button onclick="changePassword()" class="btn-primary">確認變更</button>
+                <button onclick="closeChangePasswordModal()" class="btn btn-secondary">取消</button>
+                <button onclick="changePassword()" class="btn btn-primary">確認變更</button>
             </div>
         </div>
     </div>
@@ -259,9 +267,15 @@
                     'admin.js'    // 管理首頁邏輯
                 ]);
                 
-                // 初始化模組
+                // 按順序初始化模組
+                // 1. 先初始化 UserMenu（載入用戶資訊）
+                await UserMenu.init();
+                
+                // 2. 隱藏載入指示器
                 CommonUI.hideSpinner();
-                UserMenu.init();
+                
+                // 3. AdminDashboard.init() 會在 admin.js 中自動執行
+                // 它會使用 UserMenu.getCurrentUser() 獲取已載入的用戶資訊
                 
                 console.log('所有模組載入完成');
             } catch (error) {

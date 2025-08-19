@@ -105,22 +105,16 @@
 
         // 初始化函數 - 擴展 CommonUI
         init: function() {
-            console.log('Initializing AdminUI extensions...');
-            
             // 檢查 CommonUI 是否存在
             if (!window.CommonUI) {
                 console.error('CommonUI not found, cannot extend');
                 return;
             }
             
-            console.log('CommonUI found, extending functions...');
-            
             // 添加 checkThinkFeature 到 CommonUI
             if (!window.CommonUI.checkThinkFeature) {
                 window.CommonUI.checkThinkFeature = AdminUI.checkThinkFeature;
             }
-            
-            console.log('AdminUI initialization complete');
         }
     };
 

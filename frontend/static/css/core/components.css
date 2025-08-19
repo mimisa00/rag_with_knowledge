@@ -356,6 +356,7 @@ select.form-control {
   justify-content: space-between;
   padding: var(--spacing-md);
   border-bottom: 1px solid var(--border-color);
+  background: var(--bg-light);
 }
 
 .modal-header h3 {
@@ -374,6 +375,7 @@ select.form-control {
   gap: var(--spacing-sm);
   padding: var(--spacing-md);
   border-top: 1px solid var(--border-color);
+  background: var(--bg-light);
 }
 
 .modal-close {
@@ -397,65 +399,6 @@ select.form-control {
   color: var(--text-primary);
 }
 
-/* ==================== 載入器 ==================== */
-.loader {
-  width: 40px;
-  height: 40px;
-  border: 4px solid var(--loader-secondary);
-  border-top-color: var(--loader-primary);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-.loader-sm {
-  width: 20px;
-  height: 20px;
-  border-width: 2px;
-}
-
-.loader-lg {
-  width: 60px;
-  height: 60px;
-  border-width: 6px;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.loader-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(5px);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: var(--z-loader);
-}
-
-.loader-text {
-  margin-top: var(--spacing-md);
-  color: white;
-  font-size: var(--font-size-lg);
-}
-
-/* 角落載入器 */
-.corner-loader-overlay {
-  position: fixed;
-  bottom: var(--spacing-lg);
-  right: var(--spacing-lg);
-  z-index: var(--z-loader);
-  display: none;
-}
-
-.corner-loader-overlay.show {
-  display: block;
-}
 
 /* ==================== 警告訊息 ==================== */
 .alert {

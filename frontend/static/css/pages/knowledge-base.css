@@ -1,0 +1,1949 @@
+/* 知識庫管理頁面專用樣式 */
+/* 使用新的 CSS 架構，僅保留頁面特有樣式 */
+
+/* ========================================
+   抽屜式布局
+   ======================================== */
+
+/* 主布局容器 */
+.kb-layout {
+    display: flex;
+    height: 100%; /* 使用父容器高度，避免計算錯誤 */
+    overflow: hidden;
+}
+
+/* 抽屜容器 */
+#kbDrawerContainer {
+    background: var(--bg-light);
+    border-right: 1px solid var(--border-color);
+    transition: all var(--transition-normal);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    z-index: 10;
+}
+
+#kbDrawerContainer.drawer-closed {
+    width: 50px;
+}
+
+#kbDrawerContainer.drawer-open {
+    width: 300px;
+}
+
+/* 抽屜按鈕區 */
+#kbDrawerButtons {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    padding: var(--spacing-sm);
+    gap: var(--spacing-xs);
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-main);
+}
+
+/* 抽屜內容 */
+#kbDrawerContent {
+    flex: 1;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity var(--transition-normal);
+    padding: var(--spacing-md);
+}
+
+#kbDrawerContainer.drawer-open #kbDrawerContent {
+    opacity: 1;
+}
+
+#kbDrawerContainer.drawer-closed #kbDrawerContent {
+    pointer-events: none;
+}
+
+/* 抽屜面板 */
+.drawer-panel {
+    display: none;
+    flex-direction: column;
+    height: 100%;
+}
+
+.drawer-panel.active {
+    display: flex;
+}
+
+.drawer-panel h4 {
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 2px solid var(--primary);
+    color: var(--text-primary);
+}
+
+/* 知識庫列表 */
+.kb-list-container {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.kb-search {
+    margin-bottom: var(--spacing-sm);
+}
+
+.kb-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    overflow-y: auto;
+    overflow-x: hidden; /* 禁止水平滾動 */
+    flex: 1;
+    /* 隱藏 scrollbar，hover 時顯示 */
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+}
+
+/* Scrollbar 樣式 - 預設隱藏 */
+.kb-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.kb-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.kb-list::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 3px;
+}
+
+/* Hover 時顯示 scrollbar */
+.kb-list:hover {
+    scrollbar-color: rgba(0, 0, 0, 0.2) rgba(0, 0, 0, 0.05);
+}
+
+.kb-list:hover::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.kb-list:hover::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.kb-list li {
+    padding: var(--spacing-sm) var(--spacing-md);
+    margin-bottom: var(--spacing-xs);
+    background: white;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-sm); /* 確保元素之間有間距 */
+}
+
+.kb-list li:hover {
+    background: var(--bg-hover);
+    transform: translateX(5px);
+}
+
+.kb-list li.active {
+    background: var(--primary);
+    color: white;
+}
+
+.kb-list li.active .badge {
+    background: white;
+    color: var(--primary);
+}
+
+/* 知識庫項目內容 */
+.kb-item-content {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 0; /* 允許 flex 子元素縮小 */
+    gap: var(--spacing-md); /* 圖標與文字的間距 */
+}
+
+.kb-item-icon {
+    flex-shrink: 0; /* 圖標不縮小 */
+    font-size: 1.2rem;
+    color: var(--primary);
+}
+
+.kb-list li.active .kb-item-icon {
+    color: white;
+}
+
+.kb-item-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    line-height: 1.2;
+}
+
+/* 優化 Badge 樣式 */
+.kb-status-badge {
+    flex-shrink: 0;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.kb-status-badge.badge-enable {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+}
+
+.kb-status-badge.badge-disable {
+    background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+    color: white;
+    box-shadow: 0 2px 4px rgba(107, 114, 128, 0.2);
+}
+
+.kb-list li.active .kb-status-badge {
+    background: white !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.kb-list li.active .kb-status-badge.badge-enable {
+    color: #10b981;
+}
+
+.kb-list li.active .kb-status-badge.badge-disable {
+    color: #6b7280;
+}
+
+/* 知識庫資訊表單 */
+.kb-info-form {
+    overflow-y: auto;
+    padding-right: var(--spacing-sm);
+}
+
+/* 知識庫資訊區塊 - 可捲動但隱藏 scrollbar */
+.kb-info-section {
+    overflow: visible; /* 改為 visible，讓按鈕可以浮出 */
+    flex: 1;
+    padding-right: var(--spacing-sm);
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+    display: flex;
+    flex-direction: column;
+}
+
+.kb-info-section::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+}
+
+/* 左右兩欄布局 */
+.kb-info-layout {
+    display: flex;
+    gap: var(--spacing-xl);
+    /* 扣除按鈕組和 hr 的高度：按鈕40px + margin 16px + hr上下margin 48px + hr border 1px = 105px */
+    height: calc(100% - 105px);
+}
+
+.kb-info-left {
+    flex: 0 0 40%;
+    min-width: 300px;
+    overflow-y: auto;
+    height: 100%;
+    /* 隱藏 scrollbar 樣式 */
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+}
+
+.kb-info-right {
+    flex: 1;
+    min-width: 350px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+/* kb-info-left scrollbar 樣式 */
+.kb-info-left::-webkit-scrollbar {
+    width: 6px;
+}
+
+.kb-info-left::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.kb-info-left::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 3px;
+}
+
+/* Hover 時顯示 scrollbar */
+.kb-info-left:hover {
+    scrollbar-color: rgba(0, 0, 0, 0.2) rgba(0, 0, 0, 0.05);
+}
+
+.kb-info-left:hover::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.kb-info-left:hover::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.kb-prompt-section {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.kb-prompt-textarea {
+    flex: 1;
+    resize: none;
+    font-family: 'Courier New', monospace;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.kb-info-form .form-label,
+.kb-info-left .form-label,
+.kb-info-right .form-label {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.3rem;
+}
+
+/* 權限預覽 */
+.permission-preview {
+    padding: var(--spacing-md);
+    background: var(--bg-section);
+    border-radius: var(--radius-md);
+}
+
+.feature-list {
+    list-style: none;
+    padding: 0;
+    margin: var(--spacing-md) 0;
+}
+
+.feature-list li {
+    padding: var(--spacing-sm) 0;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+/* 主內容區 */
+.kb-main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    overflow: hidden; /* 改回 hidden 限制內容 */
+    background: var(--bg-section);
+    min-width: 0; /* 允許 flex 子元素縮小 */
+}
+
+/* 選中知識庫後的內容 */
+#selectedKBState {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden; /* 改回 hidden 避免內容撐開 */
+    padding: var(--spacing-lg);
+    padding-top: 0;
+    min-width: 0; /* 允許內容縮小 */
+}
+
+/* 空狀態 */
+.kb-empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: var(--spacing-lg);
+}
+
+.empty-state-card {
+    text-align: center;
+    padding: 3rem;
+    background: white;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    max-width: 600px;
+}
+
+.kb-empty-icon {
+    font-size: 4rem;
+    color: var(--primary);
+    margin-bottom: var(--spacing-lg);
+}
+
+.quick-start-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-lg);
+}
+
+.quick-card {
+    padding: var(--spacing-lg);
+    background: var(--bg-light);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    border: 2px solid transparent;
+}
+
+.quick-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+.quick-card i {
+    font-size: 2rem;
+    color: var(--primary);
+    margin-bottom: var(--spacing-sm);
+}
+
+.quick-card h4 {
+    margin-bottom: var(--spacing-xs);
+    color: var(--text-primary);
+}
+
+.quick-card p {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+/* 狀態列 */
+.kb-status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: white;
+    border-radius: 0;
+    box-shadow: var(--shadow-sm);
+    margin: 0 calc(-1 * var(--spacing-lg));
+    margin-bottom: var(--spacing-lg); /* 增加下邊距給 TAB 更多空間 */
+    height: 62px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.current-kb-info {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.current-kb-info i {
+    color: var(--primary);
+    font-size: 1.5rem;
+}
+
+.current-kb-info span {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.kb-stats {
+    display: flex;
+    gap: var(--spacing-lg);
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    color: var(--text-secondary);
+}
+
+/* Tab 設計 */
+.kb-tabs {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    border-bottom: 2px solid var(--border-color);
+    padding-top: 4px; /* 為 TAB 按鈕浮出效果預留空間 */
+    overflow: visible; /* 確保浮出效果不被裁切 */
+}
+
+.tab-btn {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    color: var(--text-secondary);
+    font-size: 1rem;
+}
+
+.tab-btn:hover:not(:disabled) {
+    color: var(--primary);
+    z-index: 10; /* 確保浮出時不被其他元素遮擋 */
+    position: relative; /* 需要 position 才能使 z-index 生效 */
+}
+
+.tab-btn.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+    font-weight: 600;
+}
+
+/* 禁用的 Tab 樣式 */
+.tab-btn:disabled,
+.tab-btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: #f5f5f5;
+    color: var(--text-muted);
+}
+
+.tab-btn:disabled:hover,
+.tab-btn.disabled:hover {
+    color: var(--text-muted);
+}
+
+/* Tab 內容 - 可捲動但完全隱藏 scrollbar */
+.tab-content {
+    flex: 1;
+    background: white;
+    border-radius: var(--radius-md);
+    padding: var(--spacing-lg);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+}
+
+.tab-content::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+}
+
+.tab-pane {
+    display: none;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden; /* 改為 hidden 避免撐開 */
+    min-width: 0; /* 允許內容縮小 */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+/* 索引 Tab 特別處理 */
+#indexTab {
+    overflow: hidden; /* 確保內容不撐開 */
+}
+
+.tab-pane::-webkit-scrollbar {
+    display: none;
+}
+
+.tab-pane.active {
+    display: flex;
+}
+
+/* 操作列 */
+.action-bar {
+    display: flex;
+    gap: var(--spacing-sm);
+    padding-top: 4px; /* 為按鈕浮出效果預留空間 */
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* 索引操作區已改用 .action-bar 樣式 */
+
+/* 檔案列表 */
+.file-list-container {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.file-list {
+    flex: 1;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    background: var(--bg-light);
+}
+
+/* 索引摘要 */
+.index-summary {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: auto;  /* 處理水平溢出 */
+    background: var(--bg-section);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    white-space: pre-wrap;
+    word-wrap: break-word;  /* 強制長單詞換行 */
+    word-break: break-all;  /* 允許在任意位置換行 */
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    max-height: calc(100vh - 450px);
+    min-height: 200px;
+    max-width: 100%;  /* 限制最大寬度 */
+    min-width: 0;  /* 確保可以縮小 */
+    box-sizing: border-box;  /* 包含 padding 和 border */
+}
+
+/* ========================================
+   統一的動畫 Scrollbar 樣式
+   ======================================== */
+
+/* 統一的 Scrollbar 樣式 - 預設隱藏 */
+.file-list,
+.index-summary,
+.kb-prompt-textarea {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+    transition: scrollbar-color 0.3s ease;
+}
+
+/* Webkit 瀏覽器的 scrollbar 樣式 */
+.file-list::-webkit-scrollbar,
+.index-summary::-webkit-scrollbar,
+.kb-prompt-textarea::-webkit-scrollbar {
+    width: 8px;
+}
+
+.file-list::-webkit-scrollbar-track,
+.index-summary::-webkit-scrollbar-track,
+.kb-prompt-textarea::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 5px;
+    transition: background 0.3s ease;
+}
+
+.file-list::-webkit-scrollbar-thumb,
+.index-summary::-webkit-scrollbar-thumb,
+.kb-prompt-textarea::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 4px;
+    transition: background 0.3s ease;
+}
+
+/* Hover 時動畫顯示 scrollbar */
+.file-list:hover,
+.index-summary:hover,
+.kb-prompt-textarea:hover {
+    scrollbar-color: rgba(0, 0, 0, 0.3) rgba(0, 0, 0, 0.05);
+}
+
+.file-list:hover::-webkit-scrollbar-thumb,
+.index-summary:hover::-webkit-scrollbar-thumb,
+.kb-prompt-textarea:hover::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.file-list:hover::-webkit-scrollbar-track,
+.index-summary:hover::-webkit-scrollbar-track,
+.kb-prompt-textarea:hover::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+/* ========================================
+   舊版樣式（保留以確保相容性）
+   ======================================== */
+
+/* 分割條樣式 - 已不需要，但保留以防舊代碼引用 */
+#resizer {
+    display: none;
+}
+
+/* 檔案列表區域 */
+#fileCheckboxList {
+    height: calc(100vh - 400px);
+    min-height: 300px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    padding: var(--spacing-sm);
+    background: var(--bg-light);
+    border-radius: var(--radius-md);
+}
+
+/* 索引摘要區域 - 樣式已由 .index-summary 處理 */
+
+/* 權限設定預留區塊 */
+.permission-placeholder {
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: var(--bg-light);
+    border: 1px dashed var(--border-color);
+    border-radius: var(--radius-md);
+}
+
+.permission-placeholder h4 {
+    color: var(--text-secondary);
+    margin-top: 0;
+}
+
+.permission-placeholder p {
+    color: var(--text-secondary);
+    font-style: italic;
+    margin-bottom: 0;
+}
+
+/* ========================================
+   專用 Loading 覆蓋層
+   ======================================== */
+
+/* 上傳檔案 Loading 覆蓋層 */
+.upload-loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.95);
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: var(--z-loader);
+    border-radius: var(--radius-lg);
+    opacity: 1;
+    transition: opacity 2s ease;
+}
+
+.upload-loading-overlay .loader {
+    border: 8px solid rgba(52, 152, 219, 0.2);
+    border-top: 8px solid var(--primary);
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    animation: spin 1s linear infinite;
+    margin-bottom: var(--spacing-lg);
+    transition: transform 2s ease-out, opacity 1s ease;
+}
+
+/* 成功狀態的勾選圖示 */
+.upload-loading-overlay .loader.success {
+    animation: none;
+    border: none;
+    background-color: var(--success);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 2em;
+}
+
+.upload-loading-overlay .loader.success::before {
+    content: '✓';
+    font-weight: bold;
+}
+
+.upload-loading-overlay .loading-text {
+    font-size: 1.3em;
+    color: var(--primary);
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: var(--spacing-sm);
+    transition: transform 2s ease-out, opacity 1s ease;
+}
+
+.upload-loading-overlay .loading-text.success {
+    color: var(--success);
+}
+
+.upload-loading-overlay .loading-detail {
+    font-size: 1em;
+    color: var(--text-secondary);
+    text-align: center;
+    max-width: 300px;
+    line-height: 1.5;
+}
+
+/* 建立索引 Loading 覆蓋層 */
+.build-index-loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.95);
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: var(--z-loader);
+    border-radius: var(--radius-lg);
+    opacity: 1;
+    transition: opacity 2s ease;
+}
+
+.build-index-loading-overlay .loader {
+    border: 8px solid rgba(0, 123, 255, 0.2);
+    border-top: 8px solid var(--info);
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    animation: spin 1s linear infinite;
+    margin-bottom: var(--spacing-lg);
+    transition: transform 2s ease-out, opacity 1s ease;
+}
+
+/* 成功狀態的勾選圖示 */
+.build-index-loading-overlay .loader.success {
+    animation: none;
+    border: none;
+    background-color: var(--success);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 2em;
+}
+
+.build-index-loading-overlay .loader.success::before {
+    content: '✓';
+    font-weight: bold;
+}
+
+.build-index-loading-overlay .loading-text {
+    font-size: 1.3em;
+    color: var(--info);
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: var(--spacing-sm);
+    transition: transform 2s ease-out, opacity 1s ease;
+}
+
+.build-index-loading-overlay .loading-text.success {
+    color: var(--success);
+}
+
+.build-index-loading-overlay .loading-detail {
+    font-size: 1em;
+    color: var(--text-secondary);
+    text-align: center;
+    max-width: 300px;
+    line-height: 1.5;
+}
+
+/* 動畫定義 */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ========================================
+   索引成功提示樣式
+   ======================================== */
+
+/* 成功提示容器 */
+.index-success-tips {
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    border: 1px solid #86efac;
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+/* 成功訊息 */
+.success-message {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-lg);
+    font-size: 1.1rem;
+    color: #15803d;
+    font-weight: 600;
+}
+
+.success-message i {
+    font-size: 1.5rem;
+    color: #22c55e;
+}
+
+/* 操作卡片容器 */
+.next-action-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-md);
+}
+
+/* 單個操作卡片 */
+.action-card {
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: var(--radius-md);
+    padding: var(--spacing-lg);
+    text-align: center;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+}
+
+.action-card:hover:not(.disabled) {
+    border-color: var(--primary);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.action-card i {
+    font-size: 2rem;
+    color: var(--primary);
+    margin-bottom: var(--spacing-sm);
+}
+
+.action-card h4 {
+    margin-bottom: var(--spacing-xs);
+    color: var(--text-primary);
+    font-size: 1.1rem;
+}
+
+.action-card p {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+/* 停用狀態的卡片 */
+.action-card.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: #f9fafb;
+}
+
+.action-card.disabled:hover {
+    transform: none;
+    border-color: #e5e7eb;
+    box-shadow: none;
+}
+
+.action-card.disabled i {
+    color: #9ca3af;
+}
+
+/* 權限設定卡片特殊樣式（雖然待實作但可點擊） */
+.action-card:has(.badge-info) {
+    background: linear-gradient(135deg, #fff 0%, #f0f9ff 100%);
+}
+
+.action-card:has(.badge-info):hover {
+    border-color: #3b82f6;
+    background: linear-gradient(135deg, #f0f9ff 0%, #dbeafe 100%);
+}
+
+/* 淡入動畫 */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 淡出動畫 */
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+}
+
+/* 淡出狀態 */
+.index-success-tips.fade-out {
+    animation: fadeOut 0.5s ease-in-out forwards;
+}
+
+/* ========================================
+   知識庫頁面特定覆蓋樣式
+   ======================================== */
+
+/* 加強標籤對比度 */
+.admin-container label {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+/* 調整標題樣式 */
+.admin-container h3 {
+    color: var(--text-primary);
+    font-weight: 600;
+    margin-block-start: 5px;
+    margin-block-end: 5px;
+}
+
+
+/* 提示文字樣式 */
+.note {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+/* ========================================
+   空狀態區塊類別
+   ======================================== */
+
+.kb-empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+}
+
+.kb-empty-icon {
+    font-size: 3rem;
+    margin-bottom: 2rem;
+    color: var(--gray-400);
+}
+
+.kb-empty-title {
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+}
+
+.kb-empty-content {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.kb-empty-message {
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    margin-bottom: 0;
+}
+
+/* 禁用的快速卡片 */
+.quick-card.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: #f9f9f9;
+    pointer-events: none;
+}
+
+.quick-card.disabled:hover {
+    transform: none;
+    border-color: transparent;
+    box-shadow: none;
+}
+
+/* ========================================
+   知識庫管理頁面專用覆蓋
+   ======================================== */
+
+/* 知識庫管理頁面需要特殊的滾動處理 */
+.admin-layout .admin-main {
+    overflow: hidden; /* 知識庫頁面由子元素處理滾動 */
+}
+
+/* ========================================
+   知識庫管理區塊類別
+   ======================================== */
+
+.kb-selected-layout {
+    display: flex;
+    gap: 2rem;
+    align-items: flex-start;
+}
+
+.kb-management-panel {
+    flex: 1;
+    min-width: 350px;
+}
+
+.kb-form-section {
+    margin-bottom: var(--spacing-md);
+}
+
+.kb-button-group {
+    margin-bottom: var(--spacing-md);
+}
+
+.kb-button-row {
+    margin-bottom: var(--spacing-sm);
+    display: flex;
+    gap: 10px;
+}
+
+/* ========================================
+   按鈕佈局輔助類別
+   ======================================== */
+
+/* 按鈕組排版 */
+.kb-button-group {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+    padding-top: 4px; /* 為按鈕浮出效果預留空間 */
+}
+
+.kb-button-row {
+    margin-bottom: var(--spacing-sm);
+    display: flex;
+    gap: 10px;
+}
+
+/* ========================================
+   表單元素類別
+   ======================================== */
+
+.kb-label {
+    display: block;
+    margin-bottom: 0.3rem;
+}
+
+.kb-input {
+    width: 100%;
+    padding: var(--spacing-sm);
+}
+
+.kb-input-lg {
+    width: 100%;
+    padding: 0.8rem;
+    font-size: 1.1rem;
+}
+
+.kb-select {
+    width: 100%;
+    padding: var(--spacing-sm);
+}
+
+.kb-select-lg {
+    width: 100%;
+    padding: 0.8rem;
+    font-size: 1.1rem;
+    margin-bottom: var(--spacing-md);
+}
+
+.kb-textarea {
+    width: 100%;
+    padding: var(--spacing-sm);
+    resize: vertical;
+}
+
+.kb-char-count {
+    font-size: 0.8em;
+    color: var(--text-secondary);
+    text-align: right;
+}
+
+/* ========================================
+   檔案操作區塊類別
+   ======================================== */
+
+.kb-resizable-container {
+    display: flex;
+    flex: 2;
+    min-width: 700px;
+    gap: 0;
+}
+
+.kb-file-panel {
+    flex: 2;
+    min-width: 300px;
+    padding-right: var(--spacing-md);
+}
+
+.kb-index-panel {
+    flex: 3;
+    min-width: 400px;
+    padding-left: var(--spacing-md);
+}
+
+.kb-checkbox-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.kb-checkbox {
+    margin-right: 8px;
+    cursor: pointer;
+}
+
+.kb-no-content {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+}
+
+.kb-no-content-icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+.kb-upload-result {
+    margin-top: var(--spacing-sm);
+    font-size: 0.9em;
+}
+
+/* ========================================
+   模態框相關類別
+   ======================================== */
+
+.modal-loading-text {
+    font-size: 1em;
+    color: var(--text-secondary);
+    text-align: center;
+    max-width: 300px;
+    line-height: 1.5;
+}
+
+.modal-button-group {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.modal-button-group .btn {
+    flex: 1;
+    min-width: 100px;
+}
+
+.modal-file-list {
+    min-height: 150px;
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    padding: 10px;
+    background: var(--bg-light);
+    border-radius: var(--radius-md);
+}
+
+.modal-file-list-sm {
+    max-height: 200px;
+    overflow-y: auto;
+    background: var(--bg-light);
+    border: 1px solid var(--border-color);
+    padding: 10px;
+    border-radius: var(--radius-md);
+}
+
+.modal-warning {
+    color: var(--danger);
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+.modal-info {
+    color: var(--text-secondary);
+    font-size: 0.9em;
+    margin-top: 10px;
+}
+
+.modal-content-sm {
+    max-width: 500px;
+    width: 90%;
+    margin: 10% auto;
+}
+
+.modal-content-md {
+    max-width: 600px;
+    width: 90%;
+    max-height: 85vh;
+    margin: 5vh auto;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 建立索引模態框專用樣式 */
+#buildIndexModal .modal-body {
+    overflow-y: auto;
+    max-height: calc(85vh - 120px); /* 扣除 header 和 footer 高度 */
+    /* Firefox 隱藏 scrollbar */
+    scrollbar-width: none;
+    /* IE 和 Edge 隱藏 scrollbar */
+    -ms-overflow-style: none;
+}
+
+/* Webkit 瀏覽器（Chrome, Safari）隱藏 scrollbar */
+#buildIndexModal .modal-body::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+}
+
+/* 藍色 header 樣式已移除，統一使用標準 modal-header */
+
+.modal-body-content {
+    padding: var(--spacing-md) var(--spacing-sm);
+}
+
+.modal-file-placeholder {
+    color: var(--text-secondary);
+    text-align: center;
+    margin: 50px 0;
+}
+
+.modal-error-message {
+    color: var(--danger);
+    font-size: 0.9em;
+    margin-top: 10px;
+}
+
+.modal-reminder-box {
+    background: #fff3cd;
+    padding: 15px;
+    border-radius: 6px;
+    border-left: 4px solid #ffc107;
+    margin-bottom: 15px;
+}
+
+.modal-reminder-text {
+    margin: 0;
+    color: #856404;
+}
+
+/* ========================================
+   索引參數資訊樣式
+   ======================================== */
+.index-params-info {
+    background: #e8f4f8;
+    border: 1px solid #bee5eb;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.index-params-info h5 {
+    margin-bottom: 10px;
+    color: #0c5460;
+}
+
+.index-params-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.index-params-value {
+    color: #17a2b8;
+    font-weight: 500;
+}
+
+/* Chunk 參數設定區域 */
+.modal-params-section {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 15px 0;
+    border: 1px solid #dee2e6;
+}
+
+.modal-params-section h4 {
+    margin-bottom: 15px;
+    color: #495057;
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.modal-params-section h4:hover {
+    color: #343a40;
+}
+
+.modal-params-section h4::after {
+    content: '\f077'; /* Font Awesome chevron-up */
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+    transition: transform 0.3s ease;
+    font-size: 0.9em;
+}
+
+.modal-params-section.collapsed h4::after {
+    transform: rotate(180deg);
+}
+
+.modal-params-content {
+    transition: max-height 0.3s ease, opacity 0.3s ease;
+    overflow: hidden;
+}
+
+.modal-params-section.collapsed .modal-params-content {
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0;
+    margin-top: -15px;
+}
+
+.modal-params-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.chunk-value-display {
+    color: #6c757d;
+    font-weight: normal;
+}
+
+/* ========================================
+   索引摘要樣式
+   ======================================== */
+
+
+/* ========================================
+   其他工具類別
+   ======================================== */
+
+.text-center {
+    text-align: center;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.w-100 {
+    width: 100%;
+}
+
+.flex-1 {
+    flex: 1;
+}
+
+.flex-2 {
+    flex: 2;
+}
+
+.flex-3 {
+    flex: 3;
+}
+
+.gap-10 {
+    gap: 10px;
+}
+
+.gap-2rem {
+    gap: 2rem;
+}
+
+/* ========================================
+   統一按鈕特效系統
+   ======================================== */
+
+/* 所有按鈕的基礎 hover 效果 */
+.btn {
+    transition: all var(--transition-fast);
+    position: relative;
+}
+
+.btn:not(:disabled):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    filter: brightness(1.1);
+}
+
+.btn:not(:disabled):active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* 禁用狀態 */
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ========================================
+   響應式設計
+   ======================================== */
+
+/* 平板模式 */
+@media (max-width: 992px) {
+    /* 抽屜預設收合 */
+    #kbDrawerContainer {
+        position: absolute;
+        z-index: 100;
+        height: 100%;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+    }
+    
+    #kbDrawerContainer.drawer-closed {
+        transform: translateX(-50px);
+    }
+    
+    #kbDrawerContainer.drawer-open {
+        transform: translateX(0);
+    }
+    
+    /* 加入浮動按鈕來開啟抽屜 */
+    #kbDrawerButtons {
+        position: fixed;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+    
+    /* 狀態列改為堆疊 */
+    .kb-status-bar {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+    }
+    
+    /* Tab 按鈕調整 */
+    .kb-tabs {
+        overflow-x: auto;
+    }
+}
+
+/* 手機模式 */
+@media (max-width: 768px) {
+    /* 調整內距 */
+    #selectedKBState {
+        padding: var(--spacing-sm);
+        padding-top: 0;
+    }
+    
+    .kb-empty-state {
+        padding: var(--spacing-sm);
+    }
+    
+    .kb-status-bar {
+        margin: 0 calc(-1 * var(--spacing-sm));
+        padding: var(--spacing-sm);
+    }
+    
+    /* 知識庫資訊左右布局改為上下排列 */
+    .kb-info-layout {
+        flex-direction: column;
+        gap: var(--spacing-md);
+    }
+    
+    .kb-info-left {
+        flex: none;
+        width: 100%;
+        min-width: auto;
+    }
+    
+    .kb-info-right {
+        flex: none;
+        width: 100%;
+        min-width: auto;
+        min-height: 300px;
+    }
+    
+    /* 完全隱藏抽屜 */
+    #kbDrawerContainer.drawer-closed {
+        width: 0;
+        display: none;
+    }
+    
+    /* 抽屜全螢幕 */
+    #kbDrawerContainer.drawer-open {
+        width: 100%;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 1000;
+    }
+    
+    /* 主內容區調整 - padding 已移至子元素 */
+    .kb-main-content {
+        padding: 0;
+    }
+    
+    /* 快速卡片改為單欄 */
+    .quick-start-cards {
+        grid-template-columns: 1fr;
+    }
+    
+    /* 按鈕組改為垂直排列 */
+    .kb-button-row {
+        flex-direction: column;
+    }
+    
+    .kb-button-row .btn {
+        width: 100%;
+    }
+    
+    /* Modal 調整 */
+    .modal-content {
+        width: 95%;
+        margin: 5% auto;
+    }
+    
+    .modal-content-md,
+    .modal-content-sm {
+        width: 95%;
+    }
+}
+
+/* ========================================
+   創建模式遮罩
+   ======================================== */
+
+/* 創建模式遮罩 */
+.create-mode-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.9);
+    z-index: 5;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-md);
+}
+
+.create-mode-overlay.show {
+    display: flex;
+}
+
+.create-mode-message {
+    text-align: center;
+    padding: 2rem;
+    background: white;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    max-width: 400px;
+}
+
+.create-mode-message h4 {
+    color: var(--primary);
+    margin-bottom: 1rem;
+}
+
+.create-mode-message p {
+    color: var(--text-secondary);
+    margin-bottom: 0;
+}
+
+/* ========================================
+   Tab 內容模糊遮罩
+   ======================================== */
+
+/* Tab 內容模糊遮罩 */
+.tab-pane {
+    position: relative;
+}
+
+.tab-pane.disabled-overlay {
+    pointer-events: none;
+    user-select: none;
+}
+
+.tab-pane.disabled-overlay::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    z-index: 10;
+    border-radius: var(--radius-md);
+    pointer-events: all;
+}
+
+/* 停用訊息樣式 */
+.disabled-message {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 11;
+    text-align: center;
+    padding: var(--spacing-lg);
+    background: white;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    max-width: 300px;
+}
+
+.disabled-message i {
+    font-size: 3rem;
+    color: var(--warning);
+    margin-bottom: var(--spacing-md);
+    display: block;
+}
+
+.disabled-message p {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-xs);
+}
+
+.disabled-message small {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+/* Tab 按鈕停用狀態增強 */
+.tab-btn:disabled::after,
+.tab-btn.disabled::after {
+    content: '🔒';
+    margin-left: var(--spacing-xs);
+    font-size: 0.9em;
+    opacity: 0.6;
+}
+
+/* 索引下拉選單樣式 */
+.index-button-container {
+    position: relative;
+    display: inline-block;
+}
+
+.index-dropdown {
+    position: absolute;
+    top: calc(100% + 5px);
+    left: 0;
+    z-index: 1050;
+    min-width: 350px;
+    max-width: 450px;
+    background: white;
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 8px;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.12);
+    display: none;
+}
+
+.index-dropdown.show {
+    display: block;
+    animation: dropdownSlide 0.2s ease-out;
+}
+
+@keyframes dropdownSlide {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.dropdown-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid #e5e5e5;
+    font-weight: 600;
+    color: #333;
+}
+
+.dropdown-close-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: #999;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.dropdown-close-btn:hover {
+    background: #f0f0f0;
+    color: #666;
+}
+
+.dropdown-controls {
+    padding: 12px 16px;
+    border-bottom: 1px solid #e5e5e5;
+    background: #fafafa;
+}
+
+.select-all-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.select-all-label input[type="checkbox"] {
+    margin-right: 8px;
+}
+
+.dropdown-file-list {
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 8px 0;
+}
+
+.dropdown-file-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.dropdown-file-item:hover {
+    background: #f5f5f5;
+}
+
+.dropdown-file-item input[type="checkbox"] {
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
+.file-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    min-width: 0;
+}
+
+.file-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 14px;
+    color: #333;
+}
+
+.file-meta {
+    flex-shrink: 0;
+    font-size: 12px;
+    color: #999;
+    margin-left: 12px;
+}
+
+.dropdown-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 12px 16px;
+    border-top: 1px solid #e5e5e5;
+    background: #fafafa;
+    gap: 8px;
+}
+
+.dropdown-footer .btn {
+    margin: 0;
+}
+
+/* 停用 TAB 樣式 */
+.tab-btn.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: #f5f5f5;
+    position: relative;
+}
+
+.tab-btn.disabled:hover {
+    background: #f5f5f5;
+    transform: none;
+    color: inherit;
+}
+
+.tab-btn.disabled::after {
+    content: '🔒';
+    margin-left: 4px;
+    font-size: 0.9em;
+    opacity: 0.8;
+}
+
+/* Tooltip for disabled tab */
+.tab-btn.disabled[title]:hover::before {
+    content: attr(title);
+    position: absolute;
+    bottom: -35px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+/* 小螢幕手機 */
+@media (max-width: 480px) {
+    /* 文字大小調整 */
+    body {
+        font-size: 14px;
+    }
+    
+    h3, h4 {
+        font-size: 1.1rem;
+    }
+    
+    .btn {
+        font-size: 0.9rem;
+        padding: 8px 12px;
+    }
+    
+    /* 狀態列簡化 */
+    .kb-stats {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-xs);
+    }
+    
+    /* Tab 改為下拉選單 */
+    .kb-tabs {
+        display: none;
+    }
+    
+    /* 加入下拉選單代替 Tab */
+    .tab-select {
+        display: block;
+        width: 100%;
+        margin-bottom: var(--spacing-md);
+    }
+}
+
+/* 大螢幕優化 */
+@media (min-width: 1400px) {
+    /* 抽屜可以更寬 */
+    #kbDrawerContainer.drawer-open {
+        width: 350px;
+    }
+    
+    /* 調整內距到子元素 */
+    #selectedKBState {
+        padding: var(--spacing-xl);
+        padding-top: 0;
+    }
+    
+    .kb-empty-state {
+        padding: var(--spacing-xl);
+    }
+    
+    .kb-status-bar {
+        margin: 0 calc(-1 * var(--spacing-xl));
+        padding: var(--spacing-md) var(--spacing-xl);
+    }
+}

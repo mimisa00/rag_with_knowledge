@@ -62,6 +62,46 @@ class IndexJobDAO(BaseDAO):
             logger.error(f"獲取索引任務 {job_id} 狀態失敗: {e}")
             return None
 
+    def create_job(self, job_data: Dict[str, Any]) -> int:
+        """創建索引任務（支援 chunk 參數）"""
+        try:
+            kb_id = job_data.get('kb_id')
+            job_type = job_data.get('job_type', 'build')
+            status = job_data.get('status', 'pending')
+            total_files = job_data.get('total_files', 0)
+            processed_files = job_data.get('processed_files', 0)
+            chunk_size = job_data.get('chunk_size')
+            chunk_overlap = job_data.get('chunk_overlap')
+            
+            query = """
+                INSERT INTO index_jobs (kb_id, job_type, status, total_files, processed_files, chunk_size, chunk_overlap)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """
+            job_id = self.execute_insert(query, (kb_id, job_type, status, total_files, processed_files, chunk_size, chunk_overlap))
+            if job_id > 0:
+                logger.info(f"索引任務 {job_id} 建立成功 (chunk_size: {chunk_size}, chunk_overlap: {chunk_overlap})")
+            return job_id
+        except Exception as e:
+            logger.error(f"建立索引任務失敗: {e}")
+            return -1
+    
+    def get_latest_job(self, kb_id: str) -> Optional[Dict[str, Any]]:
+        """獲取知識庫最新的索引任務"""
+        try:
+            query = """
+                SELECT id, kb_id, job_type, status, chunk_size, chunk_overlap, 
+                       created_at, updated_at
+                FROM index_jobs 
+                WHERE kb_id = %s AND status = 'completed'
+                ORDER BY created_at DESC
+                LIMIT 1
+            """
+            results = self.execute_query(query, (kb_id,))
+            return results[0] if results else None
+        except Exception as e:
+            logger.error(f"獲取知識庫 {kb_id} 最新索引任務失敗: {e}")
+            return None
+    
     def get_running_jobs(self, kb_id: str = None) -> List[Dict[str, Any]]:
         """獲取正在運行的索引任務"""
         try:
