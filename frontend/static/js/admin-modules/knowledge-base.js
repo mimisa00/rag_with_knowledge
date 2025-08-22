@@ -218,10 +218,9 @@
                 const kbStatusField = document.getElementById('kbStatus');
                 const kbStatus = kbStatusField ? kbStatusField.value : 'enable';
                 this.updateTabsBasedOnStatus(kbStatus);
-            } else if (mode === KB_MODES.CREATE) {
-                // 創建模式下，預設啟用所有 Tab
-                this.enableFileTabs();
             }
+            // 移除 CREATE 模式的 enableFileTabs 呼叫
+            // CREATE 模式的 TAB 狀態應該由 showKBForm 控制
             
             // 更新麵包屑（新增模式或沒有選擇知識庫時，清除麵包屑）
             if (mode === KB_MODES.CREATE || !currentKBId) {
@@ -354,35 +353,60 @@
             
             const hasFiles = await this.checkFilesExist(kbId);
             const indexTab = document.querySelector('.tab-btn[onclick*="index"]');
-            
-            if (!indexTab) return;
+            const permissionsTab = document.querySelector('.tab-btn[onclick*="permissions"]');
             
             // 檢查是否已有索引
             const hasIndex = await this.checkHasIndex(kbId);
             
-            if (!hasFiles && !hasIndex) {
-                // 無檔案且無索引時才停用索引工具 TAB
-                indexTab.disabled = true;
-                indexTab.classList.add('disabled');
-                indexTab.title = '需要先上傳檔案才能建立索引';
-                
-                // 如果當前在索引工具 TAB，自動切換到檔案管理
-                const activeTab = document.querySelector('.tab-btn.active');
-                if (activeTab && activeTab.textContent.includes('索引工具')) {
-                    if (window.KBTabManager) {
-                        window.KBTabManager.switchTab('files');
+            // 處理索引工具 TAB
+            if (indexTab) {
+                if (!hasFiles && !hasIndex) {
+                    // 無檔案且無索引時才停用索引工具 TAB
+                    indexTab.disabled = true;
+                    indexTab.classList.add('disabled');
+                    indexTab.title = '需要先上傳檔案才能建立索引';
+                    
+                    // 如果當前在索引工具 TAB，自動切換到檔案管理
+                    const activeTab = document.querySelector('.tab-btn.active');
+                    if (activeTab && activeTab.textContent.includes('索引工具')) {
+                        if (window.KBTabManager) {
+                            window.KBTabManager.switchTab('files');
+                        }
+                    }
+                } else {
+                    // 有檔案或有索引時都啟用
+                    indexTab.disabled = false;
+                    indexTab.classList.remove('disabled');
+                    
+                    // 根據情況設置不同的提示
+                    if (!hasFiles && hasIndex) {
+                        indexTab.title = '無檔案但有現存索引';
+                    } else {
+                        indexTab.title = '';
                     }
                 }
-            } else {
-                // 有檔案或有索引時都啟用
-                indexTab.disabled = false;
-                indexTab.classList.remove('disabled');
-                
-                // 根據情況設置不同的提示
-                if (!hasFiles && hasIndex) {
-                    indexTab.title = '無檔案但有現存索引';
+            }
+            
+            // 處理權限設定 TAB
+            if (permissionsTab) {
+                if (hasIndex) {
+                    // 有索引時才啟用權限設定
+                    permissionsTab.disabled = false;
+                    permissionsTab.classList.remove('disabled');
+                    permissionsTab.title = '';
                 } else {
-                    indexTab.title = '';
+                    // 無索引時禁用權限設定
+                    permissionsTab.disabled = true;
+                    permissionsTab.classList.add('disabled');
+                    permissionsTab.title = '需要先建立索引才能設定權限';
+                    
+                    // 如果當前在權限設定 TAB，自動切換到檔案管理
+                    const activeTab = document.querySelector('.tab-btn.active');
+                    if (activeTab && activeTab.textContent.includes('權限設定')) {
+                        if (window.KBTabManager) {
+                            window.KBTabManager.switchTab('files');
+                        }
+                    }
                 }
             }
             
@@ -512,7 +536,7 @@
                 if (data.status === 'ok') {
                     // 索引有效
                     const vectorCount = data.vectors || 0;
-                    indexStatusEl.textContent = `已建立索引 (${vectorCount} 個向量)`;
+                    indexStatusEl.textContent = `已建立 ${vectorCount} 個索引區塊`;
                     indexStatusEl.style.color = '#28a745';
                     
                     // 啟用「前往問答」按鈕
@@ -750,16 +774,41 @@
             }
         },
         
-        // 禁用檔案和索引 Tab
+        // 禁用檔案和索引 Tab（創建新知識庫時使用）
         disableFileTabs: function() {
-            const tabs = document.querySelectorAll('.tab-btn');
-            tabs.forEach(tab => {
-                // 禁用除了知識庫資訊以外的所有 Tab
-                if (!tab.textContent.includes('知識庫資訊')) {
-                    tab.disabled = true;
-                    tab.classList.add('disabled');
-                }
-            });
+            // 明確獲取並禁用特定的 TAB
+            const filesTab = document.querySelector('.tab-btn[onclick*="files"]');
+            const indexTab = document.querySelector('.tab-btn[onclick*="index"]');
+            const permissionsTab = document.querySelector('.tab-btn[onclick*="permissions"]');
+            
+            // 禁用檔案管理 TAB
+            if (filesTab) {
+                filesTab.disabled = true;
+                filesTab.classList.add('disabled');
+                filesTab.title = '請先完成知識庫創建';
+            }
+            
+            // 禁用索引工具 TAB
+            if (indexTab) {
+                indexTab.disabled = true;
+                indexTab.classList.add('disabled');
+                indexTab.title = '請先完成知識庫創建並上傳檔案';
+            }
+            
+            // 禁用權限設定 TAB
+            if (permissionsTab) {
+                permissionsTab.disabled = true;
+                permissionsTab.classList.add('disabled');
+                permissionsTab.title = '請先完成知識庫創建並建立索引';
+            }
+            
+            // 確保知識庫資訊 TAB 是啟用的
+            const infoTab = document.querySelector('.tab-btn[onclick*="info"]');
+            if (infoTab) {
+                infoTab.disabled = false;
+                infoTab.classList.remove('disabled');
+                infoTab.title = '';
+            }
             
             // 為非資訊 Tab 的內容加上模糊遮罩
             const tabPanes = ['filesTab', 'indexTab', 'permissionsTab'];
@@ -776,22 +825,48 @@
             }
         },
         
-        // 啟用檔案和索引 Tab
-        enableFileTabs: function() {
-            const tabs = document.querySelectorAll('.tab-btn');
-            tabs.forEach(tab => {
-                tab.disabled = false;
-                tab.classList.remove('disabled');
-            });
+        // 啟用檔案和索引 Tab（改進版：根據實際狀態啟用）
+        enableFileTabs: async function() {
+            // 首先啟用基本的 Tab（知識庫資訊和檔案管理）
+            const basicTabs = [
+                document.querySelector('.tab-btn[onclick*="info"]'),
+                document.querySelector('.tab-btn[onclick*="files"]')
+            ];
             
-            // 移除模糊遮罩
-            const tabPanes = ['filesTab', 'indexTab', 'permissionsTab'];
-            tabPanes.forEach(id => {
-                const pane = document.getElementById(id);
-                if (pane) {
-                    pane.classList.remove('disabled-overlay');
+            basicTabs.forEach(tab => {
+                if (tab) {
+                    tab.disabled = false;
+                    tab.classList.remove('disabled');
                 }
             });
+            
+            // 根據實際狀態決定是否啟用索引工具和權限設定 Tab
+            if (currentKBId) {
+                // 呼叫 updateTabStates 來處理其他 Tab 的狀態
+                await this.updateTabStates(currentKBId);
+            } else {
+                // 如果沒有選擇知識庫，索引工具和權限設定保持禁用
+                const indexTab = document.querySelector('.tab-btn[onclick*="index"]');
+                const permissionsTab = document.querySelector('.tab-btn[onclick*="permissions"]');
+                
+                if (indexTab) {
+                    indexTab.disabled = true;
+                    indexTab.classList.add('disabled');
+                    indexTab.title = '需要先選擇知識庫';
+                }
+                
+                if (permissionsTab) {
+                    permissionsTab.disabled = true;
+                    permissionsTab.classList.add('disabled');
+                    permissionsTab.title = '需要先建立索引';
+                }
+            }
+            
+            // 移除檔案管理的模糊遮罩
+            const filesTab = document.getElementById('filesTab');
+            if (filesTab) {
+                filesTab.classList.remove('disabled-overlay');
+            }
         },
         
         // 根據知識庫狀態更新 Tab 和按鈕的可用性
@@ -1139,14 +1214,21 @@
                         const newKBId = document.getElementById('kbId').value.trim();
                         currentKBId = newKBId;
                         
+                        // 顯示創建成功引導
+                        if (window.GuideModule) {
+                            setTimeout(() => {
+                                window.GuideModule.showCreateSuccessGuide();
+                            }, 500);
+                        }
+                        
                         // 重置從抽屜創建的標記
                         isCreatingFromDrawer = false;
                         
                         // 載入新知識庫資料
                         await this.loadKnowledgeBaseData(newKBId);
                         
-                        // 啟用所有 Tab
-                        this.enableFileTabs();
+                        // 新建的知識庫沒有檔案，只啟用基本的 Tab
+                        // 不要呼叫 enableFileTabs()，而是讓 updateTabStates 處理
                         
                         // 先重新載入知識庫列表
                         await this.loadKnowledgeBases();
@@ -1698,7 +1780,7 @@
                 loaderText.classList.remove('success');
                 loaderText.style.transition = '';
                 loaderText.style.opacity = '';
-                loaderText.textContent = '索引重建處理中'; // 重置為初始文字
+                loaderText.textContent = '索引建立處理中'; // 重置為初始文字
             }
             
             if (loadingOverlay) {

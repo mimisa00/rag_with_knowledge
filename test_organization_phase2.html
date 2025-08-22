@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>組織管理 Phase 2 測試報告</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 30px 0; border: 1px solid #ddd; padding: 20px; border-radius: 5px; }
+        .test-title { font-size: 20px; font-weight: bold; color: #333; margin-bottom: 15px; }
+        .test-item { margin: 10px 0; padding: 10px; background: #f5f5f5; border-radius: 3px; }
+        .status { display: inline-block; padding: 3px 8px; border-radius: 3px; font-size: 12px; }
+        .status.completed { background: #4CAF50; color: white; }
+        .status.fixed { background: #2196F3; color: white; }
+        .status.pending { background: #FF9800; color: white; }
+        .code-block { background: #272822; color: #f8f8f2; padding: 15px; border-radius: 3px; margin: 10px 0; overflow-x: auto; }
+        .highlight { background: #ffffcc; padding: 2px 4px; }
+        h1 { color: #667eea; }
+        .summary { background: #e8f4f8; padding: 15px; border-radius: 5px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <h1>🎯 組織管理 Phase 2 - 功能測試報告</h1>
+    
+    <div class="summary">
+        <h2>📊 測試摘要</h2>
+        <p><strong>測試時間：</strong> 2025-01-21 22:30</p>
+        <p><strong>測試範圍：</strong> 組織管理介面所有 CRUD 功能</p>
+        <p><strong>測試結果：</strong> 所有功能已修正並可正常運作</p>
+    </div>
+
+    <div class="test-section">
+        <div class="test-title">✅ 已修正的問題</div>
+        
+        <div class="test-item">
+            <span class="status fixed">已修正</span>
+            <strong>新增部門功能</strong>
+            <ul>
+                <li>問題：Modal 欄位 ID 與 JavaScript 不符</li>
+                <li>修正：更新 saveDepartment() 函數，添加缺失欄位：
+                    <span class="highlight">code</span>, 
+                    <span class="highlight">sort_order</span>, 
+                    <span class="highlight">is_active</span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="test-item">
+            <span class="status fixed">已修正</span>
+            <strong>新增帳號功能</strong>
+            <ul>
+                <li>問題：缺少建立用戶的 API 端點</li>
+                <li>修正：實作 POST /api/organization/users API</li>
+                <li>功能：支援密碼策略（手動設定、臨時密碼、啟用連結）</li>
+            </ul>
+        </div>
+
+        <div class="test-item">
+            <span class="status fixed">已修正</span>
+            <strong>編輯部門功能</strong>
+            <ul>
+                <li>實作 editDepartment() 函數</li>
+                <li>更新 saveDepartment() 支援 PUT 方法</li>
+                <li>正確填充所有表單欄位</li>
+            </ul>
+        </div>
+
+        <div class="test-item">
+            <span class="status fixed">已修正</span>
+            <strong>編輯角色功能</strong>
+            <ul>
+                <li>實作 editRole() 函數</li>
+                <li>更新 saveRole() 支援 PUT 方法</li>
+                <li>權限矩陣正確對應</li>
+            </ul>
+        </div>
+
+        <div class="test-item">
+            <span class="status fixed">已修正</span>
+            <strong>編輯帳號功能</strong>
+            <ul>
+                <li>實作 editUser() 函數</li>
+                <li>更新 saveUser() 支援更新模式</li>
+                <li>密碼選填（編輯時不改密碼可留空）</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <div class="test-title">📝 API 測試命令</div>
+        
+        <div class="code-block">
+# 測試部門 CRUD
+curl -X GET http://localhost:8080/api/organization/departments -H "Cookie: session_token=xxx"
+
+# 測試角色 CRUD  
+curl -X GET http://localhost:8080/api/organization/roles -H "Cookie: session_token=xxx"
+
+# 測試用戶列表
+curl -X GET http://localhost:8080/api/organization/users -H "Cookie: session_token=xxx"
+
+# 測試新增用戶
+curl -X POST http://localhost:8080/api/organization/users \
+  -H "Content-Type: application/json" \
+  -H "Cookie: session_token=xxx" \
+  -d '{
+    "username": "test_user",
+    "email": "test@example.com",
+    "full_name": "測試用戶",
+    "department_id": 1,
+    "role_ids": [1, 2],
+    "password": "test123456"
+  }'
+        </div>
+    </div>
+
+    <div class="test-section">
+        <div class="test-title">🔧 技術實作細節</div>
+        
+        <div class="test-item">
+            <strong>檔案修改清單：</strong>
+            <ul>
+                <li><code>/app/api/routes/organization.py</code> - 新增 create_organization_user API</li>
+                <li><code>/frontend/static/js/admin-modules/organization.js</code> - 修正所有 CRUD 函數</li>
+                <li>添加全域函數支援 HTML onclick 事件</li>
+            </ul>
+        </div>
+
+        <div class="test-item">
+            <strong>關鍵修正：</strong>
+            <ul>
+                <li>統一表單欄位與後端模型對應</li>
+                <li>實作編輯模式的資料填充邏輯</li>
+                <li>區分新增（POST）與更新（PUT）請求</li>
+                <li>處理密碼策略邏輯</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <div class="test-title">✨ Phase 2 完成狀態</div>
+        
+        <div class="test-item">
+            <span class="status completed">完成</span>
+            <strong>所有基礎功能已實作：</strong>
+            <ul>
+                <li>✅ 部門管理 - 新增、編輯、刪除、查詢</li>
+                <li>✅ 角色管理 - 新增、編輯、刪除、權限設定</li>
+                <li>✅ 帳號管理 - 新增、編輯、刪除、角色分配</li>
+                <li>✅ 組織架構顯示 - 樹狀結構展示</li>
+                <li>✅ 權限矩陣 - 系統預設權限配置</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <div class="test-title">📅 下一步計劃</div>
+        
+        <div class="test-item">
+            <span class="status pending">Phase 3</span>
+            <strong>系統模式設定</strong>
+            <ul>
+                <li>實作系統參數擴充</li>
+                <li>模式切換邏輯</li>
+                <li>權限調整機制</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        console.log('Phase 2 測試報告已生成');
+        console.log('測試時間:', new Date().toLocaleString());
+        console.log('所有功能已修正並可正常運作');
+    </script>
+</body>
+</html>

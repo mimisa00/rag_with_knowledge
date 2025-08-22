@@ -30,6 +30,12 @@ const AdminRouter = (() => {
             url: '/admin/user-management.html',
             module: 'user-management-module.js',
             roles: ['admin']
+        },
+        'organization': {
+            title: '組織管理',
+            url: '/admin/organization.html',
+            module: 'organization.js',
+            roles: ['admin']
         }
     };
     
@@ -90,6 +96,12 @@ const AdminRouter = (() => {
             // 如果是帳號管理，導向新的獨立頁面
             if (functionName === 'user-management') {
                 window.location.href = '/admin/user-management';
+                return;
+            }
+            
+            // 如果是組織管理，導向新的獨立頁面
+            if (functionName === 'organization') {
+                window.location.href = '/admin/organization';
                 return;
             }
             

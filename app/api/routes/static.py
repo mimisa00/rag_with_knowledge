@@ -99,6 +99,12 @@ def user_management_page(current_user: Dict[str, Any] = Depends(get_admin_user))
     return FileResponse(html_paths["HTML_PATH_USER_MANAGEMENT"])
 
 
+@router.get("/admin/organization")
+def organization_page(current_user: Dict[str, Any] = Depends(get_admin_user)):
+    """組織管理頁面（管理員專用）"""
+    return FileResponse(html_paths["HTML_PATH_ORGANIZATION"])
+
+
 @router.get("/dashboard_admin")
 def dashboard_admin_page(current_user: Dict[str, Any] = Depends(get_admin_user)):
     """傳統管理頁面（管理員專用）"""

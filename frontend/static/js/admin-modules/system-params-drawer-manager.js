@@ -14,29 +14,44 @@ const ParamDrawerManager = (function() {
         'request': {
             icon: 'fas fa-network-wired',
             title: '請求控制設定',
+            breadcrumb: '請求控制',
             color: '#e74c3c'
         },
         'file': {
             icon: 'fas fa-file-alt',
             title: '文檔處理設定',
+            breadcrumb: '文檔處理',
             color: '#3498db'
         },
         'embedding': {
             icon: 'fas fa-project-diagram',
             title: '嵌入設定',
+            breadcrumb: '嵌入設計',
             color: '#2ecc71'
         },
         'llm': {
             icon: 'fas fa-robot',
             title: '模型設定',
+            breadcrumb: '模型設定',
             color: '#9b59b6'
         },
         'prompt': {
             icon: 'fas fa-comment-dots',
             title: '提示詞管理',
+            breadcrumb: '提示詞',
             color: '#f39c12'
         }
     };
+    
+    /**
+     * 更新麵包屑顯示
+     */
+    function updateBreadcrumb(categoryName) {
+        const breadcrumbElement = document.getElementById('categoryBreadcrumb');
+        if (breadcrumbElement) {
+            breadcrumbElement.textContent = categoryName;
+        }
+    }
     
     /**
      * 初始化抽屜管理器
@@ -133,6 +148,9 @@ const ParamDrawerManager = (function() {
         if (titleElement) {
             titleElement.textContent = categoryInfo.title;
         }
+        
+        // 更新麵包屑
+        updateBreadcrumb(categoryInfo.breadcrumb);
         
         // 切換參數區塊的顯示
         document.querySelectorAll('.param-category-section').forEach(section => {

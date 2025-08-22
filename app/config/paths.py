@@ -38,6 +38,7 @@ class PathConfig:
             "HTML_PATH_KNOWLEDGE_BASE": os.path.join(static_dir, "admin", "knowledge-base.html"),
             "HTML_PATH_SYSTEM_PARAMS": os.path.join(static_dir, "admin", "system-params.html"),
             "HTML_PATH_USER_MANAGEMENT": os.path.join(static_dir, "admin", "user-management.html"),
+            "HTML_PATH_ORGANIZATION": os.path.join(static_dir, "admin", "organization.html"),
             "HTML_PATH_LOGIN": os.path.join(static_dir, "login.html"),
             "HTML_PATH_REGISTER": os.path.join(static_dir, "register.html"),
             "HTML_PATH_SHOWINDEX": os.path.join(static_dir, "showindex.html"),

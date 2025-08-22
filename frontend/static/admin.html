@@ -15,7 +15,10 @@
     <link rel="stylesheet" href="css/core/layouts.css">
     <!-- 頁面專用樣式 -->
     <link rel="stylesheet" href="css/pages/admin.css">
+    <!-- 引入獨立的載入器樣式 -->
     <link rel="stylesheet" href="css/components/spinner-loader.css">
+    <!-- 引入 Dashboard 抽屜樣式 -->
+    <link rel="stylesheet" href="css/pages/dashboard.css">
 </head>
 
 <body class="admin-layout">
@@ -179,6 +182,23 @@
                     </div>
                     <div class="card-footer">
                         <button class="btn-enter" onclick="navigateToFunction('user-management')">
+                            進入管理
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 組織管理 -->
+                <div class="function-card" data-function="organization" data-roles="admin">
+                    <div class="card-icon">
+                        <i class="fas fa-sitemap"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>組織管理</h3>
+                        <p>管理部門架構、角色權限和組織成員</p>
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn-enter" onclick="navigateToFunction('organization')">
                             進入管理
                             <i class="fas fa-arrow-right"></i>
                         </button>

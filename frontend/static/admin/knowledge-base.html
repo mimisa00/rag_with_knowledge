@@ -228,6 +228,26 @@
                     <div class="tab-content">
                         <!-- 知識庫資訊 Tab -->
                         <div id="infoTab" class="tab-pane active">
+                            <!-- 創建成功引導提示區域 -->
+                            <div id="createSuccessGuide" class="guide-tips d-none">
+                                <div class="success-message">
+                                    <i class="fas fa-check-circle"></i>
+                                    <span>知識庫創建成功！現在您可以：</span>
+                                </div>
+                                <div class="next-action-cards">
+                                    <div class="action-card" onclick="GuideModule.goToUploadFiles()">
+                                        <i class="fas fa-upload"></i>
+                                        <h4>上傳檔案</h4>
+                                        <p>上傳文件到知識庫中</p>
+                                    </div>
+                                    <div class="action-card" onclick="GuideModule.hideGuide('createSuccessGuide')">
+                                        <i class="fas fa-times-circle"></i>
+                                        <h4>稍後處理</h4>
+                                        <p>先瀏覽其他功能</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
                             <div class="kb-info-section">
                                 <!-- 操作按鈕區 -->
                                 <div id="kbPreviewButtons" class="kb-button-group d-none">
@@ -284,6 +304,26 @@
                         
                         <!-- 檔案管理 Tab -->
                         <div id="filesTab" class="tab-pane">
+                            <!-- 檔案上傳成功引導提示區域 -->
+                            <div id="uploadSuccessGuide" class="guide-tips d-none">
+                                <div class="success-message">
+                                    <i class="fas fa-check-circle"></i>
+                                    <span>檔案上傳成功！接下來請建立索引以啟用智能問答：</span>
+                                </div>
+                                <div class="next-action-cards">
+                                    <div class="action-card" onclick="GuideModule.goToBuildIndex()">
+                                        <i class="fas fa-cogs"></i>
+                                        <h4>建立索引</h4>
+                                        <p>處理文件並建立智能索引</p>
+                                    </div>
+                                    <div class="action-card" onclick="GuideModule.hideGuide('uploadSuccessGuide')">
+                                        <i class="fas fa-clock"></i>
+                                        <h4>稍後建立</h4>
+                                        <p>先上傳更多檔案</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
                             <div class="action-bar mb-md">
                                 <button type="button" id="uploadBtn" class="btn btn-primary me-2">
                                     <i class="fas fa-upload"></i> 上傳檔案
@@ -306,6 +346,7 @@
                         
                         <!-- 索引工具 Tab -->
                         <div id="indexTab" class="tab-pane">
+                            
 
                             <div class="action-bar mb-md">
                                 <!-- 建立索引按鈕會由 JS 包裝成 index-button-container -->
@@ -327,6 +368,26 @@
                                 <button type="button" onclick="IndexModule.showCurrentKBIndex()" class="btn btn-warning me-2">
                                     <i class="fas fa-file-alt"></i> 完整內容
                                 </button>
+                            </div>
+
+                            <!-- 成功提示區域 -->
+                            <div id="indexSuccessTips" class="index-success-tips d-none">
+                                <div class="success-message">
+                                    <i class="fas fa-check-circle"></i>
+                                    <span>索引建立成功！現在您可以：</span>
+                                </div>
+                                <div class="next-action-cards">
+                                    <div class="action-card" onclick="IndexModule.goToQAPage()">
+                                        <i class="fas fa-comments"></i>
+                                        <h4>前往問答</h4>
+                                        <p>開始使用此知識庫進行智能問答</p>
+                                    </div>
+                                    <div class="action-card" onclick="KBTabManager.switchTab('permissions')">
+                                        <i class="fas fa-shield-halved"></i>
+                                        <h4>權限設定</h4>
+                                        <p>設定知識庫的存取權限</p>
+                                    </div>
+                                </div>
                             </div>
 
                             <!-- 索引參數資訊顯示區 -->
@@ -356,27 +417,6 @@
                                 </div>
                             </div>
                             
-    
-                            
-                            <!-- 成功提示區域 -->
-                            <div id="indexSuccessTips" class="index-success-tips d-none">
-                                <div class="success-message">
-                                    <i class="fas fa-check-circle"></i>
-                                    <span>索引建立成功！現在您可以：</span>
-                                </div>
-                                <div class="next-action-cards">
-                                    <div class="action-card" onclick="IndexModule.goToQAPage()">
-                                        <i class="fas fa-comments"></i>
-                                        <h4>前往問答</h4>
-                                        <p>開始使用此知識庫進行智能問答</p>
-                                    </div>
-                                    <div class="action-card" onclick="KBTabManager.switchTab('permissions')">
-                                        <i class="fas fa-shield-halved"></i>
-                                        <h4>權限設定</h4>
-                                        <p>設定知識庫的存取權限</p>
-                                    </div>
-                                </div>
-                            </div>
                             
                             <div id="indexSummary" class="index-summary">
                                 <!-- 索引摘要顯示區 -->
@@ -494,15 +534,15 @@
     <!-- 建立索引確認模態框 -->
     <div id="buildIndexModal" class="modal">
         <div class="modal-content modal-content-md">
-            <!-- 重建索引Loading覆蓋層 -->
+            <!-- 建立索引Loading覆蓋層 -->
             <div id="buildIndexLoadingOverlay" class="build-index-loading-overlay">
                 <div class="loader"></div>
-                <div class="loading-text">索引重建處理中</div>
-                <div class="loading-detail">系統正在清除舊索引並重新建立索引，請耐心等待處理完成。此過程可能需要數分鐘時間，請勿關閉此視窗。</div>
+                <div class="loading-text">索引建立處理中</div>
+                <div class="loading-detail">系統正在清除舊索引並建立新索引，請耐心等待處理完成。此過程可能需要數分鐘時間，請勿關閉此視窗。</div>
             </div>
 
             <div class="modal-header">
-                <h3>確認重建索引</h3>
+                <h3>確認建立索引</h3>
                 <button class="modal-close" onclick="closeBuildIndexModal()">
                     <i class="fa-solid fa-times"></i>
                 </button>
@@ -510,26 +550,27 @@
             <div class="modal-body">
                 <p class="modal-warning text-warning">
                     <i class="fa-solid fa-exclamation-triangle mr-sm"></i>
-                    重要提醒：重建索引操作說明
+                    重要提醒：建立索引操作說明
                 </p>
                 <div class="modal-reminder-box">
                     <p class="modal-reminder-text">
                         <strong>本操作將執行以下步驟：</strong><br>
                         1. 清除知識庫中現有的所有索引資料<br>
-                        2. 根據您勾選的檔案重新建立索引<br>
+                        2. 根據您勾選的檔案建立索引<br>
                         3. 此過程可能需要數分鐘時間，請耐心等待
                     </p>
                 </div>
                 
                 <!-- 新增：chunk 參數設定區域 -->
                 <div class="modal-params-section" id="chunkParamsSection">
-                    <h4 onclick="IndexModule.toggleChunkParams()">
+                    <h4 onclick="IndexModule.toggleChunkParams()" class="modal-params-header">
                         <span><i class="fas fa-sliders-h"></i> 索引參數設定</span>
+                        <i class="fas fa-chevron-down modal-params-toggle" id="chunkParamsToggleIcon"></i>
                     </h4>
-                    <div class="modal-params-content">
+                    <div class="modal-params-content" id="chunkParamsContent">
                         <div class="modal-params-grid">
                             <div>
-                                <label for="indexChunkSize" class="form-label">
+                                <label for="indexChunkSize" class="form-label" title="文件切割單位 : 一次切多大段文字給 AI 分析，切的越大上下文越完整，但可能超過處理限制、變慢或花更多資源，切得越小，越方便 AI 精準處理，但容易把上下文拆斷，失去連貫性">
                                     Chunk Size
                                     <span id="chunkSizeValue" class="chunk-value-display">(500)</span>
                                 </label>
@@ -539,7 +580,7 @@
                                 <small class="text-muted">文件切割大小，範圍：50-<span id="maxChunkSize">2000</span></small>
                             </div>
                             <div>
-                                <label for="indexChunkOverlap" class="form-label">
+                                <label for="indexChunkOverlap" class="form-label" title="文件切割重疊單位 : 段落之間的「重疊區」，避免重要內容剛好被切斷，讓上下文更連貫">
                                     Chunk Overlap
                                     <span id="chunkOverlapValue" class="chunk-value-display">(50)</span>
                                 </label>
@@ -557,7 +598,38 @@
                     </div>
                 </div>
                 
-                <p class="mb-md font-weight-bold">將要重建索引的檔案：</p>
+                <!-- 索引說明引導區域 -->
+                <div id="indexExplainGuide" class="guide-tips-info">
+                    <div class="guide-info-header" onclick="GuideModule.toggleIndexExplain()">
+                        <i class="fas fa-question-circle"></i>
+                        <span>什麼是索引？為什麼需要建立索引？</span>
+                        <i class="fas fa-chevron-down guide-toggle-icon" id="indexExplainIcon"></i>
+                    </div>
+                    <div id="indexExplainContent" class="guide-info-content d-none">
+                        <p><strong>索引是什麼？</strong></p>
+                        <p>索引是將您上傳的文件轉換成 AI 可以理解和搜尋的格式，就像圖書館的目錄系統，幫助 AI 快速找到相關內容。</p>
+                        
+                        <p><strong>參數說明：</strong></p>
+                        <ul>
+                            <li><strong>Chunk Size（文件切割大小）</strong>：決定每次 AI 處理多少文字
+                                <ul>
+                                    <li>較大值（如 512）：保留更完整的上下文，但處理較慢</li>
+                                    <li>較小值（如 128）：處理更精準快速，但可能失去部分關聯</li>
+                                </ul>
+                            </li>
+                            <li><strong>Chunk Overlap（重疊大小）</strong>：相鄰段落的重複部分
+                                <ul>
+                                    <li>避免重要資訊剛好被切斷</li>
+                                    <li>建議值：Chunk Size 的 10%（如 50）</li>
+                                </ul>
+                            </li>
+                        </ul>
+                        
+                        <p class="guide-tip">💡 第一次使用建議保持預設值，之後可根據實際效果調整</p>
+                    </div>
+                </div>
+                
+                <p class="mb-md font-weight-bold">將要建立索引的檔案：</p>
                 <div id="filesToIndexList" class="modal-file-list-sm">
                     <!-- 檔案列表會動態填入 -->
                 </div>
@@ -570,7 +642,7 @@
                 <button onclick="closeBuildIndexModal(true)" class="btn btn-secondary">取消</button>
                 <button onclick="confirmBuildIndex()" class="btn btn-info">
                     <i class="fa-solid fa-cogs mr-xs"></i>
-                    確認重建索引
+                    確認建立索引
                 </button>
             </div>
         </div>
@@ -609,7 +681,8 @@
                 // 載入公共模組
                 await ScriptLoader.loadModulesInOrder([
                     '/js/modules/common-ui.js',
-                    '/js/modules/user-menu-module.js'
+                    '/js/modules/user-menu-module.js',
+                    '/js/modules/guide-module.js'
                 ]);
                 
                 // 載入受保護的管理員模組
@@ -625,6 +698,11 @@
                 // 所有模組載入完成後，手動初始化頁面
                 if (window.initKnowledgeBasePage) {
                     window.initKnowledgeBasePage();
+                }
+                
+                // 初始化引導模組
+                if (window.GuideModule) {
+                    window.GuideModule.init();
                 }
             } catch (error) {
                 console.error('模組載入失敗:', error);

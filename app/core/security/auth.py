@@ -62,9 +62,9 @@ class AuthManager:
             logger.error(f"JWT 驗證錯誤: {e}")
             return None
 
-    def authenticate_user(self, username: str, password: str) -> Optional[Dict[str, Any]]:
+    def authenticate_user(self, loginid: str, password: str) -> Optional[Dict[str, Any]]:
         """驗證用戶"""
-        user = user_dao.get_user_by_username(username)
+        user = user_dao.get_user_by_loginid(loginid)
         if not user:
             return None
         if not self.verify_password(password, user["password_hash"]):

@@ -28,8 +28,18 @@
 
         <form id="register-form">
             <div class="form-group">
-                <label for="username">用戶名</label>
-                <input type="text" id="username" name="username" class="form-control" required minlength="3" maxlength="20">
+                <label for="loginid">登入帳號</label>
+                <input type="text" id="loginid" name="loginid" class="form-control" required minlength="3" maxlength="20">
+            </div>
+
+            <div class="form-group">
+                <label for="username">暱稱</label>
+                <input type="text" id="username" name="username" class="form-control" required minlength="2" maxlength="50">
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" class="form-control" required maxlength="60">
             </div>
 
             <div class="form-group">
@@ -54,7 +64,9 @@
         document.getElementById('register-form').addEventListener('submit', async function (e) {
             e.preventDefault();
 
+            const loginid = document.getElementById('loginid').value;
             const username = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const confirmPassword = document.getElementById('confirm_password').value;
 
@@ -70,7 +82,7 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ username, password })
+                    body: JSON.stringify({ loginid, username, email, password })
                 });
 
                 const data = await response.json();

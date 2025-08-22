@@ -9,15 +9,19 @@ class UserDAO(BaseDAO):
     def __init__(self, db_manager_instance=None):
         super().__init__(db_manager_instance or db_manager)
 
-    def get_user_by_username(self, username: str) -> Optional[Dict[str, Any]]:
-        """根據使用者名稱取得使用者資訊"""
+    def get_user_by_loginid(self, loginid: str) -> Optional[Dict[str, Any]]:
+        """根據登入帳號取得使用者資訊"""
         try:
-            query = "SELECT * FROM users WHERE username = %s"
-            results = self.execute_query(query, (username,))
+            query = "SELECT * FROM users WHERE loginid = %s"
+            results = self.execute_query(query, (loginid,))
             return results[0] if results else None
         except Exception as e:
             logger.error(f"取得使用者資訊失敗: {e}")
             return None
+    
+    def get_user_by_username(self, username: str) -> Optional[Dict[str, Any]]:
+        """根據使用者名稱取得使用者資訊（保留向後相容）"""
+        return self.get_user_by_loginid(username)
 
     def get_user_by_id(self, user_id: int) -> Optional[Dict[str, Any]]:
         """根據使用者ID取得使用者資訊"""
@@ -32,17 +36,17 @@ class UserDAO(BaseDAO):
     def get_all_users(self) -> List[Dict[str, Any]]:
         """獲取所有用戶（管理員功能）"""
         try:
-            query = "SELECT id, username, role, is_active, created_at FROM users ORDER BY created_at DESC"
+            query = "SELECT id, loginid, username, email, role, is_active, created_at FROM users ORDER BY created_at DESC"
             return self.execute_query(query)
         except Exception as e:
             logger.error(f"取得所有用戶失敗: {e}")
             return []
 
-    def create_user(self, username: str, password_hash: str, role: str) -> int:
+    def create_user(self, loginid: str, username: str, email: str, password_hash: str, role: str) -> int:
         """創建新用戶"""
         try:
-            query = "INSERT INTO users (username, password_hash, role) VALUES (%s, %s, %s)"
-            return self.execute_insert(query, (username, password_hash, role))
+            query = "INSERT INTO users (loginid, username, email, password_hash, role) VALUES (%s, %s, %s, %s, %s)"
+            return self.execute_insert(query, (loginid, username, email, password_hash, role))
         except Exception as e:
             logger.error(f"創建用戶失敗: {e}")
             return -1

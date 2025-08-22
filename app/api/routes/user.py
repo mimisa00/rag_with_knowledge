@@ -21,7 +21,8 @@ router = APIRouter()
 @router.post("/user/login", response_model=LoginResponse)
 def api_login(login_data: LoginRequest, response: Response):
     """用戶登入"""
-    user = auth_manager.authenticate_user(login_data.username, login_data.password)
+    # username 現在是 loginid
+    user = auth_manager.authenticate_user(login_data.loginid, login_data.password)
 
     if not user:
         raise HTTPException(
@@ -59,12 +60,12 @@ def api_login(login_data: LoginRequest, response: Response):
 @router.post("/user/register", response_model=BaseResponse)
 def api_register(register_data: RegisterRequest):
     """用戶註冊"""
-    # 檢查用戶名是否已存在
-    existing_user = user_dao.get_user_by_username(register_data.username)
+    # 檢查登入帳號是否已存在
+    existing_user = user_dao.get_user_by_loginid(register_data.loginid)
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, 
-            detail="用戶名已存在"
+            detail="登入帳號已存在"
         )
 
     # 檢查是否為第一個用戶（設為管理員）
@@ -73,9 +74,12 @@ def api_register(register_data: RegisterRequest):
 
     # 加密密碼
     password_hash = auth_manager.get_password_hash(register_data.password)
+    
+    # 使用 loginid 作為預設的 username（如果沒有提供）
+    username = getattr(register_data, 'username', register_data.loginid)
 
     # 創建用戶
-    user_id = user_dao.create_user(register_data.username, password_hash, role)
+    user_id = user_dao.create_user(register_data.loginid, username, register_data.email, password_hash, role)
     
     if user_id <= 0:
         raise HTTPException(

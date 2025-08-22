@@ -194,6 +194,25 @@
             const modal = document.getElementById('buildIndexModal');
             const fileList = document.getElementById('filesToIndexList');
             const checkedFiles = document.querySelectorAll('#fileCheckboxList .file-checkbox:checked');
+            
+            // 檢查是否為首次建立索引
+            const hasSeenParams = localStorage.getItem('kb_index_params_seen');
+            const content = document.getElementById('chunkParamsContent');
+            const icon = document.getElementById('chunkParamsToggleIcon');
+            
+            if (content && icon) {
+                if (!hasSeenParams) {
+                    // 首次使用：展開參數設定，箭頭朝下（不加 rotated）
+                    content.style.display = 'block';
+                    icon.classList.remove('rotated');
+                    // 標記已看過
+                    localStorage.setItem('kb_index_params_seen', 'true');
+                } else {
+                    // 非首次使用：收合參數設定，箭頭朝上（加 rotated）
+                    content.style.display = 'none';
+                    icon.classList.add('rotated');
+                }
+            }
 
             fileList.innerHTML = '';
             if (checkedFiles.length === 0) {
@@ -872,6 +891,12 @@
                             if (currentKBId && window.KnowledgeBaseModule && window.KnowledgeBaseModule.updateTabStates) {
                                 await window.KnowledgeBaseModule.updateTabStates(currentKBId);
                             }
+                            
+                            // 檢查是否為第一個檔案並顯示引導
+                            if (window.GuideModule && currentKBId) {
+                                const isFirstFile = await window.GuideModule.checkIsFirstFile(currentKBId);
+                                window.GuideModule.showUploadSuccessGuide(isFirstFile);
+                            }
                         }, 1000); // 等待整個同步淡出動畫完成後再執行 (4200ms + 2000ms + 400ms)
                     }
                 } else {
@@ -1392,9 +1417,23 @@
 
         // 切換 chunk 參數區域的展開/收合狀態
         toggleChunkParams: function() {
-            const section = document.getElementById('chunkParamsSection');
-            if (section) {
-                section.classList.toggle('collapsed');
+            const content = document.getElementById('chunkParamsContent');
+            const icon = document.getElementById('chunkParamsToggleIcon');
+            
+            if (content && icon) {
+                // 使用 getComputedStyle 來獲取實際的顯示狀態
+                const isHidden = content.style.display === 'none' || 
+                                (content.style.display === '' && window.getComputedStyle(content).display === 'none');
+                
+                if (isHidden) {
+                    // 展開內容，箭頭朝下（移除 rotated）
+                    content.style.display = 'block';
+                    icon.classList.remove('rotated');
+                } else {
+                    // 收合內容，箭頭朝上（加 rotated）
+                    content.style.display = 'none';
+                    icon.classList.add('rotated');
+                }
             }
         }
     };

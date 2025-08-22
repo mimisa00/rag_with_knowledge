@@ -41,6 +41,8 @@
     gap: var(--spacing-xs);
     border-bottom: 1px solid var(--border-color);
     background: var(--bg-main);
+    border-radius: 0;
+    box-shadow: var(--shadow-sm);
 }
 
 /* 抽屜內容 */
@@ -140,6 +142,8 @@
     align-items: center;
     justify-content: space-between;
     gap: var(--spacing-sm); /* 確保元素之間有間距 */
+    height: 42px;
+    position: relative;
 }
 
 .kb-list li:hover {
@@ -148,13 +152,20 @@
 }
 
 .kb-list li.active {
-    background: var(--primary);
-    color: white;
+    background: linear-gradient(90deg, rgba(var(--primary-rgb), 0.2) 10%, transparent 100%);
+    color: var(--primary);
 }
 
-.kb-list li.active .badge {
-    background: white;
-    color: var(--primary);
+.kb-list li.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 70%;
+    background: var(--primary);
+    border-radius: 0 2px 2px 0;
 }
 
 /* 知識庫項目內容 */
@@ -172,9 +183,6 @@
     color: var(--primary);
 }
 
-.kb-list li.active .kb-item-icon {
-    color: white;
-}
 
 .kb-item-name {
     flex: 1;
@@ -537,18 +545,31 @@
     display: none;
     flex-direction: column;
     height: 100%;
-    overflow: hidden; /* 改為 hidden 避免撐開 */
+    overflow-y: auto; /* 允許垂直捲動 */
+    overflow-x: hidden; /* 防止水平捲動 */
     min-width: 0; /* 允許內容縮小 */
+    scrollbar-width: none; /* Firefox 隱藏 scrollbar */
+    -ms-overflow-style: none; /* IE/Edge 隱藏 scrollbar */
+}
+
+.tab-pane::-webkit-scrollbar {
+    display: none; /* Chrome/Safari/Opera 隱藏 scrollbar */
+}
+
+/* 各個 Tab 的特別處理 - 確保都可以捲動 */
+#infoTab,
+#filesTab,
+#indexTab,
+#permissionsTab {
+    overflow-y: auto; /* 允許垂直捲動 */
     scrollbar-width: none;
     -ms-overflow-style: none;
 }
 
-/* 索引 Tab 特別處理 */
-#indexTab {
-    overflow: hidden; /* 確保內容不撐開 */
-}
-
-.tab-pane::-webkit-scrollbar {
+#infoTab::-webkit-scrollbar,
+#filesTab::-webkit-scrollbar,
+#indexTab::-webkit-scrollbar,
+#permissionsTab::-webkit-scrollbar {
     display: none;
 }
 
@@ -570,9 +591,9 @@
 /* 檔案列表 */
 .file-list-container {
     flex: 1;
-    overflow: hidden;
     display: flex;
     flex-direction: column;
+    min-height: 0; /* 允許容器縮小 */
 }
 
 .file-list {
@@ -582,6 +603,8 @@
     border-radius: var(--radius-md);
     padding: var(--spacing-md);
     background: var(--bg-light);
+    min-height: 200px; /* 設定最小高度 */
+    max-height: 500px; /* 設定最大高度，避免無限延伸 */
 }
 
 /* 索引摘要 */
@@ -847,10 +870,11 @@
 }
 
 /* ========================================
-   索引成功提示樣式
+   引導提示通用樣式
    ======================================== */
 
-/* 成功提示容器 */
+/* 通用引導提示容器（複用索引成功提示的風格） */
+.guide-tips,
 .index-success-tips {
     background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
     border: 1px solid #86efac;
@@ -858,6 +882,89 @@
     padding: var(--spacing-lg);
     margin-bottom: var(--spacing-lg);
     animation: fadeIn 0.5s ease-in-out;
+    flex-shrink: 0; /* 防止引導卡片被壓縮 */
+}
+
+/* 資訊型引導提示（可展開的說明區塊） */
+.guide-tips-info {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border: 1px solid #7dd3fc;
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    flex-shrink: 0; /* 防止引導卡片被壓縮 */
+}
+
+.guide-info-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    cursor: pointer;
+    padding: var(--spacing-sm);
+    border-radius: var(--radius-md);
+    transition: background-color var(--transition-normal);
+}
+
+.guide-info-header:hover {
+    background-color: rgba(59, 130, 246, 0.1);
+}
+
+.guide-info-header i:first-child {
+    color: #3b82f6;
+    font-size: 1.2rem;
+}
+
+.guide-toggle-icon {
+    margin-left: auto;
+    transition: transform var(--transition-normal);
+    color: #64748b;
+}
+
+.guide-toggle-icon.rotated {
+    transform: rotate(180deg);
+}
+
+.guide-info-content {
+    padding: var(--spacing-md);
+    margin-top: var(--spacing-sm);
+    background: white;
+    border-radius: var(--radius-md);
+    border: 1px solid #e2e8f0;
+}
+
+.guide-info-content p {
+    margin-bottom: var(--spacing-sm);
+    line-height: 1.6;
+}
+
+.guide-info-content ul {
+    margin-left: var(--spacing-lg);
+    margin-bottom: var(--spacing-sm);
+}
+
+.guide-info-content li {
+    margin-bottom: var(--spacing-xs);
+    list-style-type: disc;
+}
+
+.guide-info-content ul ul {
+    margin-top: var(--spacing-xs);
+    margin-left: var(--spacing-md);
+}
+
+.guide-info-content ul ul li {
+    list-style-type: circle;
+    font-size: 0.95rem;
+    color: #64748b;
+}
+
+.guide-tip {
+    padding: var(--spacing-sm);
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border: 1px solid #fbbf24;
+    border-radius: var(--radius-md);
+    margin-top: var(--spacing-md);
+    font-size: 0.95rem;
 }
 
 /* 成功訊息 */
@@ -970,8 +1077,33 @@
 }
 
 /* 淡出狀態 */
-.index-success-tips.fade-out {
+.index-success-tips.fade-out,
+.guide-tips.fade-out {
     animation: fadeOut 0.5s ease-in-out forwards;
+}
+
+/* 模態框參數設定區域樣式 */
+.modal-params-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    padding: var(--spacing-sm);
+    border-radius: var(--radius-md);
+    transition: background-color var(--transition-normal);
+}
+
+.modal-params-header:hover {
+    background-color: rgba(102, 126, 234, 0.1);
+}
+
+.modal-params-toggle {
+    transition: transform var(--transition-normal);
+    color: #64748b;
+}
+
+.modal-params-toggle.rotated {
+    transform: rotate(180deg);
 }
 
 /* ========================================
@@ -1364,28 +1496,9 @@
     color: #343a40;
 }
 
-.modal-params-section h4::after {
-    content: '\f077'; /* Font Awesome chevron-up */
-    font-family: 'Font Awesome 5 Free';
-    font-weight: 900;
-    transition: transform 0.3s ease;
-    font-size: 0.9em;
-}
-
-.modal-params-section.collapsed h4::after {
-    transform: rotate(180deg);
-}
-
 .modal-params-content {
     transition: max-height 0.3s ease, opacity 0.3s ease;
     overflow: hidden;
-}
-
-.modal-params-section.collapsed .modal-params-content {
-    max-height: 0;
-    opacity: 0;
-    padding-top: 0;
-    margin-top: -15px;
 }
 
 .modal-params-grid {

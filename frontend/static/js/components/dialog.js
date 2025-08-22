@@ -76,7 +76,8 @@
                 title: '系統訊息',
                 type: 'info', // info, success, warning, error
                 icon: true,
-                closeButton: true
+                closeButton: true,
+                allowHTML: false // 預設不允許 HTML，保持安全性
             };
             
             const config = { ...defaults, ...options };
@@ -84,9 +85,13 @@
             // 設定標題
             document.getElementById('dialogTitle').textContent = config.title;
             
-            // 設定訊息
+            // 設定訊息 - 支援 HTML 或純文字
             const messageEl = document.getElementById('dialogMessage');
-            messageEl.textContent = message;
+            if (config.allowHTML) {
+                messageEl.innerHTML = message;
+            } else {
+                messageEl.textContent = message;
+            }
             messageEl.className = `dialog-message dialog-${config.type}`;
             
             // 設定圖標
@@ -124,7 +129,8 @@
                 title: '確認操作',
                 confirmText: '確認',
                 cancelText: '取消',
-                type: 'warning'
+                type: 'warning',
+                allowHTML: false // 預設不允許 HTML，保持安全性
             };
             
             const config = { ...defaults, ...options };
@@ -132,9 +138,13 @@
             // 設定標題
             document.getElementById('dialogTitle').textContent = config.title;
             
-            // 設定訊息
+            // 設定訊息 - 支援 HTML 或純文字
             const messageEl = document.getElementById('dialogMessage');
-            messageEl.textContent = message;
+            if (config.allowHTML) {
+                messageEl.innerHTML = message;
+            } else {
+                messageEl.textContent = message;
+            }
             messageEl.className = `dialog-message dialog-${config.type}`;
             
             // 設定圖標

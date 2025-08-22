@@ -7,13 +7,15 @@ from typing import Optional
 
 class LoginRequest(BaseModel):
     """登入請求模型"""
-    username: str
+    loginid: str
     password: str
 
 
 class RegisterRequest(BaseModel):
     """註冊請求模型"""
+    loginid: str
     username: str
+    email: str
     password: str
 
 

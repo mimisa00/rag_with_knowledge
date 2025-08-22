@@ -175,6 +175,7 @@ from app.api.routes.vector_index import router as vector_index_router
 from app.api.routes.user import router as user_router
 from app.api.routes.conversation import router as conversation_router
 from app.api.routes.query import router as query_router
+from app.api.routes.organization import router as organization_router
 
 app.include_router(static_router, tags=["頁面"])
 app.include_router(config_router, prefix="/api", tags=["配置"])
@@ -185,6 +186,7 @@ app.include_router(vector_index_router, prefix="/api", tags=["向量索引"])
 app.include_router(user_router, prefix="/api", tags=["使用者"])
 app.include_router(conversation_router, prefix="/api", tags=["對話"])
 app.include_router(query_router, prefix="/api", tags=["查詢"])
+app.include_router(organization_router, tags=["組織管理"])
 
 # 掛載靜態文件服務
 static_dir = path_config.get_base_paths()["STATIC_DIR"]

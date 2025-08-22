@@ -60,6 +60,7 @@
               <tr style="background:#f0f0f0;">
                 <th style="padding:8px;border:1px solid #ccc;">ID</th>
                 <th style="padding:8px;border:1px solid #ccc;">帳號</th>
+                <th style="padding:8px;border:1px solid #ccc;">暱稱</th>
                 <th style="padding:8px;border:1px solid #ccc;">角色</th>
                 <th style="padding:8px;border:1px solid #ccc;">狀態</th>
                 <th style="padding:8px;border:1px solid #ccc;">建立時間</th>
@@ -72,6 +73,7 @@
                 const isActive = user.is_active;
                 html += `<tr>
               <td style='border:1px solid #ccc;padding:8px;'>${user.id}</td>
+              <td style='border:1px solid #ccc;padding:8px;'>${user.loginid}</td>
               <td style='border:1px solid #ccc;padding:8px;'>${user.username}</td>
               <td style='border:1px solid #ccc;padding:8px;'>
                 <select onchange="AccountModule.changeUserRole(${user.id}, this.value)" style="padding:4px 8px;">
@@ -230,7 +232,7 @@
         // 開啟管理員變更密碼視窗
         openAdminChangePasswordModal: function(userId, username) {
             window._adminChangePasswordUserId = userId;
-            document.getElementById('adminChangePasswordUsernameLabel').textContent = `帳號：${username}`;
+            document.getElementById('adminChangePasswordUsernameLabel').textContent = `暱稱：${username}`;
             document.getElementById('adminNewPassword').value = '';
             document.getElementById('adminConfirmNewPassword').value = '';
             document.getElementById('adminChangePasswordModal').style.display = 'block';

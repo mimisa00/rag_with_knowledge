@@ -149,6 +149,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    position: relative;
 }
 
 /* 最後一個項目特殊處理，確保可見 */
@@ -158,11 +159,24 @@
 
 .conversation-list li:hover {
     background-color: var(--bg-hover);
+    transform: translateX(5px);
 }
 
 .conversation-list li.active-conversation {
-    background-color: var(--primary);
-    color: white;
+    background: linear-gradient(90deg, rgba(var(--primary-rgb), 0.2) 10%, transparent 100%);
+    color: var(--primary);
+}
+
+.conversation-list li.active-conversation::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 70%;
+    background: var(--primary);
+    border-radius: 0 2px 2px 0;
 }
 
 .conversation-list li .delete-btn {
@@ -180,6 +194,7 @@
     justify-content: center;
     flex-shrink: 0;
     border-radius: var(--radius-sm);
+    color: var(--danger);
 }
 
 .conversation-list li .delete-btn:hover {
@@ -191,7 +206,7 @@
 }
 
 .conversation-list li.active-conversation .delete-btn {
-    color: white;
+    color: var(--danger);
 }
 
 /* ==================== QA 內容區 ==================== */
@@ -509,6 +524,15 @@
 
 .user-menu-content {
     padding: var(--spacing-md);
+}
+
+/* 使用者名稱樣式 */
+#userMenuUsername {
+    display: block;
+    font-size: 1.5em;
+    font-weight: 600;
+    text-align: center;
+    word-break: break-all;
 }
 
 /* 功能開關容器 */

@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>測試部門樹狀結構</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .tree-demo {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+            background: #fafafa;
+        }
+        .tree-node {
+            margin: 5px 0;
+        }
+        .node-content {
+            padding: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .node-content:hover {
+            background: #e9ecef;
+        }
+        .node-toggle {
+            width: 20px;
+            cursor: pointer;
+            color: #666;
+        }
+        .node-toggle.invisible {
+            visibility: hidden;
+        }
+        .node-icon {
+            color: #667eea;
+        }
+        .node-name {
+            flex: 1;
+            font-weight: 500;
+        }
+        .tree-children {
+            margin-left: 30px;
+            display: none;
+        }
+        .tree-children.expanded {
+            display: block;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #5a67d8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌲 部門樹狀結構測試</h1>
+        
+        <div class="status info">
+            <strong>測試說明：</strong>這個頁面用來測試部門樹狀結構的渲染和功能
+        </div>
+
+        <div>
+            <button onclick="loadDepartments()">載入部門資料</button>
+            <button onclick="testTreeRendering()">測試樹狀渲染</button>
+            <button onclick="testMockData()">測試模擬資料</button>
+            <button onclick="clearTree()">清空樹狀結構</button>
+        </div>
+
+        <h2>部門樹狀結構：</h2>
+        <div id="departmentTree" class="tree-demo">
+            <div class="status info">請點擊「載入部門資料」按鈕開始測試</div>
+        </div>
+
+        <h2>測試日誌：</h2>
+        <pre id="testLog"></pre>
+    </div>
+
+    <script>
+        let departments = [];
+        
+        function log(message, type = 'info') {
+            const logElement = document.getElementById('testLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : 'ℹ️';
+            logElement.innerHTML += `[${timestamp}] ${prefix} ${message}\n`;
+            console.log(message);
+        }
+
+        // 載入部門資料
+        async function loadDepartments() {
+            try {
+                log('開始載入部門資料...');
+                
+                // 使用模擬資料進行測試
+                departments = [
+                    { id: 1, name: '總經理室', code: 'CEO', parent_id: null, user_count: 5 },
+                    { id: 2, name: '技術部', code: 'TECH', parent_id: 1, user_count: 20 },
+                    { id: 3, name: '前端組', code: 'FE', parent_id: 2, user_count: 8 },
+                    { id: 4, name: '後端組', code: 'BE', parent_id: 2, user_count: 12 },
+                    { id: 5, name: '業務部', code: 'SALES', parent_id: 1, user_count: 15 },
+                    { id: 6, name: '人資部', code: 'HR', parent_id: 1, user_count: 3 },
+                    { id: 7, name: '財務部', code: 'FIN', parent_id: 1, user_count: 5 },
+                    { id: 8, name: 'QA組', code: 'QA', parent_id: 2, user_count: 6 }
+                ];
+                
+                log(`成功載入 ${departments.length} 個部門`, 'success');
+                renderDepartmentTree();
+            } catch (error) {
+                log(`載入失敗: ${error.message}`, 'error');
+            }
+        }
+
+        // 建構樹狀結構
+        function buildTree(items, parentId = null) {
+            return items
+                .filter(item => item.parent_id === parentId)
+                .map(item => ({
+                    ...item,
+                    children: buildTree(items, item.id)
+                }));
+        }
+
+        // 渲染樹節點
+        function renderTreeNodes(nodes, level = 0) {
+            if (!nodes || nodes.length === 0) return '';
+            
+            return nodes.map(node => `
+                <div class="tree-node" data-id="${node.id}" data-level="${level}">
+                    <div class="node-content" style="padding-left: ${level * 20}px">
+                        <span class="node-toggle ${node.children && node.children.length > 0 ? '' : 'invisible'}">
+                            <span class="toggle-icon">▶</span>
+                        </span>
+                        <span class="node-icon">📁</span>
+                        <span class="node-name">${node.name}</span>
+                        <span class="node-count">(${node.user_count || 0}人)</span>
+                    </div>
+                    ${node.children && node.children.length > 0 ? `
+                        <div class="tree-children">
+                            ${renderTreeNodes(node.children, level + 1)}
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+
+        // 渲染部門樹
+        function renderDepartmentTree() {
+            const container = document.getElementById('departmentTree');
+            
+            if (departments.length === 0) {
+                container.innerHTML = '<div class="status info">尚無部門資料</div>';
+                log('部門資料為空');
+                return;
+            }
+            
+            const tree = buildTree(departments);
+            log(`建構樹狀結構完成，根節點數: ${tree.length}`, 'success');
+            
+            if (tree.length === 0) {
+                // 沒有根節點，顯示平面列表
+                container.innerHTML = departments.map(dept => `
+                    <div class="tree-node">
+                        <div class="node-content">
+                            <span class="node-icon">📁</span>
+                            <span class="node-name">${dept.name}</span>
+                            <span class="node-count">(${dept.user_count || 0}人)</span>
+                        </div>
+                    </div>
+                `).join('');
+                log('沒有樹狀結構，顯示平面列表');
+            } else {
+                container.innerHTML = renderTreeNodes(tree);
+                bindTreeEvents();
+                log('樹狀結構渲染完成', 'success');
+            }
+        }
+
+        // 綁定樹狀結構事件
+        function bindTreeEvents() {
+            document.querySelectorAll('.node-toggle:not(.invisible)').forEach(toggle => {
+                toggle.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const node = this.closest('.tree-node');
+                    const children = node.querySelector('.tree-children');
+                    const icon = this.querySelector('.toggle-icon');
+                    
+                    if (children) {
+                        const isExpanded = children.classList.contains('expanded');
+                        
+                        if (isExpanded) {
+                            children.classList.remove('expanded');
+                            icon.textContent = '▶';
+                            log(`收合節點: ${node.querySelector('.node-name').textContent}`);
+                        } else {
+                            children.classList.add('expanded');
+                            icon.textContent = '▼';
+                            log(`展開節點: ${node.querySelector('.node-name').textContent}`);
+                        }
+                    }
+                });
+            });
+            
+            log('事件綁定完成', 'success');
+        }
+
+        // 測試樹狀渲染
+        function testTreeRendering() {
+            log('開始測試樹狀渲染...');
+            
+            // 測試簡單結構
+            departments = [
+                { id: 1, name: '根部門', parent_id: null, user_count: 10 },
+                { id: 2, name: '子部門1', parent_id: 1, user_count: 5 },
+                { id: 3, name: '子部門2', parent_id: 1, user_count: 3 }
+            ];
+            
+            renderDepartmentTree();
+            log('簡單結構測試完成', 'success');
+        }
+
+        // 測試模擬資料
+        function testMockData() {
+            log('載入完整模擬資料...');
+            loadDepartments();
+        }
+
+        // 清空樹狀結構
+        function clearTree() {
+            departments = [];
+            document.getElementById('departmentTree').innerHTML = '<div class="status info">樹狀結構已清空</div>';
+            log('樹狀結構已清空', 'success');
+        }
+
+        // 頁面載入時自動執行
+        window.onload = function() {
+            log('測試頁面載入完成', 'success');
+            log('請點擊按鈕開始測試');
+        };
+    </script>
+</body>
+</html>

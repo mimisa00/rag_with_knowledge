@@ -68,7 +68,16 @@
                 <i class="fas fa-chevron-right"></i>
             </span>
             <div class="breadcrumb-item">
-                <span class="breadcrumb-current">系統參數管理</span>
+                <a href="javascript:void(0)" onclick="ParamDrawerManager.switchCategory('request')" class="breadcrumb-link">
+                    <span>系統參數管理</span>
+                </a>
+            </div>
+            <!-- 動態分類項目 -->
+            <span id="categoryBreadcrumbSeparator" class="breadcrumb-separator">
+                <i class="fas fa-chevron-right"></i>
+            </span>
+            <div id="categoryBreadcrumbItem" class="breadcrumb-item">
+                <span id="categoryBreadcrumb" class="breadcrumb-current">請求控制</span>
             </div>
         </div>
     </div>

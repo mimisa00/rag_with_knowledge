@@ -57,6 +57,8 @@
     flex-wrap: nowrap; /* 不允許換行 */
     border-bottom: 1px solid var(--border-color);
     background: var(--bg-main);
+    border-radius: 0;
+    box-shadow: var(--shadow-sm);
 }
 
 .drawer-toggle-btn {
@@ -118,16 +120,29 @@
     cursor: pointer;
     transition: all var(--transition-fast);
     position: relative;
+    height: 42px;
 }
 
 .category-item:hover {
     background: var(--bg-hover);
-    transform: translateX(4px);
+    transform: translateX(5px);
 }
 
 .category-item.active {
+    background: linear-gradient(90deg, rgba(var(--primary-rgb), 0.2) 10%, transparent 100%);
+    color: var(--primary);
+}
+
+.category-item.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 70%;
     background: var(--primary);
-    color: white;
+    border-radius: 0 2px 2px 0;
 }
 
 .category-item i {
@@ -171,8 +186,12 @@
     align-items: center;
     padding: var(--spacing-md) var(--spacing-lg);
     background: white;
-    border-bottom: 1px solid var(--border-color);
+    border-radius: 0;
     box-shadow: var(--shadow-sm);
+    margin: 0 calc(0 * var(--spacing-lg));
+    margin-bottom: var(--spacing-lg); /* 增加下邊距給 TAB 更多空間 */
+    height: 62px;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .current-category-info {

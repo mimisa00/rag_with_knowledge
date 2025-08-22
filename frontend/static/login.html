@@ -27,8 +27,8 @@
 
         <form id="login-form">
             <div class="form-group">
-                <label for="username">用戶名</label>
-                <input type="text" id="username" name="username" class="form-control" required>
+                <label for="loginid">登入帳號</label>
+                <input type="text" id="loginid" name="loginid" class="form-control" required>
             </div>
 
             <div class="form-group">
@@ -79,7 +79,7 @@
         document.getElementById('login-form').addEventListener('submit', async function (e) {
             e.preventDefault();
 
-            const username = document.getElementById('username').value;
+            const loginid = document.getElementById('loginid').value;
             const password = document.getElementById('password').value;
 
             try {
@@ -88,7 +88,7 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ username, password })
+                    body: JSON.stringify({ loginid, password })
                 });
 
                 const data = await response.json();
