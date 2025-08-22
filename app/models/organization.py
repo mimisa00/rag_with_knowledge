@@ -214,6 +214,20 @@ class SystemModeUpdate(BaseModel):
     description: Optional[str] = None
 
 
+class UserUpdate(BaseModel):
+    """更新使用者完整資訊請求"""
+    # 基本資訊
+    username: Optional[str] = Field(None, max_length=100)
+    email: Optional[str] = Field(None, max_length=100)
+    password: Optional[str] = Field(None, min_length=6)
+    is_active: Optional[bool] = None
+    # 擴充資訊
+    department_id: Optional[int] = None
+    employee_no: Optional[str] = Field(None, max_length=50)
+    title: Optional[str] = Field(None, max_length=100)
+    # 角色
+    role_ids: Optional[List[int]] = None
+
 # 回應模型
 class DepartmentResponse(Department):
     """部門回應模型"""

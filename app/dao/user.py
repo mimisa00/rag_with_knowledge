@@ -23,11 +23,15 @@ class UserDAO(BaseDAO):
         """根據使用者名稱取得使用者資訊（保留向後相容）"""
         return self.get_user_by_loginid(username)
 
-    def get_user_by_id(self, user_id: int) -> Optional[Dict[str, Any]]:
+    def get_user_by_id(self, user_id: int, include_inactive: bool = False) -> Optional[Dict[str, Any]]:
         """根據使用者ID取得使用者資訊"""
         try:
-            query = "SELECT * FROM users WHERE id = %s AND is_active = 1"
-            results = self.execute_query(query, (user_id,))
+            if include_inactive:
+                query = "SELECT * FROM users WHERE id = %s"
+                results = self.execute_query(query, (user_id,))
+            else:
+                query = "SELECT * FROM users WHERE id = %s AND is_active = 1"
+                results = self.execute_query(query, (user_id,))
             return results[0] if results else None
         except Exception as e:
             logger.error(f"取得使用者資訊失敗: {e}")
@@ -85,6 +89,29 @@ class UserDAO(BaseDAO):
             return self.execute_update(query, (password_hash, user_id))
         except Exception as e:
             logger.error(f"更新用戶密碼失敗: {e}")
+            return False
+            
+    def update_user(self, user_id: int, updates: Dict[str, Any]) -> bool:
+        """更新使用者基本資訊"""
+        try:
+            # 過濾掉 None 值和不允許更新的欄位
+            allowed_fields = ['username', 'email', 'is_active']
+            filtered_updates = {k: v for k, v in updates.items() 
+                              if k in allowed_fields and v is not None}
+            
+            if not filtered_updates:
+                return True  # 沒有需要更新的欄位
+            
+            # 建立 UPDATE 語句
+            set_clauses = [f"{field} = %s" for field in filtered_updates.keys()]
+            query = f"UPDATE users SET {', '.join(set_clauses)} WHERE id = %s"
+            
+            # 準備參數
+            params = list(filtered_updates.values()) + [user_id]
+            
+            return self.execute_update(query, params)
+        except Exception as e:
+            logger.error(f"更新使用者資訊失敗: {e}")
             return False
 
 

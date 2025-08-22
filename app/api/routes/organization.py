@@ -7,7 +7,7 @@ from app.api.dependencies import get_current_user, get_admin_user
 from app.models.organization import (
     Department, DepartmentCreate, DepartmentUpdate, DepartmentResponse,
     Role, RoleCreate, RoleUpdate, RoleResponse,
-    UserExtension, UserExtensionUpdate, UserRoleAssign,
+    UserExtension, UserExtensionUpdate, UserUpdate, UserRoleAssign,
     SystemMode, SystemModeUpdate, UserWithRoles,
     AuditLog
 )
@@ -520,7 +520,9 @@ def list_organization_users(
     """列出組織使用者"""
     try:
         users = []
-        
+        print("====================== DEBUG ===================")
+        print(department_id, role_id,flush=True)
+        print("====================== DEBUG ===================")
         if department_id:
             # 按部門列出使用者
             dept_users = user_org_dao.list_users_in_department(department_id)
@@ -572,6 +574,122 @@ def get_organization_user(
         raise HTTPException(status_code=500, detail="取得使用者資訊時發生錯誤")
 
 
+@router.put("/users/{user_id}", response_model=Dict[str, Any])
+def update_user(
+    user_id: int,
+    user_update: UserUpdate,
+    request: Request,
+    current_user: Dict[str, Any] = Depends(get_admin_user)
+):
+    """統一更新使用者資訊（基本資訊、擴充資訊、角色）"""
+    try:
+        # 檢查使用者是否存在
+        user = user_dao.get_user_by_id(user_id, include_inactive=True)
+        if not user:
+            raise HTTPException(status_code=404, detail="使用者不存在")
+        
+        # 1. 更新基本資訊
+        basic_updates = {}
+        if user_update.username is not None:
+            basic_updates['username'] = user_update.username
+        if user_update.email is not None:
+            basic_updates['email'] = user_update.email
+        if user_update.is_active is not None:
+            basic_updates['is_active'] = user_update.is_active
+            
+        if basic_updates:
+            success = user_dao.update_user(user_id, basic_updates)
+            if not success:
+                raise HTTPException(status_code=400, detail="更新使用者基本資訊失敗")
+        
+        # 2. 更新密碼（如果提供）
+        if user_update.password:
+            from app.core.security.auth import auth_manager
+            password_hash = auth_manager.get_password_hash(user_update.password)
+            success = user_dao.update_user_password(user_id, password_hash)
+            if not success:
+                raise HTTPException(status_code=400, detail="更新密碼失敗")
+        
+        # 3. 更新擴充資訊
+        ext_updates = {}
+        if user_update.department_id is not None:
+            ext_updates['department_id'] = user_update.department_id
+        if user_update.employee_no is not None:
+            ext_updates['employee_no'] = user_update.employee_no
+        if user_update.title is not None:
+            ext_updates['title'] = user_update.title
+            
+        if ext_updates:
+            extension = user_org_dao.get_user_extension(user_id)
+            if extension:
+                success = user_org_dao.update_user_extension(user_id, ext_updates)
+            else:
+                # 建立新的擴充資訊
+                ext_model = UserExtension(
+                    user_id=user_id,
+                    **ext_updates,
+                    created_by=current_user['id']
+                )
+                success = user_org_dao.create_user_extension(ext_model)
+            
+            if not success:
+                raise HTTPException(status_code=400, detail="更新擴充資訊失敗")
+        
+        # 4. 更新角色
+        if user_update.role_ids is not None:
+            # 先獲取現有角色
+            existing_roles = user_org_dao.get_user_roles(user_id)
+            
+            # 刪除所有現有角色
+            for role in existing_roles:
+                user_org_dao.revoke_user_role(
+                    user_id=user_id,
+                    role_id=role['role_id'],
+                    department_id=role.get('department_id')
+                )
+            
+            # 分配新角色
+            from app.models.organization import UserRole
+            for role_id in user_update.role_ids:
+                user_role = UserRole(
+                    user_id=user_id,
+                    role_id=role_id,
+                    department_id=user_update.department_id,
+                    assigned_by=current_user['id']
+                )
+                user_org_dao.assign_user_role(user_role)
+                user_org_dao.assign_user_role(user_role)
+        
+        # 記錄審計日誌
+        changes = {}
+        if basic_updates:
+            changes.update(basic_updates)
+        if ext_updates:
+            changes.update(ext_updates)
+        if user_update.role_ids is not None:
+            changes['role_ids'] = user_update.role_ids
+        if user_update.password:
+            changes['password'] = '***'  # 不記錄實際密碼
+            
+        audit_log_dao.create_audit_log(AuditLog(
+            user_id=current_user['id'],
+            action="update_user",
+            target_type="user",
+            target_id=str(user_id),
+            changes=changes,
+            ip_address=request.client.host,
+            user_agent=request.headers.get("User-Agent")
+        ))
+        
+        return {"success": True, "message": "使用者資訊更新成功"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating user: {e}")
+        raise HTTPException(status_code=500, detail="更新使用者時發生錯誤")
+
+
 @router.put("/users/{user_id}/extension", response_model=Dict[str, Any])
 def update_user_extension(
     user_id: int,
@@ -582,7 +700,7 @@ def update_user_extension(
     """更新使用者擴充資訊"""
     try:
         # 檢查使用者是否存在
-        user = user_dao.get_user_by_id(user_id)
+        user = user_dao.get_user_by_id(user_id, include_inactive=True)
         if not user:
             raise HTTPException(status_code=404, detail="使用者不存在")
         
@@ -653,15 +771,32 @@ def create_organization_user(
         if not user_id or user_id == -1:
             raise HTTPException(status_code=400, detail="建立使用者失敗")
         
-        # 更新組織資訊
-        if user_data.get('department_id'):
-            ext_updates = {
-                'department_id': user_data.get('department_id'),
-                'employee_no': user_data.get('employee_no'),
-                'title': user_data.get('title'),
-                'created_by': current_user['id']
-            }
-            user_org_dao.update_user_extension(user_id, ext_updates)
+        # 建立或更新組織資訊（始終建立 user_extensions 記錄）
+        from app.models.organization import UserExtension
+        
+        # 準備擴展資訊
+        ext_data = {
+            'department_id': user_data.get('department_id'),
+            'employee_no': user_data.get('employee_no'),
+            'title': user_data.get('title'),
+            'auth_source': 'local',  # 預設認證來源
+        }
+        
+        # 檢查是否已有擴展資訊
+        existing_ext = user_org_dao.get_user_extension(user_id)
+        
+        if existing_ext:
+            # 更新現有記錄
+            ext_data['updated_by'] = current_user['id']
+            user_org_dao.update_user_extension(user_id, ext_data)
+        else:
+            # 建立新記錄
+            ext_model = UserExtension(
+                user_id=user_id,
+                **ext_data,
+                created_by=current_user['id']
+            )
+            user_org_dao.create_user_extension(ext_model)
         
         # 分配角色
         if user_data.get('role_ids'):
@@ -702,7 +837,7 @@ def delete_organization_user(
     """刪除組織使用者"""
     try:
         # 檢查使用者是否存在
-        user = user_dao.get_user_by_id(user_id)
+        user = user_dao.get_user_by_id(user_id, include_inactive=True)
         if not user:
             raise HTTPException(status_code=404, detail="使用者不存在")
         
@@ -749,7 +884,7 @@ def assign_user_role(
     """分配使用者角色"""
     try:
         # 檢查使用者和角色是否存在
-        user = user_dao.get_user_by_id(assignment.user_id)
+        user = user_dao.get_user_by_id(assignment.user_id, include_inactive=True)
         if not user:
             raise HTTPException(status_code=404, detail="使用者不存在")
         
@@ -937,8 +1072,8 @@ def list_audit_logs(
 def _build_user_with_roles(user_id: Any) -> Optional[UserWithRoles]:
     """建立包含角色的使用者資訊"""
     try:
-        # 取得使用者基本資訊
-        user = user_dao.get_user_by_id(user_id)
+        # 取得使用者基本資訊（包含停用用戶）
+        user = user_dao.get_user_by_id(user_id, include_inactive=True)
         if not user:
             return None
         

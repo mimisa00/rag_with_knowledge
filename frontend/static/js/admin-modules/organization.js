@@ -48,6 +48,9 @@ const OrganizationModule = (function() {
         // 載入初始數據
         await loadAllData();
         
+        // 預載入表單選項（確保編輯時選項已存在）
+        loadUserFormOptions();
+        
         // 監聽區塊切換事件
         window.addEventListener('orgSectionChange', async (e) => {
             await loadSectionData(e.detail.section);
@@ -675,7 +678,7 @@ const OrganizationModule = (function() {
         }
         
         tbody.innerHTML = users.map(user => `
-            <tr class="${user.status === 'disabled' ? 'inactive-row' : ''}">
+            <tr class="${!user.is_active ? 'inactive-row' : ''}">
                 <td><input type="checkbox" name="userSelect" value="${user.user_id || user.id}"></td>
                 <td>${user.loginid || user.username}</td>
                 <td>${user.username || user.name || ''}</td>
@@ -688,8 +691,8 @@ const OrganizationModule = (function() {
                     </span>
                 </td>
                 <td>
-                    <span class="status-badge ${user.status !== 'disabled' ? 'status-active' : 'status-disabled'}">
-                        ${user.status !== 'disabled' ? '啟用' : '停用'}
+                    <span class="status-badge ${user.is_active ? 'status-active' : 'status-disabled'}">
+                        ${user.is_active ? '啟用' : '停用'}
                     </span>
                 </td>
                 <td>${user.last_login || '從未登入'}</td>
@@ -697,7 +700,7 @@ const OrganizationModule = (function() {
                     <button class="btn-icon" onclick="OrganizationModule.editUser(${user.user_id || user.id})">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button class="btn-icon ${user.status === 'disabled' ? 'disabled' : ''}" ${user.status !== 'disabled' ? `onclick="OrganizationModule.deleteUser(${user.user_id || user.id})"` : ''}>
+                    <button class="btn-icon ${!user.is_active ? 'disabled' : ''}" ${user.is_active ? `onclick="OrganizationModule.deleteUser(${user.user_id || user.id})"` : ''}>
                         <i class="fas fa-trash"></i>
                     </button>
                 </td>
@@ -776,9 +779,11 @@ const OrganizationModule = (function() {
      */
     function filterUsers() {
         if (showInactiveUsers) {
-            users = [...allUsers];
+            users = [...allUsers]; // 顯示全部用戶（包含停用）
         } else {
-            users = allUsers.filter(user => user.status !== 'disabled');
+            users = allUsers.filter(user => 
+                user.is_active === true || user.is_active === 1
+            ); // 只顯示啟用用戶（is_active = true 或 1）
         }
     }
     
@@ -813,8 +818,8 @@ const OrganizationModule = (function() {
      */
     function updateUserStatistics() {
         const totalUsers = allUsers.length;
-        const activeUsers = allUsers.filter(u => u.status !== 'disabled').length;
-        const inactiveUsers = allUsers.filter(u => u.status === 'disabled').length;
+        const activeUsers = allUsers.filter(u => u.is_active === true || u.is_active === 1).length;
+        const inactiveUsers = allUsers.filter(u => u.is_active === false || u.is_active === 0).length;
         
         const totalCount = document.querySelector('#totalUserCount');
         const activeCount = document.querySelector('#activeUserCount strong');
@@ -2044,7 +2049,7 @@ const OrganizationModule = (function() {
         if (rolesContainer) {
             rolesContainer.innerHTML = roles.map(role => `
                 <label>
-                    <input type="checkbox" name="roles" value="${role.id}">
+                    <input type="checkbox" name="role_ids" value="${role.id}">
                     ${role.name}
                 </label>
             `).join('');
@@ -2257,12 +2262,15 @@ const OrganizationModule = (function() {
             return;
         }
         
+        // 取得部門ID值
+        const deptIdValue = formData.get('department_id');
+        
         // 建立基本資料（編輯模式使用）
         const data = {
             username: username.trim(),
             email: email.trim(),
             employee_no: formData.get('employee_no'),
-            department_id: formData.get('department_id') ? parseInt(formData.get('department_id')) : null,
+            department_id: deptIdValue && deptIdValue !== '' ? parseInt(deptIdValue) : null,
             title: formData.get('title'),
             role_ids: roles,
             is_active: formData.get('is_active') === 'on'
@@ -2294,37 +2302,21 @@ const OrganizationModule = (function() {
             let response;
             
             if (isEdit) {
-                // 編輯模式：更新用戶擴展資訊
-                response = await fetch(`${API_BASE}/users/${userId}/extension`, {
+                // 編輯模式：檢查是否要更新密碼
+                const passwordField = document.getElementById('userPassword');
+                if (passwordField && passwordField.value) {
+                    data.password = passwordField.value;
+                }
+                
+                // 使用統一的更新 API
+                response = await fetch(`${API_BASE}/users/${userId}`, {
                     method: 'PUT',
                     credentials: 'include',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        department_id: data.department_id,
-                        employee_no: data.employee_no,
-                        title: data.title
-                    })
+                    body: JSON.stringify(data)
                 });
-                
-                if (response.ok && roles.length > 0) {
-                    // 更新角色分配
-                    const roleResponse = await fetch(`${API_BASE}/users/${userId}/roles`, {
-                        method: 'PUT',
-                        credentials: 'include',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            role_ids: roles
-                        })
-                    });
-                    
-                    if (!roleResponse.ok) {
-                        console.error('更新角色失敗');
-                    }
-                }
             } else {
                 // 新增模式：使用組織管理的用戶建立 API
                 response = await fetch(ENDPOINTS.users, {
@@ -2455,6 +2447,9 @@ const OrganizationModule = (function() {
         const user = users.find(u => u.user_id === id);
         if (!user) return;
         
+        // 先載入表單選項（重要！確保部門和角色選項存在）
+        loadUserFormOptions();
+        
         // 填充基本資料
         document.getElementById('userId').value = user.user_id;
         document.getElementById('userLoginid').value = user.loginid;
@@ -2465,23 +2460,40 @@ const OrganizationModule = (function() {
         // 編輯模式：禁用使用者帳號欄位（不可編輯）
         document.getElementById('userLoginid').disabled = true;
         
-        // 填充組織資訊
-        const userDeptSelect = document.getElementById('userDepartment');
-        const deptId = user.department?.id || '';
-        userDeptSelect.value = deptId;
-        
-        // 如果使用了 SearchableSelect，也要更新其顯示
-        if (userDeptSelect.searchableSelectInstance) {
-            userDeptSelect.searchableSelectInstance.setValue(deptId);
-        }
+        // 延遲設定部門和角色，確保選項已經載入並渲染
+        setTimeout(() => {
+            // 填充組織資訊
+            const userDeptSelect = document.getElementById('userDepartment');
+            const deptId = user.department?.id || '';
+            userDeptSelect.value = deptId;
+            
+            // 如果使用了 SearchableSelect，也要更新其顯示
+            if (userDeptSelect.searchableSelectInstance) {
+                userDeptSelect.searchableSelectInstance.setValue(deptId);
+            } else if (window.SearchableSelect) {
+                // 如果還沒初始化 SearchableSelect，現在初始化
+                const searchableOptions = {
+                    placeholder: userDeptSelect.dataset.placeholder || '請選擇部門...',
+                    searchPlaceholder: userDeptSelect.dataset.searchPlaceholder || '搜尋部門名稱...',
+                    noResultsText: userDeptSelect.dataset.noResults || '找不到符合的部門',
+                    maxHeight: '200px'
+                };
+                const instance = new SearchableSelect(userDeptSelect, searchableOptions);
+                userDeptSelect.searchableSelectInstance = instance;
+                instance.setValue(deptId);
+            }
+            
+            // 填充角色
+            const userRoleIds = user.roles.map(r => r.id);
+            document.querySelectorAll('.role-checkboxes input[type="checkbox"]').forEach(cb => {
+                cb.checked = userRoleIds.includes(parseInt(cb.value));
+            });
+        }, 100);
         
         document.getElementById('userTitle').value = user.user_extension?.title || '';
         
-        // 填充角色
-        const userRoleIds = user.roles.map(r => r.id);
-        document.querySelectorAll('.role-checkboxes input[type="checkbox"]').forEach(cb => {
-            cb.checked = userRoleIds.includes(parseInt(cb.value));
-        });
+        // 設定帳號狀態
+        document.getElementById('userActive').checked = user.is_active !== false;  // 預設為啟用
         
         // 設置密碼策略為手動（編輯模式不改密碼）
         document.getElementById('passwordStrategy').value = 'MANUAL';
