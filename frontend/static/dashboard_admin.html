@@ -106,13 +106,13 @@
                 <!-- 對話記憶區 -->
                 <div id="memoryDrawer" class="drawer-panel">
                     <button title="新增對話" class="drawer-toggle-btn" onclick="QAModule.createNewConversation()"><i class="fas fa-solid fa-plus"></i></button>
-                    <ul id="conversationList" class="conversation-list"></ul>
+                    <ul id="conversationList" class="conversation-list scrollable-fade"></ul>
                 </div>
 
                 <!-- Prompt 區 -->
                 <div id="promptDrawer" class="drawer-panel">
                     <button class="drawer-toggle-btn" onclick="document.getElementById('actualprompt').innerText = '';" title="清除"><i class="fa-solid fa-eraser"></i></button>
-                    <div id="actualprompt"></div>
+                    <div id="actualprompt" class="scrollable-fade"></div>
                 </div>
             </div>
         </div>
@@ -130,12 +130,12 @@
                     </div>
                 </div>
                 <div class="d-flex align-start p-xs">
-                    <div id="nounAnalysis" aria-live="polite" aria-atomic="true" class="flex-1">已關閉名詞分析</div>
+                    <div id="nounAnalysis" aria-live="polite" aria-atomic="true" class="flex-1 scrollable-fade">已關閉名詞分析</div>
                 </div>
                 <div id="thinkToggleSection" class="d-none align-start p-xs">
-                    <div id="thinkResponse" aria-live="polite" aria-atomic="true" class="flex-1">已關閉推理</div>
+                    <div id="thinkResponse" aria-live="polite" aria-atomic="true" class="flex-1 scrollable-fade">已關閉推理</div>
                 </div>
-                <div id="answer" aria-live="polite" aria-atomic="true" class="qa-content">
+                <div id="answer" aria-live="polite" aria-atomic="true" class="qa-content scrollable-fade">
                 </div>
             </div>
             <div class="qa-input">
@@ -195,6 +195,12 @@
                 CommonUI.hideSpinner();
                 UserMenu.init();
                 QAModule.init();
+                
+                // 初始化滾動條淡出淡入效果
+                if (CommonUI.initScrollFadeEffect) {
+                    CommonUI.initScrollFadeEffect();
+                }
+                
                 console.log('所有模組載入完成');
             } catch (error) {
                 console.error('模組載入失敗:', error);

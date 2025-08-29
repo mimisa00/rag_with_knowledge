@@ -156,7 +156,7 @@
                             <div class="kb-search mb-sm">
                                 <input type="text" id="kbSearchInput" placeholder="搜尋知識庫..." class="form-control">
                             </div>
-                            <ul id="kbList" class="kb-list">
+                            <ul id="kbList" class="kb-list scrollable-fade">
                                 <!-- 動態載入知識庫項目 -->
                             </ul>
                         </div>
@@ -225,9 +225,9 @@
                     </div>
                     
                     <!-- Tab 內容區 -->
-                    <div class="tab-content">
+                    <div class="tab-content scrollable-fade">
                         <!-- 知識庫資訊 Tab -->
-                        <div id="infoTab" class="tab-pane active">
+                        <div id="infoTab" class="tab-pane active scrollable-fade">
                             <!-- 創建成功引導提示區域 -->
                             <div id="createSuccessGuide" class="guide-tips d-none">
                                 <div class="success-message">
@@ -248,7 +248,7 @@
                                 </div>
                             </div>
                             
-                            <div class="kb-info-section">
+                            <div class="kb-info-section scrollable-fade">
                                 <!-- 操作按鈕區 -->
                                 <div id="kbPreviewButtons" class="kb-button-group d-none">
                                     <button type="button" id="editKBModeBtn" class="btn btn-primary me-2">編輯</button>
@@ -266,7 +266,7 @@
                                 <!-- 左右兩欄布局 -->
                                 <div class="kb-info-layout">
                                     <!-- 左側欄：基本資訊 -->
-                                    <div class="kb-info-left">
+                                    <div class="kb-info-left scrollable-fade">
                                         <div class="mb-sm">
                                             <label for="kbId" class="form-label">ID：</label>
                                             <input type="text" id="kbId" placeholder="例：hr-manual-2024" maxlength="36" pattern="[a-zA-Z0-9_\-]+" class="form-control" readonly>
@@ -292,7 +292,7 @@
                                     <div class="kb-info-right">
                                         <div class="kb-prompt-section">
                                             <label for="kbSystemPrompt" class="form-label">提示詞 (最大1024字)：</label>
-                                            <textarea id="kbSystemPrompt" maxlength="1024" placeholder="請輸入針對此知識庫的系統提示詞..." class="form-control kb-prompt-textarea" readonly></textarea>
+                                            <textarea id="kbSystemPrompt" maxlength="1024" placeholder="請輸入針對此知識庫的系統提示詞..." class="form-control kb-prompt-textarea scrollable-fade" readonly></textarea>
                                             <div class="kb-char-count">
                                                 <span id="promptCharCount">0</span>/1024
                                             </div>
@@ -303,7 +303,7 @@
                         </div>
                         
                         <!-- 檔案管理 Tab -->
-                        <div id="filesTab" class="tab-pane">
+                        <div id="filesTab" class="tab-pane scrollable-fade">
                             <!-- 檔案上傳成功引導提示區域 -->
                             <div id="uploadSuccessGuide" class="guide-tips d-none">
                                 <div class="success-message">
@@ -338,14 +338,14 @@
                                     <input type="checkbox" id="selectAllUploadedFilesCheckbox" onclick="toggleSelectAllUploadedFiles()" class="kb-checkbox" title="全選/取消全選所有檔案">
                                     <h4 class="mb-0">檔案列表</h4>
                                 </div>
-                                <div id="fileCheckboxList" class="file-list">
+                                <div id="fileCheckboxList" class="file-list scrollable-fade">
                                     <!-- 檔案列表 -->
                                 </div>
                             </div>
                         </div>
                         
                         <!-- 索引工具 Tab -->
-                        <div id="indexTab" class="tab-pane">
+                        <div id="indexTab" class="tab-pane scrollable-fade">
                             
 
                             <div class="action-bar mb-md">
@@ -418,13 +418,13 @@
                             </div>
                             
                             
-                            <div id="indexSummary" class="index-summary">
+                            <div id="indexSummary" class="index-summary scrollable-fade">
                                 <!-- 索引摘要顯示區 -->
                             </div>
                         </div>
                         
                         <!-- 權限設定 Tab -->
-                        <div id="permissionsTab" class="tab-pane">
+                        <div id="permissionsTab" class="tab-pane scrollable-fade">
                             <div class="permission-section">
                                 <h4>
                                     <i class="fa-solid fa-shield-halved"></i> 
@@ -487,7 +487,7 @@
                         <input type="checkbox" id="selectAllFilesCheckbox" onclick="toggleSelectAllFiles()" class="kb-checkbox" title="全選/取消全選所有檔案">
                         <h4 class="mb-0 text-primary">待上傳檔案清單</h4>
                     </div>
-                    <div id="pendingFilesList" class="modal-file-list">
+                    <div id="pendingFilesList" class="modal-file-list scrollable-fade">
                         <p class="modal-file-placeholder">尚未選擇任何檔案</p>
                     </div>
                 </div>
@@ -513,7 +513,7 @@
                     警告：此操作無法復原！
                 </p>
                 <p class="mb-md">您確定要刪除以下檔案嗎？</p>
-                <div id="filesToRemoveList" class="modal-file-list-sm">
+                <div id="filesToRemoveList" class="modal-file-list-sm scrollable-fade">
                     <!-- 檔案列表會動態填入 -->
                 </div>
                 <p class="modal-info">
@@ -547,7 +547,7 @@
                     <i class="fa-solid fa-times"></i>
                 </button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body scrollable-fade">
                 <p class="modal-warning text-warning">
                     <i class="fa-solid fa-exclamation-triangle mr-sm"></i>
                     重要提醒：建立索引操作說明
@@ -630,7 +630,7 @@
                 </div>
                 
                 <p class="mb-md font-weight-bold">將要建立索引的檔案：</p>
-                <div id="filesToIndexList" class="modal-file-list-sm">
+                <div id="filesToIndexList" class="modal-file-list-sm scrollable-fade">
                     <!-- 檔案列表會動態填入 -->
                 </div>
                 <p class="modal-info mt-md">
@@ -687,13 +687,18 @@
                 
                 // 載入受保護的管理員模組
                 await ScriptLoader.loadProtectedAdminScriptsInOrder([
-                    'knowledge-base.js',  // 已包含頁面初始化邏輯
-                    'knowledge-base-drawer-manager.js',  // 抽屜管理器
-                    'knowledge-base-index-module.js'
+                    'knowledge-base/knowledge-base.js',  // 已包含頁面初始化邏輯
+                    'knowledge-base/knowledge-base-drawer-manager.js',  // 抽屜管理器
+                    'knowledge-base/knowledge-base-index-module.js'
                 ]);
                 
                 // 只保留隱藏載入動畫
                 CommonUI.hideSpinner();
+                
+                // 初始化滾動條淡出淡入效果
+                if (CommonUI.initScrollFadeEffect) {
+                    CommonUI.initScrollFadeEffect();
+                }
                 
                 // 所有模組載入完成後，手動初始化頁面
                 if (window.initKnowledgeBasePage) {

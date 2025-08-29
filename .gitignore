@@ -42,3 +42,5 @@ Thumbs.db
 # 日誌文件
 *.log
 
+# 暫存備份目錄
+backup_org_refactor_20250828/

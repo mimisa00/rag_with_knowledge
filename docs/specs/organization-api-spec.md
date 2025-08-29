@@ -235,7 +235,7 @@ GET /api/organization/roles
       "code": "SYSTEM_ADMIN",
       "name": "系統管理員",
       "description": "具有系統所有權限",
-      "role_type": "system",
+      "permission_type": "system",
       "is_active": true,
       "user_count": 2
     }
@@ -260,7 +260,7 @@ GET /api/organization/roles/{id}
     "code": "SYSTEM_ADMIN",
     "name": "系統管理員",
     "description": "具有系統所有權限",
-    "role_type": "system",
+    "permission_type": "system",
     "permissions": {
       "all": true
     },

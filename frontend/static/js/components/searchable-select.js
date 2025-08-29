@@ -34,6 +34,11 @@ class SearchableSelect {
         
         // 隱藏原始 select
         this.originalSelect.style.display = 'none';
+        
+        // 如果原始 select 已經是禁用狀態，同步禁用狀態
+        if (this.originalSelect.disabled) {
+            this.disable();
+        }
     }
     
     /**
@@ -89,7 +94,7 @@ class SearchableSelect {
         
         // 選項容器
         this.optionsContainer = document.createElement('div');
-        this.optionsContainer.className = 'searchable-select-options';
+        this.optionsContainer.className = 'searchable-select-options scrollable-fade';
         
         this.dropdown.appendChild(this.searchInput);
         this.dropdown.appendChild(this.optionsContainer);
@@ -336,6 +341,9 @@ class SearchableSelect {
      * 切換下拉選單
      */
     toggle() {
+        if (this.isDisabled()) {
+            return;
+        }
         if (this.isOpen) {
             this.close();
         } else {
@@ -411,6 +419,36 @@ class SearchableSelect {
     getSelectedText() {
         const selectedOption = this.originalSelect.options[this.originalSelect.selectedIndex];
         return selectedOption ? selectedOption.textContent : '';
+    }
+    
+    /**
+     * 禁用元件
+     */
+    disable() {
+        this.originalSelect.disabled = true;
+        this.display.classList.add('disabled');
+        this.display.style.opacity = '0.6';
+        this.display.style.cursor = 'not-allowed';
+        this.display.style.backgroundColor = 'var(--bg-light)';
+        this.close();
+    }
+    
+    /**
+     * 啟用元件
+     */
+    enable() {
+        this.originalSelect.disabled = false;
+        this.display.classList.remove('disabled');
+        this.display.style.opacity = '';
+        this.display.style.cursor = 'pointer';
+        this.display.style.backgroundColor = '';
+    }
+    
+    /**
+     * 檢查是否禁用
+     */
+    isDisabled() {
+        return this.originalSelect.disabled;
     }
 }
 

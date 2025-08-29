@@ -31,26 +31,6 @@ CREATE TABLE IF NOT EXISTS departments (
     FOREIGN KEY (parent_id) REFERENCES departments(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- =====================================================
--- 2-2. roles（角色表）
--- =====================================================
-CREATE TABLE IF NOT EXISTS roles (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    code VARCHAR(50) NOT NULL COMMENT '角色代碼',
-    name VARCHAR(100) NOT NULL COMMENT '角色名稱',
-    description TEXT COMMENT '角色描述',
-    role_type VARCHAR(20) DEFAULT 'custom' COMMENT '角色類型：system/custom',
-    permissions JSON DEFAULT NULL COMMENT '權限設定 JSON',
-    is_active BOOLEAN DEFAULT TRUE COMMENT '是否啟用',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    created_by INT DEFAULT NULL,
-    updated_by INT DEFAULT NULL,
-    
-    INDEX idx_code (code),
-    INDEX idx_type (role_type),
-    UNIQUE KEY uk_code (code)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================
 -- 2-3. user_extensions（使用者擴充表）
@@ -79,34 +59,6 @@ CREATE TABLE IF NOT EXISTS user_extensions (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- =====================================================
--- 2-4. user_roles（使用者角色關聯表）
--- =====================================================
-CREATE TABLE IF NOT EXISTS user_roles (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL COMMENT '使用者 ID',
-    role_id BIGINT NOT NULL COMMENT '角色 ID',
-    department_id BIGINT DEFAULT NULL COMMENT '角色作用部門（NULL 表示全域）',
-    assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '指派時間',
-    assigned_by INT DEFAULT NULL COMMENT '指派者',
-    expires_at TIMESTAMP DEFAULT NULL COMMENT '角色過期時間',
-    
-    INDEX idx_user (user_id),
-    INDEX idx_role (role_id),
-    INDEX idx_department (department_id),
-    UNIQUE KEY uk_user_role_dept (user_id, role_id, department_id),
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE,
-    FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-ALTER TABLE roles 
-ADD CONSTRAINT chk_role_code_not_empty 
-CHECK (CHAR_LENGTH(TRIM(code)) > 0);
-
-ALTER TABLE roles 
-ADD CONSTRAINT chk_role_name_not_empty 
-CHECK (CHAR_LENGTH(TRIM(name)) > 0);
 
 -- =====================================================
 -- 2-5. system_modes（系統模式設定表）
@@ -151,19 +103,6 @@ CREATE TABLE IF NOT EXISTS password_policies (
 -- 2-7. 插入預設資料
 -- =====================================================
 
--- 預設角色
-INSERT INTO roles (code, name, description, role_type, permissions) VALUES
-('SYSTEM_ADMIN', '系統管理員', '具有系統所有權限', 'system', 
- '{"all": true}'),
-('KB_MANAGER', '知識庫管理員', '管理知識庫和文件', 'system',
- '{"knowledge_base": ["create", "read", "update", "delete"], "documents": ["all"]}'),
-('USER', '一般使用者', '基本使用權限', 'system',
- '{"knowledge_base": ["read"], "documents": ["read", "upload"]}')
-ON DUPLICATE KEY UPDATE 
-    name = VALUES(name),
-    description = VALUES(description),
-    permissions = VALUES(permissions);
-
 -- 系統模式預設值
 INSERT INTO system_modes (mode_key, mode_value, category, description) VALUES
 ('SYSTEM_MODE', 'BASIC', 'core', '系統運作模式：BASIC/ORGANIZATION'),
@@ -193,30 +132,6 @@ SELECT u.id,
 FROM users u
 WHERE NOT EXISTS (
     SELECT 1 FROM user_extensions WHERE user_id = u.id
-);
-
--- 為既有管理員分配系統管理員角色
-INSERT INTO user_roles (user_id, role_id, assigned_by)
-SELECT u.id, r.id, NULL
-FROM users u
-CROSS JOIN roles r
-WHERE u.role = 'admin'
-  AND r.code = 'SYSTEM_ADMIN'
-  AND NOT EXISTS (
-    SELECT 1 FROM user_roles ur 
-    WHERE ur.user_id = u.id AND ur.role_id = r.id
-);
-
--- 為既有一般使用者分配預設角色
-INSERT INTO user_roles (user_id, role_id, assigned_by)
-SELECT u.id, r.id, NULL
-FROM users u
-CROSS JOIN roles r
-WHERE u.role = 'user'
-  AND r.code = 'USER'
-  AND NOT EXISTS (
-    SELECT 1 FROM user_roles ur 
-    WHERE ur.user_id = u.id AND ur.role_id = r.id
 );
 
 -- =====================================================

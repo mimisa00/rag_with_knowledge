@@ -303,11 +303,8 @@
     opacity: 0.9;                  /* 輕微透明度 */
 }
 
-/* Webkit 瀏覽器隱藏滾動條 */
-#nounAnalysis::-webkit-scrollbar,
-#thinkResponse::-webkit-scrollbar {
-    display: none;  /* 配合 scrollbar-width: none 完全隱藏滾動條 */
-}
+/* 使用統一的淡出淡入滾動條
+   #nounAnalysis 和 #thinkResponse 元素請添加 scrollable-fade class */
 
 .qa-header {
     display: flex;
@@ -663,44 +660,8 @@
     animation: typing 1s steps(3, end) infinite;
 }
 
-/* ==================== 自訂捲軸 ==================== */
-/* QA 內容區保持原有捲軸 */
-.qa-content::-webkit-scrollbar {
-    width: 6px;
-}
-
-.qa-content::-webkit-scrollbar-track {
-    background: var(--bg-light);
-}
-
-.qa-content::-webkit-scrollbar-thumb {
-    background: var(--text-muted);
-    border-radius: var(--radius-sm);
-}
-
-.qa-content::-webkit-scrollbar-thumb:hover {
-    background: var(--text-secondary);
-}
-
-/* 滾動時才顯示的捲軸 - 對話列表 */
-.conversation-list::-webkit-scrollbar {
-    width: 6px;
-}
-
-.conversation-list::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.conversation-list::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0);
-    border-radius: 3px;
-    transition: background 0.3s ease;
-}
-
-.conversation-list:hover::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.3);
-}
-
-.conversation-list::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 0, 0, 0.5);
-}
+/* ==================== 使用統一的淡出淡入滾動條 ==================== */
+/* 請在 HTML 中為以下元素添加 scrollable-fade class：
+   - .qa-content
+   - .conversation-list
+   並確保頁面載入 CommonUI.initScrollFadeEffect() 函數 */

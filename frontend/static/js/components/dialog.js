@@ -44,7 +44,7 @@
                                 <i class="fa-solid fa-times"></i>
                             </button>
                         </div>
-                        <div class="dialog-body">
+                        <div class="dialog-body scrollable-fade">
                             <i id="dialogIcon" class="dialog-icon"></i>
                             <div id="dialogMessage" class="dialog-message"></div>
                         </div>
@@ -116,6 +116,13 @@
             // 顯示對話框
             document.getElementById('dialogOverlay').classList.add('show');
             this.currentDialog = 'message';
+            
+            // 初始化滾動條效果
+            if (window.CommonUI && window.CommonUI.initScrollFadeEffect) {
+                setTimeout(() => {
+                    window.CommonUI.initScrollFadeEffect();
+                }, 100);
+            }
         }
         
         /**
@@ -166,6 +173,13 @@
             // 顯示對話框
             document.getElementById('dialogOverlay').classList.add('show');
             this.currentDialog = 'confirm';
+            
+            // 初始化滾動條效果
+            if (window.CommonUI && window.CommonUI.initScrollFadeEffect) {
+                setTimeout(() => {
+                    window.CommonUI.initScrollFadeEffect();
+                }, 100);
+            }
         }
         
         /**
@@ -201,29 +215,29 @@
         /**
          * 顯示成功訊息
          */
-        success(message, title = '操作成功') {
-            this.show(message, { title, type: 'success' });
+        success(message, title = '操作成功', options = {}) {
+            this.show(message, { title, type: 'success', ...options });
         }
         
         /**
          * 顯示錯誤訊息
          */
-        error(message, title = '操作失敗') {
-            this.show(message, { title, type: 'error' });
+        error(message, title = '操作失敗', options = {}) {
+            this.show(message, { title, type: 'error', ...options });
         }
         
         /**
          * 顯示警告訊息
          */
-        warning(message, title = '警告') {
-            this.show(message, { title, type: 'warning' });
+        warning(message, title = '警告', options = {}) {
+            this.show(message, { title, type: 'warning', ...options });
         }
         
         /**
          * 顯示資訊訊息
          */
-        info(message, title = '提示') {
-            this.show(message, { title, type: 'info' });
+        info(message, title = '提示', options = {}) {
+            this.show(message, { title, type: 'info', ...options });
         }
     }
     

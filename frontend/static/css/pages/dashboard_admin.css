@@ -28,28 +28,8 @@
     margin-bottom: var(--spacing-md); /* 底部留白 */
 }
 
-/* 滾動時才顯示的捲軸 */
-#actualprompt::-webkit-scrollbar {
-    width: 6px;
-}
-
-#actualprompt::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-#actualprompt::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0);
-    border-radius: 3px;
-    transition: background 0.3s ease;
-}
-
-#actualprompt:hover::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.3);
-}
-
-#actualprompt::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 0, 0, 0.5);
-}
+/* 使用統一的淡出淡入滾動條
+   #actualprompt 元素已添加 scrollable-fade class */
 
 /* ==================== 管理員特有：藍色 H3 標題 ==================== */
 H3 {

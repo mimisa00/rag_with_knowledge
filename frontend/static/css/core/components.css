@@ -104,6 +104,28 @@
   color: white;
 }
 
+/* 還原按鈕樣式 */
+.btn-reset {
+  min-width: 50px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+}
+
+.btn-reset:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: var(--bg-light);
+  border-color: var(--border-color);
+}
+
+.btn-reset:disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
 /* 按鈕大小 */
 .btn-sm {
   padding: var(--spacing-xs) var(--spacing-sm);

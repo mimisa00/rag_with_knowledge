@@ -13,12 +13,6 @@ const AdminRouter = (() => {
             module: 'knowledge-base-module.js',
             roles: ['admin', 'org_admin']
         },
-        'index': {
-            title: '索引管理',
-            url: '/admin/index-management.html',
-            module: 'index-module.js',
-            roles: ['admin', 'org_admin']
-        },
         'system-params': {
             title: '系統參數',
             url: '/admin/system-params.html',
@@ -34,7 +28,13 @@ const AdminRouter = (() => {
         'organization': {
             title: '組織管理',
             url: '/admin/organization.html',
-            module: 'organization.js',
+            module: 'organization/organization.js',
+            roles: ['admin']
+        },
+        'permission-management': {
+            title: '權限管理',
+            url: '/admin/permission-management.html',
+            module: 'permission-management.js',
             roles: ['admin']
         }
     };
@@ -102,6 +102,12 @@ const AdminRouter = (() => {
             // 如果是組織管理，導向新的獨立頁面
             if (functionName === 'organization') {
                 window.location.href = '/admin/organization';
+                return;
+            }
+            
+            // 如果是權限管理，導向新的獨立頁面
+            if (functionName === 'permission-management') {
+                window.location.href = '/admin/permission-management';
                 return;
             }
             

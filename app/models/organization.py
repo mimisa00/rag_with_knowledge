@@ -32,13 +32,13 @@ class Department(BaseModel):
         }
 
 
-class Role(BaseModel):
-    """角色模型"""
+class PermissionGroup(BaseModel):
+    """權限群組模型"""
     id: Optional[int] = None
     code: str = Field(..., max_length=50)
     name: str = Field(..., max_length=100)
     description: Optional[str] = None
-    role_type: str = Field(default="custom", max_length=20)
+    permission_type: str = Field(default="custom", max_length=20)  # 保留欄位名稱以相容資料庫
     permissions: Optional[Dict[str, Any]] = None
     is_active: bool = True
     created_at: Optional[datetime] = None
@@ -75,11 +75,11 @@ class UserExtension(BaseModel):
         }
 
 
-class UserRole(BaseModel):
-    """使用者角色關聯模型"""
+class UserPermissionGroup(BaseModel):
+    """使用者權限群組關聯模型"""
     id: Optional[int] = None
     user_id: int
-    role_id: int
+    permission_group_id: int
     department_id: Optional[int] = None
     assigned_at: Optional[datetime] = None
     assigned_by: Optional[int] = None
@@ -172,29 +172,29 @@ class DepartmentUpdate(BaseModel):
     metadata: Optional[Dict[str, Any]] = None
 
 
-class RoleCreate(BaseModel):
-    """建立角色請求"""
-    code: str = Field(..., min_length=1, max_length=50, description="角色代碼不能為空")
-    name: str = Field(..., min_length=1, max_length=100, description="角色名稱不能為空")
+class PermissionGroupCreate(BaseModel):
+    """建立權限群組請求"""
+    code: str = Field(..., min_length=1, max_length=50, description="權限群組代碼不能為空")
+    name: str = Field(..., min_length=1, max_length=100, description="權限群組名稱不能為空")
     description: Optional[str] = None
-    role_type: str = Field(default="custom", max_length=20)
+    permission_type: str = Field(default="custom", max_length=20)  # 保留欄位名稱以相容資料庫
     permissions: Optional[Dict[str, Any]] = None
     is_active: bool = True
 
 
-class RoleUpdate(BaseModel):
-    """更新角色請求"""
-    name: Optional[str] = Field(None, min_length=1, max_length=100, description="角色名稱不能為空")
+class PermissionGroupUpdate(BaseModel):
+    """更新權限群組請求"""
+    name: Optional[str] = Field(None, min_length=1, max_length=100, description="權限群組名稱不能為空")
     description: Optional[str] = None
-    role_type: Optional[str] = Field(None, max_length=20, description="角色類型")
+    permission_type: Optional[str] = Field(None, max_length=20, description="權限群組類型")  # 保留欄位名稱
     permissions: Optional[Dict[str, Any]] = None
     is_active: Optional[bool] = None
 
 
-class UserRoleAssign(BaseModel):
-    """分配使用者角色請求"""
+class UserPermissionGroupAssign(BaseModel):
+    """分配使用者權限群組請求"""
     user_id: int
-    role_id: int
+    permission_group_id: int
     department_id: Optional[int] = None
     expires_at: Optional[datetime] = None
 
@@ -225,8 +225,8 @@ class UserUpdate(BaseModel):
     department_id: Optional[int] = None
     employee_no: Optional[str] = Field(None, max_length=50)
     title: Optional[str] = Field(None, max_length=100)
-    # 角色
-    role_ids: Optional[List[int]] = None
+    # 權限群組
+    permission_group_ids: Optional[List[int]] = None
 
 # 回應模型
 class DepartmentResponse(Department):
@@ -235,21 +235,22 @@ class DepartmentResponse(Department):
     user_count: Optional[int] = 0
 
 
-class RoleResponse(Role):
-    """角色回應模型"""
+class PermissionGroupResponse(PermissionGroup):
+    """權限群組回應模型"""
     user_count: Optional[int] = 0
 
 
-class UserWithRoles(BaseModel):
-    """包含角色的使用者模型"""
+class UserWithPermissionGroups(BaseModel):
+    """包含權限群組的使用者模型"""
     user_id: int
     loginid: str  # 登入帳號
     username: str  # 真實姓名
     email: str
     is_active: bool
     department: Optional[Department] = None
-    roles: List[Role] = []
+    permission_groups: List[PermissionGroup] = []
     user_extension: Optional[UserExtension] = None
+    department_roles: Optional[List[Dict[str, Any]]] = []  # 新增部門角色資訊欄位
 
 
 # 更新 forward references

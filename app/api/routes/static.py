@@ -105,6 +105,12 @@ def organization_page(current_user: Dict[str, Any] = Depends(get_admin_user)):
     return FileResponse(html_paths["HTML_PATH_ORGANIZATION"])
 
 
+@router.get("/admin/permission-management")
+def permission_management_page(current_user: Dict[str, Any] = Depends(get_admin_user)):
+    """權限管理頁面（管理員專用）"""
+    return FileResponse(html_paths["HTML_PATH_PERMISSION_MANAGEMENT"])
+
+
 @router.get("/dashboard_admin")
 def dashboard_admin_page(current_user: Dict[str, Any] = Depends(get_admin_user)):
     """傳統管理頁面（管理員專用）"""
@@ -269,7 +275,10 @@ async def get_admin_script(
     """
     try:
         # 確保腳本名稱安全（防止路徑遍歷攻擊）
-        script_name = Path(script_name).name
+        script_path = Path(script_name)
+        # 檢查是否有危險的路徑元素
+        if ".." in script_path.parts or script_path.is_absolute():
+            raise HTTPException(status_code=400, detail="不安全的路徑")
         if not script_name.endswith('.js'):
             raise HTTPException(status_code=400, detail="只能請求 JavaScript 文件")
         

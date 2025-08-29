@@ -1,0 +1,594 @@
+/* ========================================
+   組織管理 - 部門相關樣式
+   從 organization.css 拆分出來的部門專屬樣式
+   ======================================== */
+
+/* ========================================
+   部門變更編輯樣式
+   ======================================== */
+/* 部門變更警告樣式 */
+#deptChangeWarning {
+    padding: 0.5rem;
+    background-color: rgba(255, 193, 7, 0.1);
+    border: 1px solid rgba(255, 193, 7, 0.3);
+    border-radius: 4px;
+    margin-top: 0.5rem;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+/* 部門選擇器與還原按鈕群組 */
+.input-group {
+    display: flex;
+    width: 100%;
+}
+
+.input-group-append {
+    margin-left: -1px;
+    display: flex;
+}
+
+.input-group-append .btn {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+/* 確保 SearchableSelect 在 input-group 中正確顯示 */
+.input-group .searchable-select-wrapper {
+    flex: 1;
+}
+
+.input-group .searchable-select-trigger {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+/* ========================================
+   部門樹狀結構
+   ======================================== */
+.department-tree {
+    background: white;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    height: calc(100vh - 370px);
+}
+
+/* 樹狀結構工具列 */
+.department-tree .tree-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.tree-search-box {
+    display: flex;
+    flex: 1;
+    max-width: 400px;
+    position: relative;
+}
+
+.tree-search-box input {
+    flex: 1;
+    padding-right: 40px;
+    border-radius: 20px;
+}
+
+.tree-search-box .btn-search {
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--primary);
+    cursor: pointer;
+    padding: 5px 10px;
+}
+
+.tree-search-box .btn-search:hover {
+    color: var(--primary-dark);
+}
+
+.tree-filters {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+/* 停用部門切換按鈕 */
+.org-layout .toggle-inactive-btn {
+    background: none;
+    border: none;
+    color: #999;
+    cursor: pointer;
+    padding: 0 0.5rem;
+    margin-left: 0.5rem;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.org-layout .toggle-inactive-btn:hover {
+    color: var(--primary);
+    transform: scale(1.1);
+}
+
+.org-layout .toggle-inactive-btn.active {
+    color: var(--primary);
+}
+
+.org-layout .toggle-inactive-btn.active i::before {
+    content: '\f06e'; /* fa-eye icon */
+}
+
+/* Tooltip for toggle button */
+.org-layout .toggle-inactive-btn::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    margin-bottom: 0.25rem;
+}
+
+.org-layout .toggle-inactive-btn:hover::after {
+    opacity: 1;
+}
+
+.tree-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-outline {
+    background: white;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    transition: all 0.2s;
+}
+
+.btn-outline:hover {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+}
+
+/* 部門統計 */
+.department-tree .tree-stats {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 1rem;
+    padding: 0.5rem;
+    background: var(--bg-light);
+    border-radius: 4px;
+    font-size: 0.875rem;
+}
+
+.tree-stats .org-layout .stat-item {
+    color: var(--text-secondary);
+}
+
+.tree-stats .stat-item strong {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.tree-container {
+    flex: 1;
+    position: relative;
+    min-height: 300px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* 樹狀節點基本樣式 */
+.tree-node {
+    margin: 0.25rem 0;
+    transition: opacity 0.3s;
+}
+
+/* ========================================
+   部門拖曳相關樣式
+   ======================================== */
+.tree-node.dragging {
+    opacity: 0.4;
+}
+
+.tree-node.drag-over {
+    background-color: #e3f2fd;
+    border: 2px dashed #2196f3;
+    border-radius: 4px;
+}
+
+.tree-node.drag-invalid {
+    background-color: #ffebee;
+    border: 2px dashed #f44336;
+    border-radius: 4px;
+    cursor: not-allowed;
+}
+
+/* 排序插入指示器 */
+.tree-node.drag-over-top {
+    position: relative;
+}
+
+.tree-node.drag-over-top::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: #2196f3;
+    border-radius: 2px;
+    box-shadow: 0 0 5px rgba(33, 150, 243, 0.5);
+    animation: pulse 0.5s ease-in-out infinite;
+}
+
+.tree-node.drag-over-bottom {
+    position: relative;
+}
+
+.tree-node.drag-over-bottom::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: #2196f3;
+    border-radius: 2px;
+    box-shadow: 0 0 5px rgba(33, 150, 243, 0.5);
+    animation: pulse 0.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+/* 拖曳手柄 */
+.drag-handle {
+    cursor: move;
+    color: #999;
+    margin-right: 0.375rem;
+    padding-left: 0.5rem;
+    transition: color 0.2s;
+}
+
+.drag-handle:hover {
+    color: var(--primary);
+}
+
+/* 根節點放置區樣式 - 固定在頂部 */
+.root-drop-zone {
+    margin-bottom: 0.5rem;
+    flex-shrink: 0; /* 不會被壓縮 */
+}
+
+.root-drop-zone .node-content {
+    justify-content: center;
+    min-height: 40px;
+}
+
+.root-drop-zone.drag-over {
+    background-color: #e3f2fd !important;
+    border: 2px solid #2196f3 !important;
+}
+
+/* 樹狀節點內容區域 - 可滾動 */
+.tree-scrollable-content {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+/* ========================================
+   節點內容樣式
+   ======================================== */
+.node-content {
+    display: flex;
+    align-items: center;
+    padding: 0.375rem;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+    cursor: pointer;
+    position: relative;
+}
+
+.node-content:hover {
+    background-color: var(--bg-hover);
+}
+
+.node-content.selected {
+    background-color: rgba(102, 126, 234, 0.1);
+    border: 1px solid var(--primary);
+}
+
+/* 搜尋高亮 - 柔和現代設計 */
+.tree-node.highlight .node-content {
+    background: linear-gradient(90deg, 
+        rgba(102, 126, 234, 0.08) 0%, 
+        rgba(102, 126, 234, 0.03) 100%);
+    border-left: 3px solid rgba(102, 126, 234, 0.8);
+    border-radius: 4px;
+    animation: gentle-slide-in 0.4s ease-out;
+    transition: background 0.2s ease;
+}
+
+/* hover 時稍微加強效果 */
+.tree-node.highlight .node-content:hover {
+    background: linear-gradient(90deg, 
+        rgba(102, 126, 234, 0.12) 0%, 
+        rgba(102, 126, 234, 0.05) 100%);
+}
+
+/* 柔和的滑入動畫 */
+@keyframes gentle-slide-in {
+    from { 
+        opacity: 0; 
+        transform: translateX(-4px);
+        background: rgba(102, 126, 234, 0.15);
+    }
+    to { 
+        opacity: 1; 
+        transform: translateX(0);
+    }
+}
+
+.tree-node.search-hidden {
+    opacity: 0.3;
+}
+
+/* 停用部門樣式 */
+.tree-node.inactive .node-content {
+    opacity: 0.6;
+    background: #f8f8f8;
+}
+
+.tree-node.inactive .node-name {
+    color: #999;
+    font-style: italic;
+}
+
+.tree-node.inactive .node-icon {
+    color: #ccc;
+}
+
+.tree-node.inactive .node-count {
+    color: #bbb;
+}
+
+.tree-node.inactive .btn-icon {
+    opacity: 0.5;
+}
+
+.tree-node.inactive .btn-icon:hover {
+    opacity: 1;
+}
+
+/* 節點元素樣式 */
+.node-toggle {
+    width: 20px;
+    text-align: center;
+    cursor: pointer;
+    color: var(--text-secondary);
+}
+
+.node-toggle:hover {
+    color: var(--primary);
+}
+
+.node-toggle.invisible {
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.node-toggle i {
+    transition: transform 0.2s ease;
+    font-size: 0.75rem;
+}
+
+.node-icon {
+    margin: 0 0.375rem;
+    color: var(--primary);
+}
+
+/* 確保啟用部門的圖標為主題色 */
+.tree-node:not(.inactive) .node-icon {
+    color: var(--primary);
+}
+
+.tree-node:not(.inactive) .node-icon i {
+    color: inherit;
+}
+
+.node-name {
+    flex: 1;
+    font-weight: 500;
+}
+
+.node-count {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    margin-left: 0.375rem;
+}
+
+.node-actions {
+    display: flex;
+    gap: 0.375rem;  /* 稍微增加按鈕間距 */
+    opacity: 1;  /* 改為常態顯示 */
+    transition: all 0.2s;
+    margin-left: auto;  /* 將按鈕推到右側 */
+    padding-right: 0.5rem;
+}
+
+.btn-icon {
+    background: none;
+    border: none;
+    padding: 0.25rem 0.5rem;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: color 0.2s;
+}
+
+.btn-icon:hover {
+    color: var(--primary);
+}
+
+/* 垃圾桶圖標 hover 時顯示危險色 */
+.btn-icon:hover .fa-trash {
+    color: var(--danger) !important;
+}
+
+/* 狀態切換按鈕樣式 */
+.btn-toggle-status {
+    font-size: 1.1rem;
+    min-width: 32px;
+}
+
+.btn-toggle-status.active {
+    color: var(--success);
+}
+
+.btn-toggle-status:not(.active) {
+    color: var(--text-muted);
+}
+
+.btn-toggle-status:hover.active {
+    color: var(--warning);
+}
+
+.btn-toggle-status:hover:not(.active) {
+    color: var(--success);
+}
+
+/* 子節點樣式 */
+.tree-children {
+    margin-left: 1.5rem;
+    display: none;
+    transition: all 0.3s ease;
+}
+
+.tree-children.expanded {
+    display: block;
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ========================================
+   部門詳情面板
+   ======================================== */
+.department-details {
+    flex: 1;
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 20px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.details-card h3 {
+    margin: 0 0 1rem 0;
+    color: var(--text-primary);
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.details-content {
+    min-height: 200px;
+}
+
+.detail-item {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.detail-item:last-child {
+    border-bottom: none;
+}
+
+.detail-item label {
+    font-weight: 600;
+    color: var(--text-secondary);
+    min-width: 100px;
+    margin-right: 1rem;
+    margin-bottom: 0;
+}
+
+.detail-item span {
+    color: var(--text-primary);
+    flex: 1;
+}
+
+/* ========================================
+   部門管理特定的 section-content 布局
+   ======================================== */
+#departments-section .section-content {
+    display: grid;
+    grid-template-columns: 1fr 600px;
+    gap: 2rem;
+    flex: 1;
+}
+
+/* ========================================
+   響應式設計 - 部門相關
+   ======================================== */
+@media (max-width: 768px) {
+    #departments-section .section-content {
+        grid-template-columns: 1fr;
+    }
+    
+    .department-tree {
+        height: calc(100vh - 300px);
+    }
+}
+
+@media (max-height: 800px) {
+    .department-tree {
+        height: calc(100vh - 350px);
+    }
+}
+
+@media (max-height: 600px) {
+    .department-tree {
+        height: calc(100vh - 320px);
+    }
+}

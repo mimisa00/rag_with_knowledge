@@ -150,23 +150,8 @@
     min-height: 0; /* 允許 flex 收縮 */
 }
 
-/* 自訂滾動條 */
-.searchable-select-options::-webkit-scrollbar {
-    width: 6px;
-}
-
-.searchable-select-options::-webkit-scrollbar-track {
-    background: var(--bg-light);
-}
-
-.searchable-select-options::-webkit-scrollbar-thumb {
-    background: var(--border-color);
-    border-radius: 3px;
-}
-
-.searchable-select-options::-webkit-scrollbar-thumb:hover {
-    background: var(--primary);
-}
+/* 使用統一的淡出淡入滾動條
+   .searchable-select-options 元素會自動繼承全域 scrollable-fade 行為 */
 
 /* ========================================
    選項項目

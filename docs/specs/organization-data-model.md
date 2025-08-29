@@ -34,15 +34,15 @@ CREATE TABLE departments (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
-### 2.2 roles（角色表）
+### 2.2 permission_groups
 
 ```sql
-CREATE TABLE roles (
+CREATE TABLE permission_groups (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    code VARCHAR(50) NOT NULL,                    -- 角色代碼
-    name VARCHAR(100) NOT NULL,                   -- 角色名稱
-    description TEXT,                             -- 角色描述
-    role_type VARCHAR(20) DEFAULT 'custom',       -- 角色類型：system/custom
+    code VARCHAR(50) NOT NULL,                    -- 權限群組代碼
+    name VARCHAR(100) NOT NULL,                   -- 權限群組名稱
+    description TEXT,                             -- 角色權限群組描述描述
+    permission_type VARCHAR(20) DEFAULT 'custom', -- 權限群組類型：system/custom
     permissions JSON DEFAULT NULL,                -- 權限設定 JSON
     is_active BOOLEAN DEFAULT TRUE,               -- 是否啟用
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -51,7 +51,7 @@ CREATE TABLE roles (
     updated_by VARCHAR(100) DEFAULT NULL,
     
     INDEX idx_code (code),
-    INDEX idx_type (role_type),
+    INDEX idx_type (permission_type),
     UNIQUE KEY uk_code (code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
@@ -85,14 +85,14 @@ CREATE TABLE user_extensions (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
-### 2.4 user_roles（使用者角色關聯表）
+### 2.4 user_permission_groups（使用者權限群組關聯表）
 
 ```sql
-CREATE TABLE user_roles (
+CREATE TABLE user_permission_groups (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id VARCHAR(100) NOT NULL,                -- 使用者 ID
-    role_id BIGINT NOT NULL,                      -- 角色 ID
-    department_id BIGINT DEFAULT NULL,            -- 角色作用部門（NULL 表示全域）
+    role_id BIGINT NOT NULL,                      -- 權限群組 ID
+    department_id BIGINT DEFAULT NULL,            -- 權限群組作用部門（NULL 表示全域）
     assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     assigned_by VARCHAR(100) DEFAULT NULL,
     expires_at TIMESTAMP DEFAULT NULL,            -- 角色過期時間
@@ -154,7 +154,7 @@ CREATE TABLE password_policies (
 
 ```sql
 -- 系統預設角色
-INSERT INTO roles (code, name, description, role_type, permissions) VALUES
+INSERT INTO permission_groups (code, name, description, permission_type, permissions) VALUES
 ('SYSTEM_ADMIN', '系統管理員', '具有系統所有權限', 'system', 
  '{"all": true}'),
 ('KB_MANAGER', '知識庫管理員', '管理知識庫和文件', 'system',
@@ -227,12 +227,26 @@ WHERE NOT EXISTS (
 );
 
 -- 為既有使用者分配預設角色
-INSERT INTO user_roles (user_id, role_id)
-SELECT u.id, r.id
-FROM users u, roles r
-WHERE r.code = 'USER'
-AND NOT EXISTS (
-    SELECT 1 FROM user_roles WHERE user_id = u.id
+INSERT INTO user_permission_groups (user_id, permission_group_id, assigned_by)
+SELECT u.id, r.id, NULL
+FROM users u
+CROSS JOIN permission_groups r
+WHERE u.role = 'admin'
+  AND r.code = 'SYSTEM_ADMIN'
+  AND NOT EXISTS (
+    SELECT 1 FROM user_permission_groups upg 
+    WHERE upg.user_id = u.id AND upg.permission_group_id = r.id
+);
+
+INSERT INTO user_permission_groups (user_id, permission_group_id, assigned_by)
+SELECT u.id, r.id, NULL
+FROM users u
+CROSS JOIN permission_groups r
+WHERE u.role = 'user'
+  AND r.code = 'USER'
+  AND NOT EXISTS (
+    SELECT 1 FROM user_permission_groups upg 
+    WHERE upg.user_id = u.id AND upg.permission_group_id = r.id
 );
 ```
 

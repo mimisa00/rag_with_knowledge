@@ -260,6 +260,113 @@ const CommonUI = (() => {
         };
     }
 
+    /**
+     * 初始化滾動條淡出淡入效果
+     * 處理所有具有 .scrollable-fade class 的元素
+     */
+    function initScrollFadeEffect() {
+        // 同時處理所有具有 scrollable-fade class 的元素（包括 tbody）
+        const scrollables = document.querySelectorAll('.scrollable-fade, tbody.scrollable-fade');
+        
+        scrollables.forEach(element => {
+            let scrollTimeout;
+            let fadeTimeout;
+            let mouseLeaveTimeout;
+            
+            // 移除舊的事件監聽器（防止重複綁定）
+            if (element._scrollHandler) {
+                element.removeEventListener('scroll', element._scrollHandler);
+            }
+            if (element._mouseEnterHandler) {
+                element.removeEventListener('mouseenter', element._mouseEnterHandler);
+            }
+            if (element._mouseLeaveHandler) {
+                element.removeEventListener('mouseleave', element._mouseLeaveHandler);
+            }
+            
+            // 統一的顯示函數
+            const showScrollbar = () => {
+                // 清除所有計時器
+                clearTimeout(scrollTimeout);
+                clearTimeout(fadeTimeout);
+                clearTimeout(mouseLeaveTimeout);
+                
+                // 移除淡出狀態，顯示滾動條
+                element.classList.remove('fading-out');
+                element.classList.add('scrolling');
+                
+                // 如果是 tbody，也為其 wrapper 添加樣式
+                if (element.tagName === 'TBODY') {
+                    const wrapper = element.closest('.permission-group-table-wrapper, .user-table-wrapper, .group-table-wrapper');
+                    if (wrapper) {
+                        wrapper.classList.remove('fading-out');
+                        wrapper.classList.add('scrolling');
+                    }
+                }
+            };
+            
+            // 統一的淡出函數
+            const startFadeOut = () => {
+                // 清除其他計時器
+                clearTimeout(scrollTimeout);
+                clearTimeout(mouseLeaveTimeout);
+                
+                // 開始淡出
+                element.classList.remove('scrolling');
+                element.classList.add('fading-out');
+                
+                // 如果是 tbody，也為其 wrapper 添加淡出樣式
+                if (element.tagName === 'TBODY') {
+                    const wrapper = element.closest('.permission-group-table-wrapper, .user-table-wrapper, .group-table-wrapper');
+                    if (wrapper) {
+                        wrapper.classList.remove('scrolling');
+                        wrapper.classList.add('fading-out');
+                    }
+                }
+                
+                // 淡出完成後清理 class
+                fadeTimeout = setTimeout(() => {
+                    element.classList.remove('fading-out');
+                    
+                    if (element.tagName === 'TBODY') {
+                        const wrapper = element.closest('.permission-group-table-wrapper, .user-table-wrapper, .group-table-wrapper');
+                        if (wrapper) {
+                            wrapper.classList.remove('fading-out');
+                        }
+                    }
+                }, 1500); // CSS 淡出動畫時間
+            };
+            
+            // 滾動事件處理
+            element._scrollHandler = function() {
+                showScrollbar();
+                
+                // 滾動停止 1 秒後開始淡出（只有在沒有 hover 的情況下）
+                scrollTimeout = setTimeout(() => {
+                    if (!element.matches(':hover')) {
+                        startFadeOut();
+                    }
+                }, 1000);
+            };
+            
+            // 滑鼠進入事件處理
+            element._mouseEnterHandler = function() {
+                showScrollbar();
+            };
+            
+            // 滑鼠離開事件處理
+            element._mouseLeaveHandler = function() {
+                // 立即開始淡出，1.5秒內完成
+                startFadeOut();
+            };
+            
+            // 綁定所有事件
+            element.addEventListener('scroll', element._scrollHandler);
+            element.addEventListener('mouseenter', element._mouseEnterHandler);
+            element.addEventListener('mouseleave', element._mouseLeaveHandler);
+        });
+    }
+
     // 公開API
     return {
         showSpinner,
@@ -276,7 +383,8 @@ const CommonUI = (() => {
         showAlert,
         toggleElement,
         debounce,
-        throttle
+        throttle,
+        initScrollFadeEffect
     };
 })();
 

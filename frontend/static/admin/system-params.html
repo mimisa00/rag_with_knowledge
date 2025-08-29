@@ -190,7 +190,7 @@
                 </div>
                 
                 <!-- 參數表單區 -->
-                <div class="param-content">
+                <div class="param-content scrollable-fade">
                     <form id="paramForm">
                         <!-- 請求控制分類 -->
                         <div id="requestCategory" class="param-category-section active">
@@ -510,6 +510,11 @@
                 ParamDrawerManager.init();
                 ParamModule.init();
                 UserMenu.init();
+                
+                // 初始化滾動條淡出淡入效果
+                if (CommonUI.initScrollFadeEffect) {
+                    CommonUI.initScrollFadeEffect();
+                }
                 
                 console.log('系統參數管理頁面模組載入完成');
             } catch (error) {

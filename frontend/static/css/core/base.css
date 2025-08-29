@@ -288,6 +288,91 @@ summary {
   background: var(--text-secondary);
 }
 
+/* 統一的淡出淡入滾動條特效 */
+.scrollable-fade {
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: transparent transparent; /* Firefox 預設透明 */
+  transition: scrollbar-color 1.5s ease-out;
+}
+
+.scrollable-fade::-webkit-scrollbar {
+  width: 8px;
+  height: 8px; /* 水平滾動條高度 */
+}
+
+.scrollable-fade::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 1.5s ease-out;
+}
+
+.scrollable-fade::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 1.5s ease-out;
+}
+
+/* hover 時快速顯示 */
+.scrollable-fade:hover::-webkit-scrollbar-track {
+  background: var(--bg-light);
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+.scrollable-fade:hover::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+.scrollable-fade:hover::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* 滾動時快速顯示 */
+.scrollable-fade.scrolling::-webkit-scrollbar-track {
+  background: var(--bg-light);
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+.scrollable-fade.scrolling::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+.scrollable-fade.scrolling::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* 淡出時保持顏色但慢慢變透明 */
+.scrollable-fade.fading-out::-webkit-scrollbar-track {
+  background: var(--bg-light);
+  opacity: 0;
+  transition: opacity 1.5s ease-out;
+}
+
+.scrollable-fade.fading-out::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  opacity: 0;
+  transition: opacity 1.5s ease-out;
+}
+
+/* Firefox 支援 */
+.scrollable-fade:hover,
+.scrollable-fade.scrolling {
+  scrollbar-color: var(--border-color) var(--bg-light);
+  transition: scrollbar-color 0.2s ease;
+}
+
+.scrollable-fade.fading-out {
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 1.5s ease-out;
+}
+
 /* 選取文字樣式 */
 ::selection {
   background-color: rgba(var(--primary-rgb), 0.2);

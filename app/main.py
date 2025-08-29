@@ -5,10 +5,13 @@ RAG 系統主要入口檔案
 """
 
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
+import logging
 
 from app.config.settings import app_config
 from app.config.paths import path_config
@@ -28,6 +31,30 @@ app = FastAPI(
     description="基於 Ollama 的檢索增強生成系統",
     version="2.0.0",
 )
+
+# 加入 Pydantic 驗證錯誤處理器
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """處理 Pydantic 驗證錯誤，返回詳細的錯誤資訊"""
+    errors = []
+    for error in exc.errors():
+        errors.append({
+            "loc": error["loc"],
+            "msg": error["msg"],
+            "type": error["type"],
+            "input": error.get("input")
+        })
+    
+    logger.error(f"驗證錯誤 - URL: {request.url}, 錯誤: {errors}")
+    
+    return JSONResponse(
+        status_code=422,
+        content={
+            "detail": "資料驗證失敗",
+            "errors": errors,
+            "message": "請檢查輸入資料格式是否正確"
+        }
+    )
 
 # 獲取路徑配置
 paths = path_config.get_base_paths()
@@ -176,6 +203,7 @@ from app.api.routes.user import router as user_router
 from app.api.routes.conversation import router as conversation_router
 from app.api.routes.query import router as query_router
 from app.api.routes.organization import router as organization_router
+from app.api.routes.permissions import router as permissions_router
 
 app.include_router(static_router, tags=["頁面"])
 app.include_router(config_router, prefix="/api", tags=["配置"])
@@ -186,7 +214,8 @@ app.include_router(vector_index_router, prefix="/api", tags=["向量索引"])
 app.include_router(user_router, prefix="/api", tags=["使用者"])
 app.include_router(conversation_router, prefix="/api", tags=["對話"])
 app.include_router(query_router, prefix="/api", tags=["查詢"])
-app.include_router(organization_router, tags=["組織管理"])
+app.include_router(organization_router, prefix="/api",tags=["組織管理"])
+app.include_router(permissions_router, prefix="/api", tags=["權限管理"])
 
 # 掛載靜態文件服務
 static_dir = path_config.get_base_paths()["STATIC_DIR"]

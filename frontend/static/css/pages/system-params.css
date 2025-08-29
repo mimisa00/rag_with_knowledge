@@ -407,28 +407,9 @@
     }
 }
 
-/* 隱藏式滾動條樣式 - 參考 dashboard.css */
-.param-content::-webkit-scrollbar {
-    width: 6px;
-}
-
-.param-content::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.param-content::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0);
-    border-radius: 3px;
-    transition: background 0.3s ease;
-}
-
-.param-content:hover::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.3);
-}
-
-.param-content::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 0, 0, 0.5);
-}
+/* 使用統一的淡出淡入滾動條
+   請在 HTML 中為 .param-content 元素添加 scrollable-fade class 
+   並確保頁面載入 CommonUI.initScrollFadeEffect() 函數 */
 
 /* 工具提示 */
 .mb-sm {

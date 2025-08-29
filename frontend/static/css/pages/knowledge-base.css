@@ -99,36 +99,7 @@
     overflow-y: auto;
     overflow-x: hidden; /* 禁止水平滾動 */
     flex: 1;
-    /* 隱藏 scrollbar，hover 時顯示 */
-    scrollbar-width: thin;
-    scrollbar-color: transparent transparent;
-}
-
-/* Scrollbar 樣式 - 預設隱藏 */
-.kb-list::-webkit-scrollbar {
-    width: 6px;
-}
-
-.kb-list::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.kb-list::-webkit-scrollbar-thumb {
-    background: transparent;
-    border-radius: 3px;
-}
-
-/* Hover 時顯示 scrollbar */
-.kb-list:hover {
-    scrollbar-color: rgba(0, 0, 0, 0.2) rgba(0, 0, 0, 0.05);
-}
-
-.kb-list:hover::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.2);
-}
-
-.kb-list:hover::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.05);
+    /* 使用統一的淡出淡入滾動條 - .kb-list 元素請添加 scrollable-fade class */
 }
 
 .kb-list li {
@@ -245,9 +216,7 @@
     flex-direction: column;
 }
 
-.kb-info-section::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
-}
+/* .kb-info-section 請添加 scrollable-fade class */
 
 /* 左右兩欄布局 */
 .kb-info-layout {
@@ -275,32 +244,7 @@
     height: 100%;
 }
 
-/* kb-info-left scrollbar 樣式 */
-.kb-info-left::-webkit-scrollbar {
-    width: 6px;
-}
-
-.kb-info-left::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.kb-info-left::-webkit-scrollbar-thumb {
-    background: transparent;
-    border-radius: 3px;
-}
-
-/* Hover 時顯示 scrollbar */
-.kb-info-left:hover {
-    scrollbar-color: rgba(0, 0, 0, 0.2) rgba(0, 0, 0, 0.05);
-}
-
-.kb-info-left:hover::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.2);
-}
-
-.kb-info-left:hover::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.05);
-}
+/* .kb-info-left 請添加 scrollable-fade class 以使用統一的淡出淡入滾動條 */
 
 .kb-prompt-section {
     display: flex;
@@ -537,9 +481,7 @@
     -ms-overflow-style: none; /* IE and Edge */
 }
 
-.tab-content::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
-}
+/* .tab-content 請添加 scrollable-fade class */
 
 .tab-pane {
     display: none;
@@ -548,29 +490,15 @@
     overflow-y: auto; /* 允許垂直捲動 */
     overflow-x: hidden; /* 防止水平捲動 */
     min-width: 0; /* 允許內容縮小 */
-    scrollbar-width: none; /* Firefox 隱藏 scrollbar */
-    -ms-overflow-style: none; /* IE/Edge 隱藏 scrollbar */
+    /* 使用統一的淡出淡入滾動條 - .tab-pane 元素請添加 scrollable-fade class */
 }
 
-.tab-pane::-webkit-scrollbar {
-    display: none; /* Chrome/Safari/Opera 隱藏 scrollbar */
-}
-
-/* 各個 Tab 的特別處理 - 確保都可以捲動 */
+/* 各個 Tab 請添加 scrollable-fade class 以使用統一的淡出淡入滾動條 */
 #infoTab,
 #filesTab,
 #indexTab,
 #permissionsTab {
     overflow-y: auto; /* 允許垂直捲動 */
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-
-#infoTab::-webkit-scrollbar,
-#filesTab::-webkit-scrollbar,
-#indexTab::-webkit-scrollbar,
-#permissionsTab::-webkit-scrollbar {
-    display: none;
 }
 
 .tab-pane.active {
@@ -632,56 +560,8 @@
    統一的動畫 Scrollbar 樣式
    ======================================== */
 
-/* 統一的 Scrollbar 樣式 - 預設隱藏 */
-.file-list,
-.index-summary,
-.kb-prompt-textarea {
-    scrollbar-width: thin;
-    scrollbar-color: transparent transparent;
-    transition: scrollbar-color 0.3s ease;
-}
-
-/* Webkit 瀏覽器的 scrollbar 樣式 */
-.file-list::-webkit-scrollbar,
-.index-summary::-webkit-scrollbar,
-.kb-prompt-textarea::-webkit-scrollbar {
-    width: 8px;
-}
-
-.file-list::-webkit-scrollbar-track,
-.index-summary::-webkit-scrollbar-track,
-.kb-prompt-textarea::-webkit-scrollbar-track {
-    background: transparent;
-    margin: 5px;
-    transition: background 0.3s ease;
-}
-
-.file-list::-webkit-scrollbar-thumb,
-.index-summary::-webkit-scrollbar-thumb,
-.kb-prompt-textarea::-webkit-scrollbar-thumb {
-    background: transparent;
-    border-radius: 4px;
-    transition: background 0.3s ease;
-}
-
-/* Hover 時動畫顯示 scrollbar */
-.file-list:hover,
-.index-summary:hover,
-.kb-prompt-textarea:hover {
-    scrollbar-color: rgba(0, 0, 0, 0.3) rgba(0, 0, 0, 0.05);
-}
-
-.file-list:hover::-webkit-scrollbar-thumb,
-.index-summary:hover::-webkit-scrollbar-thumb,
-.kb-prompt-textarea:hover::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.3);
-}
-
-.file-list:hover::-webkit-scrollbar-track,
-.index-summary:hover::-webkit-scrollbar-track,
-.kb-prompt-textarea:hover::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.05);
-}
+/* 使用統一的淡出淡入滾動條
+   請為 .file-list, .index-summary, .kb-prompt-textarea 元素添加 scrollable-fade class */
 
 /* ========================================
    舊版樣式（保留以確保相容性）
@@ -1402,17 +1282,6 @@
 #buildIndexModal .modal-body {
     overflow-y: auto;
     max-height: calc(85vh - 120px); /* 扣除 header 和 footer 高度 */
-    /* Firefox 隱藏 scrollbar */
-    scrollbar-width: none;
-    /* IE 和 Edge 隱藏 scrollbar */
-    -ms-overflow-style: none;
-}
-
-/* Webkit 瀏覽器（Chrome, Safari）隱藏 scrollbar */
-#buildIndexModal .modal-body::-webkit-scrollbar {
-    display: none;
-    width: 0;
-    height: 0;
 }
 
 /* 藍色 header 樣式已移除，統一使用標準 modal-header */

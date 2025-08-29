@@ -1,0 +1,1065 @@
+/* 權限管理頁面專用樣式 */
+/* 使用新的 CSS 架構，僅保留頁面特有樣式 */
+
+/* ========================================
+   模態框統一優化
+   ======================================== */
+
+/* 統一所有權限管理模態框的固定 header/footer 樣式 */
+#groupModal .modal-content {
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh;
+    height: auto;
+}
+
+#groupModal .modal-header,
+#groupModal .modal-footer {
+    flex-shrink: 0;
+    background: white;
+    z-index: 10;
+}
+
+/* header 樣式 */
+#groupModal .modal-header {
+    border-bottom: 1px solid var(--border-color);
+    border-radius: 8px 8px 0 0;
+}
+
+/* footer 樣式 */
+#groupModal .modal-footer {
+    border-top: 1px solid var(--border-color);
+    border-radius: 0 0 8px 8px;
+}
+
+/* body 可捲動區域 */
+#groupModal .modal-body {
+    flex: 1;
+    overflow-y: auto;
+    max-height: calc(90vh - 120px);
+    padding: 20px;
+}
+
+/* 權限網格在角色模態框中的特殊優化 */
+#groupModal .permission-grid {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 15px;
+    background: var(--bg-light);
+}
+
+#groupModal .permission-item {
+    margin-bottom: 15px;
+}
+
+#groupModal .permission-item:last-child {
+    margin-bottom: 0;
+}
+
+/* ========================================
+   抽屜式布局
+   ======================================== */
+
+/* 主布局容器 */
+.perm-layout {
+    display: flex;
+    height: 100%; /* 使用父容器高度 */
+    overflow: hidden;
+}
+
+/* 抽屜容器 */
+#permDrawerContainer {
+    background: var(--bg-light);
+    border-right: 1px solid var(--border-color);
+    transition: width var(--transition-normal);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    z-index: 10;
+}
+
+#permDrawerContainer.drawer-closed {
+    width: 50px;
+}
+
+#permDrawerContainer.drawer-open {
+    width: 350px;
+}
+
+/* 抽屜按鈕區 */
+#permDrawerButtons {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    padding: var(--spacing-sm);
+    gap: var(--spacing-xs);
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-main);
+    border-radius: 0;
+    box-shadow: var(--shadow-sm);
+}
+
+/* 抽屜切換按鈕 - 參考 dashboard.css */
+.drawer-toggle-btn {
+    width: 35px;
+    height: 35px;
+    border: none;
+    background-color: var(--bg-main);
+    color: var(--text-secondary);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.drawer-toggle-btn:hover {
+    background-color: var(--primary);
+    color: white;
+    transform: scale(1.1);
+}
+
+/* 抽屜內容 */
+#permDrawerContent {
+    flex: 1;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity var(--transition-normal);
+    padding: var(--spacing-md);
+}
+
+#permDrawerContainer.drawer-open #permDrawerContent {
+    opacity: 1;
+}
+
+#permDrawerContainer.drawer-closed #permDrawerContent {
+    pointer-events: none;
+}
+
+#permDrawerContent h4 {
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 2px solid var(--primary);
+    color: var(--text-primary);
+}
+
+/* 組織選單 */
+.perm-menu {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.perm-menu-item {
+    display: flex;
+    align-items: center;
+    padding: 0.875rem 1rem;
+    color: var(--text-secondary);
+    text-decoration: none;
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+    position: relative;
+    height: 42px;
+}
+
+.perm-menu-item:hover {
+    background: var(--bg-hover);
+    color: var(--primary);
+    transform: translateX(5px);
+    text-decoration: none;
+}
+
+.perm-menu-item.active {
+    background: linear-gradient(90deg, rgba(var(--primary-rgb), 0.2) 10%, transparent 100%);
+    color: var(--primary);
+    text-decoration: none;
+}
+
+.perm-menu-item.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 70%;
+    background: var(--primary);
+    border-radius: 0 2px 2px 0;
+}
+
+.perm-menu-item i {
+    margin-right: 0.75rem;
+    width: 20px;
+    text-align: center;
+}
+
+/* 主內容區 */
+.perm-main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg-main);
+}
+
+/* 狀態列 */
+.perm-status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: white;
+    border-radius: 0;
+    box-shadow: var(--shadow-sm);
+    margin: 0 calc(0 * var(--spacing-lg));
+    margin-bottom: var(--spacing-lg); /* 增加下邊距給 TAB 更多空間 */
+    min-height: 62px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.current-perm-info {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.current-perm-info i {
+    color: var(--primary);
+    font-size: 1.5rem;
+}
+
+.current-perm-info span {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.perm-stats {
+    display: flex;
+    gap: var(--spacing-lg);
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    color: var(--text-secondary);
+}
+
+.section-stats {
+    display: flex;
+    gap: var(--spacing-lg);
+}
+
+
+/* 內容區塊 */
+.content-section {
+    display: none;
+    padding: 0.5rem;
+    height: calc(100vh - 230px); /* 更精確地計算固定元素高度：導航欄60px+狀態列80px+麵包屑40px+其他邊距50px */
+    overflow: hidden;
+}
+
+.content-section.active {
+    display: flex;
+    flex-direction: column;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.section-header h2 {
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.header-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.section-content {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 2rem;
+    flex: 1;
+    overflow: hidden;
+    min-height: 0;
+}
+
+/* 即將推出區塊 */
+.coming-soon-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 12px;
+    padding: 3rem 2rem;
+    min-height: 400px;
+    text-align: center;
+    border: 1px solid var(--border-color);
+}
+
+.coming-soon-icon {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    border-radius: 50%;
+    color: white;
+    font-size: 2rem;
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+.coming-soon-block h3 {
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.coming-soon-block p {
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+.feature-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+    margin-top: 2rem;
+}
+
+.feature-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.feature-item i {
+    color: var(--success);
+    width: 16px;
+    text-align: center;
+}
+
+/* 樹狀結構工具列 - 保留給group使用 */
+.group-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.group-search-box {
+    display: flex;
+    flex: 1;
+    max-width: 400px;
+    position: relative;
+}
+
+.group-search-box input {
+    flex: 1;
+    padding-right: 40px;
+    border-radius: 20px;
+}
+
+.group-search-box .btn-search {
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--primary);
+    cursor: pointer;
+    padding: 5px 10px;
+}
+
+.group-search-box .btn-search:hover {
+    color: var(--primary-dark);
+}
+
+.group-filters {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+/* 停用群組切換按鈕 */
+.toggle-inactive-btn {
+    background: none;
+    border: none;
+    color: #999;
+    cursor: pointer;
+    padding: 0 0.5rem;
+    margin-left: 0.5rem;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.toggle-inactive-btn:hover {
+    color: var(--primary);
+    transform: scale(1.1);
+}
+
+.toggle-inactive-btn.active {
+    color: var(--primary);
+}
+
+.toggle-inactive-btn.active i::before {
+    content: '\f06e'; /* fa-eye icon */
+}
+
+/* Tooltip for toggle button */
+.toggle-inactive-btn::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    margin-bottom: 0.25rem;
+}
+
+.toggle-inactive-btn:hover::after {
+    opacity: 1;
+}
+
+.group-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* 群組統計 */
+.group-stats {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 1rem;
+    padding: 0.5rem;
+    background: var(--bg-light);
+    border-radius: 4px;
+    font-size: 0.875rem;
+}
+
+.group-stats .stat-item {
+    color: var(--text-secondary);
+}
+
+.group-stats .stat-item strong {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+
+/* 通用滾動條樣式已統一至 base.css，使用 scrollable-fade class */
+
+.btn-icon {
+    background: none;
+    border: none;
+    padding: 0.25rem 0.5rem;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: color 0.2s;
+}
+
+.btn-icon:hover {
+    color: var(--primary);
+}
+
+/* 垃圾桶圖標 hover 時顯示危險色 */
+.btn-icon:hover .fa-trash {
+    color: var(--danger) !important;
+}
+
+/* 權限資訊極簡化樣式 */
+.permission-info-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    max-height: calc(100vh - 445px);
+    overflow-y: auto;
+    /* scrollbar 樣式已統一至 base.css，使用 scrollable-fade class */
+}
+
+.group-description {
+    color: var(--text-secondary);
+    line-height: 1.5;
+    font-size: 0.95rem;
+}
+
+.permission-tags {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.permission-category-block {
+    margin-bottom: 1rem;
+}
+
+.permission-category-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--primary);
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.25rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.permission-category-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.permission-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    background: rgba(40, 167, 69, 0.1);
+    color: #28a745;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.permission-tag.denied {
+    background: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+}
+
+.permission-tag i {
+    font-size: 0.8rem;
+}
+
+/* 資料表格 */
+.data-table {
+    width: 100%;
+    background: white;
+    border-radius: 8px;
+    overflow: visible; /* 改為 visible 以顯示 sticky header */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.data-table thead {
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--secondary) 100%);
+    color: white;
+}
+
+.data-table th {
+    padding: 1rem;
+    text-align: left;
+    font-weight: 500;
+    color: white; /* 改為 white 以配合漸層背景 */
+    white-space: nowrap; /* 防止文字換行 */
+}
+
+.data-table tbody tr {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.data-table tbody tr:hover {
+    background-color: var(--bg-hover);
+}
+
+.data-table tbody tr.selected {
+    background-color: rgba(102, 126, 234, 0.1);
+    border-left: 3px solid var(--primary);
+}
+
+.data-table tbody tr {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.data-table td {
+    padding: 1rem;
+    color: var(--text-primary);
+}
+
+/* 群組權限 */
+.group-info-block {
+    background: white;
+    border-radius: 8px;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 365px); /* 從 280px 調整為 400px，更精確計算固定元素高度 */
+    min-height: 500px; /* 添加最小高度確保可用性 */
+    overflow: hidden;
+}
+
+/* 群組權限詳情 */
+.group-details {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    overflow-y: auto;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 群組權限統計 */
+.group-stats {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 1rem;
+    padding: 0.5rem;
+    background: var(--bg-light);
+    border-radius: 4px;
+    font-size: 0.875rem;
+}
+
+.group-stats .stat-item {
+    color: var(--text-secondary);
+}
+
+.group-stats .stat-item strong {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.group-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.group-search-box {
+    display: flex;
+    flex: 1;
+    max-width: 400px;
+    position: relative;
+}
+
+.group-search-box input {
+    flex: 1;
+    padding-right: 40px;
+    border-radius: 20px;
+}
+
+.group-search-box .btn-search {
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--primary);
+    cursor: pointer;
+    padding: 5px 10px;
+}
+
+.group-search-box .btn-search:hover {
+    color: var(--primary-dark);
+}
+
+/* 群組權限列表容器 - 新增固定高度和滾動 */
+.group-list {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+/* 群組權限表格可滾動區域 */
+.group-table-wrapper {
+    flex: 1;
+    overflow: hidden; /* 改為 hidden，不要整個 wrapper 滾動 */
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 350px; /* 確保表格容器有足夠空間 */
+}
+
+/* 群組權限表格結構 */
+.group-table-wrapper .data-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 350px; /* 與 wrapper 配合，確保表格本身有正確高度 */
+}
+
+.group-table-wrapper .data-table thead {
+    flex-shrink: 0;
+    display: block;
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--secondary) 100%);
+    padding-right: 8px; /* 預留 scrollbar 寬度 */
+}
+
+.group-table-wrapper .data-table tbody {
+    flex: 1;
+    display: block;
+    overflow-y: auto;
+    min-height: 300px; /* 添加最小高度確保 scrollbar 顯示 */
+    max-height: 100%; /* 確保不超過父容器 */
+}
+
+/* 調整 thead 和 tbody 的 tr 為 table 佈局 */
+.group-table-wrapper .data-table thead tr,
+.group-table-wrapper .data-table tbody tr {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+}
+
+.group-table-wrapper .data-table thead th {
+    display: table-cell;
+    position: relative;
+    background: inherit;
+    border-bottom: 2px solid var(--primary-dark);
+    padding: 1rem;
+}
+
+.group-table-wrapper .data-table tbody td {
+    display: table-cell;
+    padding: 1rem;
+}
+
+/* tbody 的 scrollbar 樣式已統一至 base.css，使用 scrollable-fade class */
+
+/* 統一停用項目的視覺樣式 */
+.inactive-row {
+    opacity: 0.6;
+    background-color: var(--bg-light) !important;
+}
+
+.inactive-row td {
+    color: var(--text-muted) !important;
+    font-style: italic;
+}
+
+.inactive-row .btn-icon {
+    opacity: 0.5;
+}
+
+.inactive-row .btn-icon:hover {
+    opacity: 1;
+}
+
+/* 搜尋與篩選 */
+.section-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.filters {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.filters select {
+    min-width: 150px;
+}
+
+
+/* 權限網格 */
+.permission-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+.permission-item {
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 1rem;
+}
+
+.permission-header {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.permission-header i {
+    margin-right: 0.5rem;
+    color: var(--primary);
+}
+
+.permission-actions {
+    display: flex;
+    gap: 1rem;
+    margin-left: 1.5rem;
+}
+
+.permission-actions label {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    cursor: pointer;
+}
+
+/* 狀態標籤 */
+.status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.status-active {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-pending {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.status-disabled {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+/* 載入動畫 */
+.loading-spinner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid var(--border-color);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.loading-spinner p {
+    margin-top: 1rem;
+    color: var(--text-muted);
+}
+
+/* 空狀態 */
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-muted);
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.empty-state h3 {
+    color: var(--text-primary);
+    margin: 1rem 0;
+}
+
+/* 表單樣式 */
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group.col-6 {
+    grid-column: span 1;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.required {
+    color: #dc3545;
+}
+
+/* 模態框擴展 */
+.modal-lg {
+    max-width: 800px;
+    width: 90%;
+}
+
+.modal-xl {
+    max-width: 1200px;
+    width: 90%;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    #permDrawerContainer {
+        position: fixed;
+        z-index: 1000;
+        height: 100%;
+        transform: translateX(-100%);
+    }
+    
+    #permDrawerContainer.drawer-open {
+        transform: translateX(0);
+    }
+    
+    .perm-main-content {
+        margin-left: 0;
+    }
+    
+    .section-content {
+        grid-template-columns: 1fr;
+    }
+    
+    .section-toolbar {
+        flex-direction: column;
+    }
+    
+    .search-box {
+        max-width: 100%;
+    }
+    
+    .filters {
+        flex-wrap: wrap;
+    }
+    
+    .data-table {
+        font-size: 0.875rem;
+    }
+    
+    .modal-content {
+        width: 95%;
+        margin: 2.5%;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* 響應式高度調整 */
+@media (max-height: 800px) {
+    .group-info-block {
+        height: calc(100vh - 350px);
+        min-height: 400px;
+    }
+    
+    .group-table-wrapper .data-table tbody {
+        min-height: 250px;
+    }
+    
+    .group-table-wrapper {
+        min-height: 300px;
+    }
+    
+    .group-table-wrapper .data-table {
+        min-height: 300px;
+    }
+}
+
+@media (max-height: 600px) {
+    .group-info-block {
+        height: calc(100vh - 300px);
+        min-height: 300px;
+    }
+    
+    .group-table-wrapper .data-table tbody {
+        min-height: 200px;
+    }
+    
+    .group-table-wrapper {
+        min-height: 250px;
+    }
+    
+    .group-table-wrapper .data-table {
+        min-height: 250px;
+    }
+}
+
+/* ========================================
+   停用項目的垃圾桶按鈕樣式
+   ======================================== */
+
+/* 停用狀態的垃圾桶按鈕樣式 - 使用高權重選擇器覆蓋所有hover效果 */
+.data-table .btn-icon.disabled,
+.data-table .btn-icon.disabled:hover,
+table .btn-icon.disabled,
+table .btn-icon.disabled:hover,
+.btn-icon.disabled,
+.btn-icon.disabled:hover {
+    pointer-events: none !important;
+    opacity: 0.3 !important;
+    color: var(--text-muted) !important;
+    cursor: not-allowed !important;
+    background: none !important;
+    border: none !important;
+    /* 覆蓋可能的transform和box-shadow效果 */
+    transform: none !important;
+    box-shadow: none !important;
+    /* 禁用transition避免動畫效果 */
+    transition: none !important;
+}
+
+.data-table .btn-icon.disabled:hover .fa-trash,
+table .btn-icon.disabled:hover .fa-trash,
+.btn-icon.disabled:hover .fa-trash {
+    color: var(--text-muted) !important;
+}

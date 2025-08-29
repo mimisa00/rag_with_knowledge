@@ -6,7 +6,7 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime
 from app.dao.base import BaseDAO, db_manager
 from app.models.organization import (
-    Department, Role, UserExtension, UserRole, 
+    Department, PermissionGroup, UserExtension, UserPermissionGroup, 
     SystemMode, PasswordPolicy, AuditLog
 )
 from app.utils.logging import get_logger
@@ -248,80 +248,80 @@ class DepartmentDAO(BaseDAO):
             return []
 
 
-class RoleDAO(BaseDAO):
-    """角色資料存取物件"""
+class PermissionGroupDAO(BaseDAO):
+    """權限群組資料存取物件"""
     
     def __init__(self, db_manager_instance=None):
         super().__init__(db_manager_instance or db_manager)
     
-    def create_role(self, role: Role) -> Optional[int]:
-        """建立角色"""
+    def create_permission_group(self, permission_group: PermissionGroup) -> Optional[int]:
+        """建立權限群組"""
         try:
             query = """
-                INSERT INTO roles (
-                    code, name, description, role_type, permissions,
+                INSERT INTO permission_groups (
+                    code, name, description, permission_type, permissions,
                     is_active, created_by
                 ) VALUES (%s, %s, %s, %s, %s, %s, %s)
             """
             
-            permissions_json = json.dumps(role.permissions) if role.permissions else None
+            permissions_json = json.dumps(permission_group.permissions) if permission_group.permissions else None
             
-            role_id = self.execute_insert(query, (
-                role.code, role.name, role.description, role.role_type,
-                permissions_json, role.is_active, role.created_by
+            group_id = self.execute_insert(query, (
+                permission_group.code, permission_group.name, permission_group.description, permission_group.permission_type,
+                permissions_json, permission_group.is_active, permission_group.created_by
             ))
             
-            if role_id > 0:
-                logger.info(f"角色 {role.code} 建立成功，ID: {role_id}")
-                return role_id
+            if group_id > 0:
+                logger.info(f"權限群組 {permission_group.code} 建立成功，ID: {group_id}")
+                return group_id
             else:
-                logger.error(f"角色 {role.code} 建立失敗")
+                logger.error(f"權限群組 {permission_group.code} 建立失敗")
                 return None
                 
         except Exception as e:
-            logger.error(f"建立角色失敗: {e}")
+            logger.error(f"建立權限群組失敗: {e}")
             return None
     
-    def get_role(self, role_id: int) -> Optional[Dict[str, Any]]:
-        """取得單一角色"""
+    def get_permission_group(self, group_id: int) -> Optional[Dict[str, Any]]:
+        """取得單一權限群組"""
         try:
-            query = "SELECT * FROM roles WHERE id = %s"
-            results = self.execute_query(query, (role_id,))
+            query = "SELECT * FROM permission_groups WHERE id = %s"
+            results = self.execute_query(query, (group_id,))
             if results:
-                role = results[0]
-                if role.get('permissions'):
-                    role['permissions'] = json.loads(role['permissions'])
-                return role
+                group = results[0]
+                if group.get('permissions'):
+                    group['permissions'] = json.loads(group['permissions'])
+                return group
             return None
         except Exception as e:
-            logger.error(f"取得角色失敗: {e}")
+            logger.error(f"取得權限群組失敗: {e}")
             return None
     
-    def get_role_by_code(self, code: str) -> Optional[Dict[str, Any]]:
-        """根據代碼取得角色"""
+    def get_permission_group_by_code(self, code: str) -> Optional[Dict[str, Any]]:
+        """根據代碼取得權限群組"""
         try:
-            query = "SELECT * FROM roles WHERE code = %s"
+            query = "SELECT * FROM permission_groups WHERE code = %s"
             results = self.execute_query(query, (code,))
             if results:
-                role = results[0]
-                if role.get('permissions'):
-                    role['permissions'] = json.loads(role['permissions'])
-                return role
+                group = results[0]
+                if group.get('permissions'):
+                    group['permissions'] = json.loads(group['permissions'])
+                return group
             return None
         except Exception as e:
-            logger.error(f"根據代碼取得角色失敗: {e}")
+            logger.error(f"根據代碼取得權限群組失敗: {e}")
             return None
     
-    def list_roles(self, role_type: Optional[str] = None,
+    def list_permission_groups(self, group_type: Optional[str] = None,
                   is_active: Optional[bool] = None) -> List[Dict[str, Any]]:
-        """列出角色"""
+        """列出權限群組"""
         try:
             conditions = []
             params = []
             
-            if role_type:
-                conditions.append("role_type = %s")
-                params.append(role_type)
+            if group_type:
+                conditions.append("permission_type = %s")
+                params.append(group_type)
             
             if is_active is not None:
                 conditions.append("is_active = %s")
@@ -330,25 +330,25 @@ class RoleDAO(BaseDAO):
             where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
             
             query = f"""
-                SELECT * FROM roles {where_clause}
-                ORDER BY role_type, name
+                SELECT * FROM permission_groups {where_clause}
+                ORDER BY permission_type, name
             """
             
-            roles = self.execute_query(query, tuple(params) if params else None)
+            groups = self.execute_query(query, tuple(params) if params else None)
             
             # 解析 JSON permissions
-            for role in roles:
-                if role.get('permissions'):
-                    role['permissions'] = json.loads(role['permissions'])
+            for group in groups:
+                if group.get('permissions'):
+                    group['permissions'] = json.loads(group['permissions'])
             
-            return roles
+            return groups
             
         except Exception as e:
-            logger.error(f"列出角色失敗: {e}")
+            logger.error(f"列出權限群組失敗: {e}")
             return []
     
-    def update_role(self, role_id: int, updates: Dict[str, Any]) -> bool:
-        """更新角色"""
+    def update_permission_group(self, group_id: int, updates: Dict[str, Any]) -> bool:
+        """更新權限群組"""
         try:
             # 處理 permissions
             if 'permissions' in updates and updates['permissions'] is not None:
@@ -360,48 +360,48 @@ class RoleDAO(BaseDAO):
                 set_clauses.append(f"{key} = %s")
                 values.append(value)
             
-            values.append(role_id)
+            values.append(group_id)
             
             query = f"""
-                UPDATE roles 
+                UPDATE permission_groups 
                 SET {', '.join(set_clauses)}, updated_at = NOW()
                 WHERE id = %s
             """
             
             success = self.execute_update(query, tuple(values))
             if success:
-                logger.info(f"角色 {role_id} 更新成功")
+                logger.info(f"權限群組 {group_id} 更新成功")
             return success
             
         except Exception as e:
-            logger.error(f"更新角色失敗: {e}")
+            logger.error(f"更新權限群組失敗: {e}")
             return False
     
-    def delete_role(self, role_id: int) -> bool:
-        """刪除角色"""
+    def delete_permission_group(self, group_id: int) -> bool:
+        """刪除權限群組"""
         try:
-            # 檢查是否為系統角色
-            query = "SELECT role_type FROM roles WHERE id = %s"
-            results = self.execute_query(query, (role_id,))
-            if results and results[0]['role_type'] == 'system':
-                logger.warning(f"無法刪除系統角色 {role_id}")
+            # 檢查是否為系統權限群組
+            query = "SELECT permission_type FROM permission_groups WHERE id = %s"
+            results = self.execute_query(query, (group_id,))
+            if results and results[0]['permission_type'] == 'system':
+                logger.warning(f"無法刪除系統權限群組 {group_id}")
                 return False
             
             # 檢查是否有使用者使用
-            query = "SELECT COUNT(*) as count FROM user_roles WHERE role_id = %s"
-            results = self.execute_query(query, (role_id,))
+            query = "SELECT COUNT(*) as count FROM user_permission_groups WHERE permission_group_id = %s"
+            results = self.execute_query(query, (group_id,))
             if results and results[0]['count'] > 0:
-                logger.warning(f"無法刪除角色 {role_id}：有使用者使用")
+                logger.warning(f"無法刪除權限群組 {group_id}：有使用者使用")
                 return False
             
-            query = "DELETE FROM roles WHERE id = %s"
-            success = self.execute_update(query, (role_id,))
+            query = "DELETE FROM permission_groups WHERE id = %s"
+            success = self.execute_update(query, (group_id,))
             if success:
-                logger.info(f"角色 {role_id} 刪除成功")
+                logger.info(f"權限群組 {group_id} 刪除成功")
             return success
             
         except Exception as e:
-            logger.error(f"刪除角色失敗: {e}")
+            logger.error(f"刪除權限群組失敗: {e}")
             return False
 
 
@@ -492,12 +492,12 @@ class UserOrganizationDAO(BaseDAO):
             logger.error(f"更新使用者擴充資訊失敗: {e}")
             return False
     
-    def assign_user_role(self, user_role: UserRole) -> bool:
-        """分配使用者角色"""
+    def assign_user_permission_group(self, user_permission_group: UserPermissionGroup) -> bool:
+        """分配使用者權限群組"""
         try:
             query = """
-                INSERT INTO user_roles (
-                    user_id, role_id, department_id, assigned_by, expires_at
+                INSERT INTO user_permission_groups (
+                    user_id, permission_group_id, department_id, assigned_by, expires_at
                 ) VALUES (%s, %s, %s, %s, %s)
                 ON DUPLICATE KEY UPDATE
                     assigned_at = NOW(),
@@ -506,69 +506,69 @@ class UserOrganizationDAO(BaseDAO):
             """
             
             result = self.execute_update(query, (
-                user_role.user_id, user_role.role_id, user_role.department_id,
-                user_role.assigned_by, user_role.expires_at
+                user_permission_group.user_id, user_permission_group.permission_group_id, user_permission_group.department_id,
+                user_permission_group.assigned_by, user_permission_group.expires_at
             ))
             
             if result:
-                logger.info(f"使用者 {user_role.user_id} 分配角色 {user_role.role_id} 成功")
+                logger.info(f"使用者 {user_permission_group.user_id} 分配權限群組 {user_permission_group.permission_group_id} 成功")
             return result
             
         except Exception as e:
-            logger.error(f"分配使用者角色失敗: {e}")
+            logger.error(f"分配使用者權限群組失敗: {e}")
             return False
     
-    def revoke_user_role(self, user_id: int, role_id: int, 
+    def revoke_user_permission_group(self, user_id: int, permission_group_id: int, 
                         department_id: Optional[int] = None) -> bool:
-        """撤銷使用者角色"""
+        """撤銷使用者權限群組"""
         try:
             if department_id is not None:
                 query = """
-                    DELETE FROM user_roles 
-                    WHERE user_id = %s AND role_id = %s AND department_id = %s
+                    DELETE FROM user_permission_groups 
+                    WHERE user_id = %s AND permission_group_id = %s AND department_id = %s
                 """
-                params = (user_id, role_id, department_id)
+                params = (user_id, permission_group_id, department_id)
             else:
                 query = """
-                    DELETE FROM user_roles 
-                    WHERE user_id = %s AND role_id = %s AND department_id IS NULL
+                    DELETE FROM user_permission_groups 
+                    WHERE user_id = %s AND permission_group_id = %s AND department_id IS NULL
                 """
-                params = (user_id, role_id)
+                params = (user_id, permission_group_id)
             
             success = self.execute_update(query, params)
             if success:
-                logger.info(f"使用者 {user_id} 撤銷角色 {role_id} 成功")
+                logger.info(f"使用者 {user_id} 撤銷權限群組 {permission_group_id} 成功")
             return success
             
         except Exception as e:
-            logger.error(f"撤銷使用者角色失敗: {e}")
+            logger.error(f"撤銷使用者權限群組失敗: {e}")
             return False
     
-    def get_user_roles(self, user_id: int) -> List[Dict[str, Any]]:
-        """取得使用者角色"""
+    def get_user_permission_groups(self, user_id: int) -> List[Dict[str, Any]]:
+        """取得使用者權限群組"""
         try:
             query = """
-                SELECT ur.*, r.code, r.name, r.permissions, r.role_type,
+                SELECT upg.*, pg.code, pg.name, pg.permissions, pg.permission_type,
                        d.name as department_name
-                FROM user_roles ur
-                JOIN roles r ON ur.role_id = r.id
-                LEFT JOIN departments d ON ur.department_id = d.id
-                WHERE ur.user_id = %s
-                AND (ur.expires_at IS NULL OR ur.expires_at > NOW())
-                ORDER BY r.role_type, r.name
+                FROM user_permission_groups upg
+                JOIN permission_groups pg ON upg.permission_group_id = pg.id
+                LEFT JOIN departments d ON upg.department_id = d.id
+                WHERE upg.user_id = %s
+                AND (upg.expires_at IS NULL OR upg.expires_at > NOW())
+                ORDER BY pg.permission_type, pg.name
             """
             
-            roles = self.execute_query(query, (user_id,))
+            groups = self.execute_query(query, (user_id,))
             
             # 解析 JSON permissions
-            for role in roles:
-                if role.get('permissions'):
-                    role['permissions'] = json.loads(role['permissions'])
+            for group in groups:
+                if group.get('permissions'):
+                    group['permissions'] = json.loads(group['permissions'])
             
-            return roles
+            return groups
             
         except Exception as e:
-            logger.error(f"取得使用者角色失敗: {e}")
+            logger.error(f"取得使用者權限群組失敗: {e}")
             return []
     
     def list_users_in_department(self, department_id: int) -> List[Dict[str, Any]]:
@@ -587,23 +587,23 @@ class UserOrganizationDAO(BaseDAO):
             logger.error(f"列出部門使用者失敗: {e}")
             return []
     
-    def list_users_with_role(self, role_id: int) -> List[Dict[str, Any]]:
-        """列出擁有特定角色的使用者"""
+    def list_users_with_permission_group(self, permission_group_id: int) -> List[Dict[str, Any]]:
+        """列出擁有特定權限群組的使用者"""
         try:
             query = """
                 SELECT u.id, u.username, u.email, u.is_active,
-                       ur.department_id, ur.assigned_at, ur.expires_at,
+                       upg.department_id, upg.assigned_at, upg.expires_at,
                        d.name as department_name
                 FROM users u
-                JOIN user_roles ur ON u.id = ur.user_id
-                LEFT JOIN departments d ON ur.department_id = d.id
-                WHERE ur.role_id = %s
-                AND (ur.expires_at IS NULL OR ur.expires_at > NOW())
+                JOIN user_permission_groups upg ON u.id = upg.user_id
+                LEFT JOIN departments d ON upg.department_id = d.id
+                WHERE upg.permission_group_id = %s
+                AND (upg.expires_at IS NULL OR upg.expires_at > NOW())
                 ORDER BY u.username
             """
-            return self.execute_query(query, (role_id,))
+            return self.execute_query(query, (permission_group_id,))
         except Exception as e:
-            logger.error(f"列出角色使用者失敗: {e}")
+            logger.error(f"列出權限群組使用者失敗: {e}")
             return []
 
 
@@ -735,7 +735,7 @@ class AuditLogDAO(BaseDAO):
 
 # 建立 DAO 實例
 department_dao = DepartmentDAO()
-role_dao = RoleDAO()
+permission_group_dao = PermissionGroupDAO()
 user_org_dao = UserOrganizationDAO()
 system_mode_dao = SystemModeDAO()
 audit_log_dao = AuditLogDAO()

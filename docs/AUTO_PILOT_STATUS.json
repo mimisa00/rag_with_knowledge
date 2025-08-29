@@ -1,8 +1,8 @@
 {
   "global_status": "IN_PROGRESS",
   "current_phase": "Phase_2_IN_PROGRESS",
-  "current_task": "組織管理功能優化中",
-  "last_update": "2025-01-22T18:30:00Z",
+  "current_task": "帳號管理 GUI 調整",
+  "last_update": "2025-01-22T23:55:00Z",
   "progress": {
     "Phase_1": {
       "status": "COMPLETED",
@@ -21,8 +21,8 @@
     "Phase_2": {
       "status": "IN_PROGRESS",
       "tasks_total": 14,
-      "tasks_completed": 12,
-      "current_task": "組織管理功能優化",
+      "tasks_completed": 13,
+      "current_task": "帳號管理 GUI 調整",
       "completed_items": [
         "建立 organization.html",
         "建立 organization.css",
@@ -35,14 +35,15 @@
         "修正權限 API 使用 BaseDAO",
         "修正帳號顯示欄位對應",
         "實作部門樹狀結構",
-        "實作部門拖曳排序功能"
+        "實作部門拖曳排序功能",
+        "完整實作帳號編輯功能（統一API）"
       ],
       "resolved_issues": [
         "新增部門功能已修正（添加 code、sort_order、is_active 欄位）",
         "新增帳號功能已修正（實作 POST /api/organization/users API）",
         "編輯部門功能已實作",
         "編輯角色功能已實作",
-        "編輯帳號功能已實作",
+        "編輯帳號功能已完整實作（所有欄位可儲存）",
         "修正權限 API 500 錯誤（改用 BaseDAO）",
         "修正帳號管理顯示欄位對應問題",
         "部門樹狀結構已實作完成",
@@ -50,14 +51,14 @@
         "實作停用部門顯示開關功能"
       ],
       "pending_issues": [
+        "帳號管理 GUI 介面調整優化",
         "新增帳號功能細節完善（密碼策略、啟用連結）",
-        "編輯帳號功能優化（角色更新、密碼變更）",
         "角色管理完整 CRUD 功能",
         "批次操作功能（批次啟用/停用）"
       ],
       "next_tasks": [
-        "完善新增帳號功能",
-        "完善編輯帳號功能",
+        "調整帳號管理 GUI 介面",
+        "完善新增帳號功能細節",
         "實作角色管理 CRUD"
       ],
       "recent_fixes": [
@@ -78,7 +79,13 @@
         "實作部門拖曳功能（支援排序和層級調整）",
         "修復拖曳位置判斷邏輯（使用 data 屬性）",
         "修復子部門移到頂層 parent_id null 問題",
-        "改善同級節點排序體驗"
+        "改善同級節點排序體驗",
+        "新增統一的使用者更新 API (PUT /users/{user_id})",
+        "修正編輯帳號時姓名、Email、密碼無法儲存問題",
+        "新增帳號狀態(is_active)欄位到使用者表單",
+        "修正停用帳號無法編輯的問題",
+        "修正 user_extensions 表 updated_by 欄位錯誤",
+        "修正角色更新時 remove_user_roles 方法不存在問題"
       ]
     },
     "Phase_3": {
@@ -134,7 +141,7 @@
       "response": null
     }
   },
-  "waiting_for": "明天繼續完成 Phase 2 剩餘功能（新增帳號、編輯帳號、角色管理）",
+  "waiting_for": "繼續完成 Phase 2 剩餘功能（帳號管理 GUI 調整、角色管理）",
   "errors": [],
   "decisions": [
     "使用 BaseDAO 模式而非直接資料庫連線",
@@ -143,7 +150,8 @@
     "使用 app.api.dependencies 進行認證依賴注入",
     "採用 Drawer UI 架構（350px寬度）",
     "權限矩陣存於 configs 表作為系統預設值",
-    "移除批次匯入功能（Phase 5 實作）"
+    "移除批次匯入功能（Phase 5 實作）",
+    "統一使用單一 API 更新所有使用者資訊"
   ],
   "files_created": [
     "app/api/routes/organization.py",
@@ -166,13 +174,15 @@
     "test_dept_tree_debug.html",
     "test_dept_drag_drop.html",
     "test_organization_fixes.html",
-    "test_org_fixes_2.html"
+    "test_org_fixes_2.html",
+    "test_user_edit.html"
   ],
   "files_modified": [
     "app/main.py",
     "app/config/paths.py",
     "app/api/routes/static.py",
     "app/api/routes/user.py",
+    "app/api/routes/organization.py",
     "app/dao/user.py",
     "app/dao/organization.py",
     "app/core/security/auth.py",
@@ -193,9 +203,9 @@
     "db_root_password": "root_password_2024",
     "db_name": "rag_db",
     "current_branch": "feature/organization-phase1-complete",
-    "last_commit_message": "feat: 實作部門拖曳功能與修復組織管理問題",
-    "last_commit_hash": "628a393",
-    "today_progress": "實作部門拖曳排序功能、修復多項組織管理 Bug",
-    "tomorrow_tasks": "完成新增帳號、編輯帳號、角色管理 CRUD 功能"
+    "last_commit_message": "fix: 修正組織管理帳號編輯功能的多個問題",
+    "last_commit_hash": "034d474",
+    "today_progress": "完整實作帳號編輯功能、修正所有欄位儲存問題、修正停用帳號無法編輯",
+    "tomorrow_tasks": "調整帳號管理 GUI、完成角色管理 CRUD 功能"
   }
 }
