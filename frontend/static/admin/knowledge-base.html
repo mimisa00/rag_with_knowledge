@@ -5,662 +5,660 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>知識庫管理 - E-Helper</title>
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="../css/core/all.min.css">
-    <!-- 新的 CSS 架構 -->
-    <link rel="stylesheet" href="../css/themes/theme-variables.css">
-    <link rel="stylesheet" href="../css/core/base.css">
-    <link rel="stylesheet" href="../css/core/components.css">
-    <link rel="stylesheet" href="../css/core/utilities.css">
-    <link rel="stylesheet" href="../css/core/layouts.css">
-    <!-- 引入 admin.css 作為基礎樣式（導航欄等） -->
-    <link rel="stylesheet" href="../css/pages/admin.css">
-    <!-- 引入獨立的載入器樣式 -->
-    <link rel="stylesheet" href="../css/components/spinner-loader.css">
-    <!-- 引入 Dashboard 抽屜樣式 -->
-    <link rel="stylesheet" href="../css/pages/dashboard.css">
-    <!-- 引入知識庫管理頁面專用樣式 -->
-    <link rel="stylesheet" href="../css/pages/knowledge-base.css">
-    <!-- 引入 Dialog 元件樣式 -->
-    <link rel="stylesheet" href="/css/components/dialog.css">
+    <!-- 靜態載入頁面載入器樣式（避免 FOUC） -->
+    <link rel="stylesheet" href="/css/components/page-loader.css">
+    <link rel="stylesheet" href="/css/components/spinner-loader.css">
+    <!-- 其他 CSS 將動態載入 -->
 </head>
 
 <body class="admin-layout">
-    <!-- 載入指示器 -->
+    <!-- 頁面載入器 -->
+    <div id="pageLoader" class="page-loader-overlay">
+        <div class="page-loader-content">
+            <div class="page-loader-spinner"></div>
+            <div class="page-loader-text">系統載入中...</div>
+        </div>
+    </div>
+
+    <!-- 局部載入指示器 -->
     <div id="loader-overlay" class="loader-overlay">
         <div class="loader"></div>
-        <div class="loader-text">系統載入中...</div>
+        <div class="loader-text">載入中...</div>
     </div>
 
-    <!-- 頂部導航欄 -->
-    <nav class="admin-navbar">
-        <div class="navbar-brand">
-            <i class="fas fa-database"></i>
-            <span>知識庫管理</span>
-        </div>
-        <div class="navbar-info">
-            <span id="userInfo" class="user-info" onclick="openUserMenu()">
-                <i class="fas fa-user-circle"></i>
-                <span id="username">載入中...</span>
-                <span id="userRole" class="user-role"></span>
-            </span>
-        </div>
-    </nav>
+    <!-- 頁面內容容器 -->
+    <div id="pageContent" class="page-content">
 
-    <!-- 麵包屑導航 -->
-    <div class="breadcrumb">
-        <div class="breadcrumb-items">
-            <div class="breadcrumb-item">
-                <a href="/dashboard" class="breadcrumb-link">
-                    <i class="fas fa-home"></i>
-                    <span>首頁</span>
-                </a>
+        <!-- 頂部導航欄 -->
+        <nav class="admin-navbar">
+            <div class="navbar-brand">
+                <i class="fas fa-database"></i>
+                <span>知識庫管理</span>
             </div>
-            <span class="breadcrumb-separator">
-                <i class="fas fa-chevron-right"></i>
-            </span>
-            <div class="breadcrumb-item">
-                <a href="/admin" class="breadcrumb-link">
-                    <span>系統管理中心</span>
-                </a>
+            <div class="navbar-info">
+                <span id="userInfo" class="user-info" onclick="openUserMenu()">
+                    <i class="fas fa-user-circle"></i>
+                    <span id="username">載入中...</span>
+                    <span id="userRole" class="user-role"></span>
+                </span>
             </div>
-            <span class="breadcrumb-separator">
-                <i class="fas fa-chevron-right"></i>
-            </span>
-            <div class="breadcrumb-item" id="breadcrumb-kb-management">
-                <a href="javascript:void(0)" class="breadcrumb-link d-none" id="breadcrumb-kb-link" onclick="window.KnowledgeBaseModule.handleBreadcrumbClick()">
-                    <span>知識庫管理</span>
-                </a>
-                <span class="breadcrumb-current" id="breadcrumb-kb-current">知識庫管理</span>
-            </div>
-            <!-- 動態知識庫名稱項目 -->
-            <span class="breadcrumb-separator d-none" id="breadcrumb-kb-separator">
-                <i class="fas fa-chevron-right"></i>
-            </span>
-            <div class="breadcrumb-item d-none" id="breadcrumb-kb-name">
-                <span class="breadcrumb-current" id="breadcrumb-kb-name-text"></span>
-            </div>
-        </div>
-    </div>
+        </nav>
 
-    <!-- 個人功能抽屜 -->
-    <div id="userMenuDrawer" onclick="closeUserMenu()" class="user-menu-drawer">
-        <div class="user-menu-header">
-            <span id="userMenuUsername"></span>
+        <!-- 麵包屑導航 -->
+        <div class="breadcrumb">
+            <div class="breadcrumb-items">
+                <div class="breadcrumb-item">
+                    <a href="/dashboard" class="breadcrumb-link">
+                        <i class="fas fa-home"></i>
+                        <span>首頁</span>
+                    </a>
+                </div>
+                <span class="breadcrumb-separator">
+                    <i class="fas fa-chevron-right"></i>
+                </span>
+                <div class="breadcrumb-item">
+                    <a href="/admin" class="breadcrumb-link">
+                        <span>系統管理中心</span>
+                    </a>
+                </div>
+                <span class="breadcrumb-separator">
+                    <i class="fas fa-chevron-right"></i>
+                </span>
+                <div class="breadcrumb-item" id="breadcrumb-kb-management">
+                    <a href="javascript:void(0)" class="breadcrumb-link d-none" id="breadcrumb-kb-link" onclick="window.KnowledgeBaseModule.handleBreadcrumbClick()">
+                        <span>知識庫管理</span>
+                    </a>
+                    <span class="breadcrumb-current" id="breadcrumb-kb-current">知識庫管理</span>
+                </div>
+                <!-- 動態知識庫名稱項目 -->
+                <span class="breadcrumb-separator d-none" id="breadcrumb-kb-separator">
+                    <i class="fas fa-chevron-right"></i>
+                </span>
+                <div class="breadcrumb-item d-none" id="breadcrumb-kb-name">
+                    <span class="breadcrumb-current" id="breadcrumb-kb-name-text"></span>
+                </div>
+            </div>
         </div>
-        <div class="user-menu-content">
-            <button onclick="showChangePasswordModal()" class="menu-item">
-                <i class="fa-solid fa-key"></i>
-                <span>變更密碼</span>
-            </button>
-            <hr>
-            <button onclick="logout()" class="menu-item">
-                <i class="fa-solid fa-sign-out-alt"></i>
-                <span>登出</span>
-            </button>
-        </div>
-    </div>
 
-    <!-- 變更密碼模態框 -->
-    <div id="changePasswordModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>變更密碼</h3>
-                <button class="modal-close" onclick="closeChangePasswordModal()">
-                    <i class="fa-solid fa-times"></i>
+        <!-- 個人功能抽屜 -->
+        <div id="userMenuDrawer" onclick="closeUserMenu()" class="user-menu-drawer">
+            <div class="user-menu-header">
+                <span id="userMenuUsername"></span>
+            </div>
+            <div class="user-menu-content">
+                <button onclick="showChangePasswordModal()" class="menu-item">
+                    <i class="fa-solid fa-key"></i>
+                    <span>變更密碼</span>
+                </button>
+                <hr>
+                <button onclick="logout()" class="menu-item">
+                    <i class="fa-solid fa-sign-out-alt"></i>
+                    <span>登出</span>
                 </button>
             </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label for="oldPassword" class="form-label">舊密碼</label>
-                    <input type="password" id="oldPassword" class="form-control" required>
-                </div>
-                <div class="form-group">
-                    <label for="newPassword" class="form-label">新密碼</label>
-                    <input type="password" id="newPassword" class="form-control" required minlength="6">
-                </div>
-                <div class="form-group">
-                    <label for="confirmNewPassword" class="form-label">確認新密碼</label>
-                    <input type="password" id="confirmNewPassword" class="form-control" required minlength="6">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button onclick="closeChangePasswordModal()" class="btn btn-secondary">取消</button>
-                <button onclick="changePassword()" class="btn btn-primary">確認變更</button>
-            </div>
         </div>
-    </div>
 
-    <!-- 主要內容區 -->
-    <main class="admin-main">
-        <!-- 新的抽屜式布局 -->
-        <div class="kb-layout">
-            <!-- 左側抽屜容器 -->
-            <div id="kbDrawerContainer" class="drawer-closed">
-                <!-- 抽屜控制按鈕 -->
-                <div id="kbDrawerButtons">
-                    <button onclick="KBDrawerManager.toggleDrawer()" class="drawer-toggle-btn" title="展開/收合">
-                        <i class="fas fa-bars"></i>
+        <!-- 變更密碼模態框 -->
+        <div id="changePasswordModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>變更密碼</h3>
+                    <button class="modal-close" onclick="closeChangePasswordModal()">
+                        <i class="fa-solid fa-times"></i>
                     </button>
                 </div>
-                
-                <!-- 抽屜內容 -->
-                <div id="kbDrawerContent">
-                    <!-- Panel 1: 知識庫列表 -->
-                    <div id="kbListPanel" class="drawer-panel active">
-                        <h4>知識庫列表</h4>
-                        <button id="drawerCreateKBBtn" class="btn btn-success mb-md w-100" onclick="window.KnowledgeBaseModule.showKBForm('create', true)">
-                            <i class="fas fa-plus"></i> 創建新知識庫
-                        </button>
-                        <div class="kb-list-container">
-                            <div class="kb-search mb-sm">
-                                <input type="text" id="kbSearchInput" placeholder="搜尋知識庫..." class="form-control">
-                            </div>
-                            <ul id="kbList" class="kb-list scrollable-fade">
-                                <!-- 動態載入知識庫項目 -->
-                            </ul>
-                        </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="oldPassword" class="form-label">舊密碼</label>
+                        <input type="password" id="oldPassword" class="form-control" required>
                     </div>
+                    <div class="form-group">
+                        <label for="newPassword" class="form-label">新密碼</label>
+                        <input type="password" id="newPassword" class="form-control" required minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmNewPassword" class="form-label">確認新密碼</label>
+                        <input type="password" id="confirmNewPassword" class="form-control" required minlength="6">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button onclick="closeChangePasswordModal()" class="btn btn-secondary">取消</button>
+                    <button onclick="changePassword()" class="btn btn-primary">確認變更</button>
                 </div>
             </div>
-            
-            <!-- 右側主工作區 -->
-            <div class="kb-main-content">
-                <!-- 空狀態提示 -->
-                <div id="emptyKBState" class="kb-empty-state">
-                    <div class="empty-state-card">
-                        <i class="fas fa-database kb-empty-icon"></i>
-                        <h3>開始管理您的知識庫</h3>
-                        <p class="text-muted mb-lg" id="emptyStateMessage">請選擇知識庫或創建新的知識庫</p>
-                        <div class="quick-start-cards">
-                            <div class="quick-card" onclick="window.KnowledgeBaseModule.showKBForm('create')">
-                                <i class="fas fa-plus-circle"></i>
-                                <h4>創建新知識庫</h4>
-                                <p>建立全新的知識庫並設定基本資訊</p>
-                            </div>
-                            <div class="quick-card" id="selectExistingCard" onclick="window.KnowledgeBaseModule.handleSelectExisting()">
-                                <i class="fas fa-folder-open"></i>
-                                <h4>選擇現有知識庫</h4>
-                                <p>從左側列表選擇要管理的知識庫</p>
+        </div>
+
+        <!-- 主要內容區 -->
+        <main class="admin-main">
+            <!-- 新的抽屜式布局 -->
+            <div class="kb-layout">
+                <!-- 左側抽屜容器 -->
+                <div id="kbDrawerContainer" class="drawer-closed">
+                    <!-- 抽屜控制按鈕 -->
+                    <div id="kbDrawerButtons">
+                        <button onclick="KBDrawerManager.toggleDrawer()" class="drawer-toggle-btn" title="展開/收合">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                    </div>
+
+                    <!-- 抽屜內容 -->
+                    <div id="kbDrawerContent">
+                        <!-- Panel 1: 知識庫列表 -->
+                        <div id="kbListPanel" class="drawer-panel active">
+                            <h4>知識庫列表</h4>
+                            <button id="drawerCreateKBBtn" class="btn btn-success mb-md w-100" onclick="window.KnowledgeBaseModule.showKBForm('create', true)">
+                                <i class="fas fa-plus"></i> 創建新知識庫
+                            </button>
+                            <div class="kb-list-container">
+                                <div class="kb-search mb-sm">
+                                    <input type="text" id="kbSearchInput" placeholder="搜尋知識庫..." class="form-control">
+                                </div>
+                                <ul id="kbList" class="kb-list scrollable-fade">
+                                    <!-- 動態載入知識庫項目 -->
+                                </ul>
                             </div>
                         </div>
                     </div>
                 </div>
-                
-                <!-- 選中知識庫後的內容 -->
-                <div id="selectedKBState" class="d-none">
-                    <!-- 知識庫狀態列 -->
-                    <div class="kb-status-bar">
-                        <div class="current-kb-info">
-                            <i class="fas fa-database"></i>
-                            <span id="currentKBName">載入中...</span>
-                        </div>
-                        <div class="kb-stats">
-                            <span class="stat-item">
-                                <i class="fas fa-file"></i> 
-                                <span id="fileCount">0</span> 個檔案
-                            </span>
-                            <span class="stat-item">
-                                <i class="fas fa-search"></i>
-                                <span id="indexStatus">未建立索引</span>
-                            </span>
-                            <span class="kb-status-badge badge-enable" id="kbStatusBadge">啟用</span>
-                        </div>
-                    </div>
-                    
-                    <!-- Tab 切換區 -->
-                    <div class="kb-tabs">
-                        <button class="tab-btn active" onclick="KBTabManager.switchTab('info')">
-                            <i class="fas fa-info-circle"></i> 知識庫資訊
-                        </button>
-                        <button class="tab-btn" onclick="KBTabManager.switchTab('files')">
-                            <i class="fas fa-folder"></i> 檔案管理
-                        </button>
-                        <button class="tab-btn" onclick="KBTabManager.switchTab('index')">
-                            <i class="fas fa-cogs"></i> 索引工具
-                        </button>
-                        <button class="tab-btn" onclick="KBTabManager.switchTab('permissions')">
-                            <i class="fas fa-shield-halved"></i> 權限設定
-                        </button>
-                    </div>
-                    
-                    <!-- Tab 內容區 -->
-                    <div class="tab-content scrollable-fade">
-                        <!-- 知識庫資訊 Tab -->
-                        <div id="infoTab" class="tab-pane active scrollable-fade">
-                            <!-- 創建成功引導提示區域 -->
-                            <div id="createSuccessGuide" class="guide-tips d-none">
-                                <div class="success-message">
-                                    <i class="fas fa-check-circle"></i>
-                                    <span>知識庫創建成功！現在您可以：</span>
+
+                <!-- 右側主工作區 -->
+                <div class="kb-main-content">
+                    <!-- 空狀態提示 -->
+                    <div id="emptyKBState" class="kb-empty-state">
+                        <div class="empty-state-card">
+                            <i class="fas fa-database kb-empty-icon"></i>
+                            <h3>開始管理您的知識庫</h3>
+                            <p class="text-muted mb-lg" id="emptyStateMessage">請選擇知識庫或創建新的知識庫</p>
+                            <div class="quick-start-cards">
+                                <div class="quick-card" onclick="window.KnowledgeBaseModule.showKBForm('create')">
+                                    <i class="fas fa-plus-circle"></i>
+                                    <h4>創建新知識庫</h4>
+                                    <p>建立全新的知識庫並設定基本資訊</p>
                                 </div>
-                                <div class="next-action-cards">
-                                    <div class="action-card" onclick="GuideModule.goToUploadFiles()">
-                                        <i class="fas fa-upload"></i>
-                                        <h4>上傳檔案</h4>
-                                        <p>上傳文件到知識庫中</p>
-                                    </div>
-                                    <div class="action-card" onclick="GuideModule.hideGuide('createSuccessGuide')">
-                                        <i class="fas fa-times-circle"></i>
-                                        <h4>稍後處理</h4>
-                                        <p>先瀏覽其他功能</p>
-                                    </div>
+                                <div class="quick-card" id="selectExistingCard" onclick="window.KnowledgeBaseModule.handleSelectExisting()">
+                                    <i class="fas fa-folder-open"></i>
+                                    <h4>選擇現有知識庫</h4>
+                                    <p>從左側列表選擇要管理的知識庫</p>
                                 </div>
                             </div>
-                            
-                            <div class="kb-info-section scrollable-fade">
-                                <!-- 操作按鈕區 -->
-                                <div id="kbPreviewButtons" class="kb-button-group d-none">
-                                    <button type="button" id="editKBModeBtn" class="btn btn-primary me-2">編輯</button>
-                                    <button type="button" id="deleteKBBtn" class="btn btn-danger">刪除</button>
-                                </div>
-                                
-                                <!-- 表單操作按鈕區 -->
-                                <div id="kbFormButtons" class="kb-button-group d-none">
-                                    <button type="button" id="saveKBBtn" class="btn btn-primary me-2">存檔</button>
-                                    <button type="button" id="cancelKBBtn" class="btn btn-secondary">取消</button>
-                                </div>
-                                
-                                <hr>
-                                
-                                <!-- 左右兩欄布局 -->
-                                <div class="kb-info-layout">
-                                    <!-- 左側欄：基本資訊 -->
-                                    <div class="kb-info-left scrollable-fade">
-                                        <div class="mb-sm">
-                                            <label for="kbId" class="form-label">ID：</label>
-                                            <input type="text" id="kbId" placeholder="例：hr-manual-2024" maxlength="36" pattern="[a-zA-Z0-9_\-]+" class="form-control" readonly>
+                        </div>
+                    </div>
+
+                    <!-- 選中知識庫後的內容 -->
+                    <div id="selectedKBState" class="d-none">
+                        <!-- 知識庫狀態列 -->
+                        <div class="kb-status-bar">
+                            <div class="current-kb-info">
+                                <i class="fas fa-database"></i>
+                                <span id="currentKBName">載入中...</span>
+                            </div>
+                            <div class="kb-stats">
+                                <span class="stat-item">
+                                    <i class="fas fa-file"></i>
+                                    <span id="fileCount">0</span> 個檔案
+                                </span>
+                                <span class="stat-item">
+                                    <i class="fas fa-search"></i>
+                                    <span id="indexStatus">未建立索引</span>
+                                </span>
+                                <span class="kb-status-badge badge-enable" id="kbStatusBadge">啟用</span>
+                            </div>
+                        </div>
+
+                        <!-- Tab 切換區 -->
+                        <div class="kb-tabs">
+                            <button class="tab-btn active" onclick="KBTabManager.switchTab('info')">
+                                <i class="fas fa-info-circle"></i> 知識庫資訊
+                            </button>
+                            <button class="tab-btn" onclick="KBTabManager.switchTab('files')">
+                                <i class="fas fa-folder"></i> 檔案管理
+                            </button>
+                            <button class="tab-btn" onclick="KBTabManager.switchTab('index')">
+                                <i class="fas fa-cogs"></i> 索引工具
+                            </button>
+                            <button class="tab-btn" onclick="KBTabManager.switchTab('permissions')">
+                                <i class="fas fa-shield-halved"></i> 權限設定
+                            </button>
+                        </div>
+
+                        <!-- Tab 內容區 -->
+                        <div class="tab-content scrollable-fade">
+                            <!-- 知識庫資訊 Tab -->
+                            <div id="infoTab" class="tab-pane active scrollable-fade">
+                                <!-- 創建成功引導提示區域 -->
+                                <div id="createSuccessGuide" class="guide-tips d-none">
+                                    <div class="success-message">
+                                        <i class="fas fa-check-circle"></i>
+                                        <span>知識庫創建成功！現在您可以：</span>
+                                    </div>
+                                    <div class="next-action-cards">
+                                        <div class="action-card" onclick="GuideModule.goToUploadFiles()">
+                                            <i class="fas fa-upload"></i>
+                                            <h4>上傳檔案</h4>
+                                            <p>上傳文件到知識庫中</p>
                                         </div>
-                                        <div class="mb-sm">
-                                            <label for="kbName" class="form-label">名稱：</label>
-                                            <input type="text" id="kbName" placeholder="請輸入知識庫名稱" class="form-control" readonly>
-                                        </div>
-                                        <div class="mb-sm">
-                                            <label for="kbStatus" class="form-label">狀態：</label>
-                                            <select id="kbStatus" class="form-control" disabled>
-                                                <option value="enable">啟用</option>
-                                                <option value="disable">停用</option>
-                                            </select>
-                                        </div>
-                                        <div class="mb-sm">
-                                            <label for="kbNote" class="form-label">備註：</label>
-                                            <input type="text" id="kbNote" placeholder="可選" class="form-control" readonly>
+                                        <div class="action-card" onclick="GuideModule.hideGuide('createSuccessGuide')">
+                                            <i class="fas fa-times-circle"></i>
+                                            <h4>稍後處理</h4>
+                                            <p>先瀏覽其他功能</p>
                                         </div>
                                     </div>
-                                    
-                                    <!-- 右側欄：提示詞 -->
-                                    <div class="kb-info-right">
-                                        <div class="kb-prompt-section">
-                                            <label for="kbSystemPrompt" class="form-label">提示詞 (最大1024字)：</label>
-                                            <textarea id="kbSystemPrompt" maxlength="1024" placeholder="請輸入針對此知識庫的系統提示詞..." class="form-control kb-prompt-textarea scrollable-fade" readonly></textarea>
-                                            <div class="kb-char-count">
-                                                <span id="promptCharCount">0</span>/1024
+                                </div>
+
+                                <div class="kb-info-section scrollable-fade">
+                                    <!-- 操作按鈕區 -->
+                                    <div id="kbPreviewButtons" class="kb-button-group d-none">
+                                        <button type="button" id="editKBModeBtn" class="btn btn-primary me-2">編輯</button>
+                                        <button type="button" id="deleteKBBtn" class="btn btn-danger">刪除</button>
+                                    </div>
+
+                                    <!-- 表單操作按鈕區 -->
+                                    <div id="kbFormButtons" class="kb-button-group d-none">
+                                        <button type="button" id="saveKBBtn" class="btn btn-primary me-2">存檔</button>
+                                        <button type="button" id="cancelKBBtn" class="btn btn-secondary">取消</button>
+                                    </div>
+
+                                    <hr>
+
+                                    <!-- 左右兩欄布局 -->
+                                    <div class="kb-info-layout">
+                                        <!-- 左側欄：基本資訊 -->
+                                        <div class="kb-info-left scrollable-fade">
+                                            <div class="mb-sm">
+                                                <label for="kbId" class="form-label">ID：</label>
+                                                <input type="text" id="kbId" placeholder="例：hr-manual-2024" maxlength="36" pattern="[a-zA-Z0-9_\-]+" class="form-control" readonly>
+                                            </div>
+                                            <div class="mb-sm">
+                                                <label for="kbName" class="form-label">名稱：</label>
+                                                <input type="text" id="kbName" placeholder="請輸入知識庫名稱" class="form-control" readonly>
+                                            </div>
+                                            <div class="mb-sm">
+                                                <label for="kbStatus" class="form-label">狀態：</label>
+                                                <select id="kbStatus" class="form-control" disabled>
+                                                    <option value="enable">啟用</option>
+                                                    <option value="disable">停用</option>
+                                                </select>
+                                            </div>
+                                            <div class="mb-sm">
+                                                <label for="kbConversationHistoryLimit" class="form-label">對話歷史筆數：</label>
+                                                <input type="number" id="kbConversationHistoryLimit" min="0" max="50" placeholder="0" class="form-control" readonly>
+                                                <small class="form-text text-muted">0 表示不包含歷史對話，建議值 5-20</small>
+                                            </div>
+                                            <div class="mb-sm">
+                                                <label for="kbNote" class="form-label">備註：</label>
+                                                <input type="text" id="kbNote" placeholder="可選" class="form-control" readonly>
+                                            </div>
+                                        </div>
+
+                                        <!-- 右側欄：提示詞 -->
+                                        <div class="kb-info-right">
+                                            <div class="kb-prompt-section">
+                                                <label for="kbSystemPrompt" class="form-label">系統提示詞 (最大1024字)：<i class="required">不可移除 {context} {question}</i></label>
+                                                <textarea id="kbSystemPrompt" maxlength="1024" placeholder="請輸入針對此知識庫的系統提示詞..." class="form-control kb-prompt-textarea scrollable-fade" readonly></textarea>
+                                                <div id="promptValidationMessage" class="prompt-validation-message d-none"></div>
+                                                <div class="kb-char-count">
+                                                    <span id="promptCharCount">0</span>/1024
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        
-                        <!-- 檔案管理 Tab -->
-                        <div id="filesTab" class="tab-pane scrollable-fade">
-                            <!-- 檔案上傳成功引導提示區域 -->
-                            <div id="uploadSuccessGuide" class="guide-tips d-none">
-                                <div class="success-message">
-                                    <i class="fas fa-check-circle"></i>
-                                    <span>檔案上傳成功！接下來請建立索引以啟用智能問答：</span>
-                                </div>
-                                <div class="next-action-cards">
-                                    <div class="action-card" onclick="GuideModule.goToBuildIndex()">
-                                        <i class="fas fa-cogs"></i>
-                                        <h4>建立索引</h4>
-                                        <p>處理文件並建立智能索引</p>
-                                    </div>
-                                    <div class="action-card" onclick="GuideModule.hideGuide('uploadSuccessGuide')">
-                                        <i class="fas fa-clock"></i>
-                                        <h4>稍後建立</h4>
-                                        <p>先上傳更多檔案</p>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="action-bar mb-md">
-                                <button type="button" id="uploadBtn" class="btn btn-primary me-2">
-                                    <i class="fas fa-upload"></i> 上傳檔案
-                                </button>
-                                <button type="button" id="removeFilesBtn" onclick="removeSelectedFiles()" class="btn btn-danger">
-                                    <i class="fas fa-trash"></i> 移除選中檔案
-                                </button>
-                            </div>
-                            <div id="uploadResult" class="kb-upload-result"></div>
-                            <div class="file-list-container">
-                                <div class="kb-checkbox-header">
-                                    <input type="checkbox" id="selectAllUploadedFilesCheckbox" onclick="toggleSelectAllUploadedFiles()" class="kb-checkbox" title="全選/取消全選所有檔案">
-                                    <h4 class="mb-0">檔案列表</h4>
-                                </div>
-                                <div id="fileCheckboxList" class="file-list scrollable-fade">
-                                    <!-- 檔案列表 -->
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- 索引工具 Tab -->
-                        <div id="indexTab" class="tab-pane scrollable-fade">
-                            
 
-                            <div class="action-bar mb-md">
-                                <!-- 建立索引按鈕會由 JS 包裝成 index-button-container -->
-                                <button type="button" id="prepareSelectedBtn" class="btn btn-primary me-2">
-                                    <i class="fas fa-cogs"></i> 建立索引
-                                </button>
-                                <button type="button" id="goToQABtn" onclick="IndexModule.goToQAPage()" class="btn btn-primary me-2" disabled title="需要先建立索引">
-                                    <i class="fas fa-comments"></i> 前往問答
-                                </button>
-                                <button type="button" onclick="IndexModule.deleteIndex()" class="btn btn-danger me-2">
-                                    <i class="fas fa-trash"></i> 刪除索引
-                                </button>
-                                <button type="button" onclick="IndexModule.showIndexSummary100()" class="btn btn-info me-2">
-                                    <i class="fas fa-list"></i> 顯示摘要(前100筆)
-                                </button>
-                                <button type="button" onclick="document.getElementById('indexSummary').innerText = '';" class="btn btn-secondary">
-                                    <i class="fas fa-eraser"></i> 清空摘要
-                                </button>
-                                <button type="button" onclick="IndexModule.showCurrentKBIndex()" class="btn btn-warning me-2">
-                                    <i class="fas fa-file-alt"></i> 完整內容
-                                </button>
-                            </div>
+                            <!-- 檔案管理 Tab -->
+                            <div id="filesTab" class="tab-pane scrollable-fade">
+                                <!-- 檔案上傳成功引導提示區域 -->
+                                <div id="uploadSuccessGuide" class="guide-tips d-none">
+                                    <div class="success-message">
+                                        <i class="fas fa-check-circle"></i>
+                                        <span>檔案上傳成功！接下來請建立索引以啟用智能問答：</span>
+                                    </div>
+                                    <div class="next-action-cards">
+                                        <div class="action-card" onclick="GuideModule.goToBuildIndex()">
+                                            <i class="fas fa-cogs"></i>
+                                            <h4>建立索引</h4>
+                                            <p>處理文件並建立智能索引</p>
+                                        </div>
+                                        <div class="action-card" onclick="GuideModule.hideGuide('uploadSuccessGuide')">
+                                            <i class="fas fa-clock"></i>
+                                            <h4>稍後建立</h4>
+                                            <p>先上傳更多檔案</p>
+                                        </div>
+                                    </div>
+                                </div>
 
-                            <!-- 成功提示區域 -->
-                            <div id="indexSuccessTips" class="index-success-tips d-none">
-                                <div class="success-message">
-                                    <i class="fas fa-check-circle"></i>
-                                    <span>索引建立成功！現在您可以：</span>
-                                </div>
-                                <div class="next-action-cards">
-                                    <div class="action-card" onclick="IndexModule.goToQAPage()">
-                                        <i class="fas fa-comments"></i>
-                                        <h4>前往問答</h4>
-                                        <p>開始使用此知識庫進行智能問答</p>
-                                    </div>
-                                    <div class="action-card" onclick="KBTabManager.switchTab('permissions')">
-                                        <i class="fas fa-shield-halved"></i>
-                                        <h4>權限設定</h4>
-                                        <p>設定知識庫的存取權限</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- 索引參數資訊顯示區 -->
-                            <div id="indexParamsInfo" class="index-params-info d-none">
-                                <h5>
-                                    <i class="fas fa-info-circle"></i> 當前索引參數
-                                </h5>
-                                <div class="index-params-grid">
-                                    <div>
-                                        <strong title="文件切割單位 : 一次切多大段文字給 AI 分析，切的越大上下文越完整，但可能超過處理限制、變慢或花更多資源，切得越小，越方便 AI 精準處理，但容易把上下文拆斷，失去連貫性">Chunk Size : </strong> 
-                                        <span id="currentChunkSize" class="index-params-value">-</span> 
-                                        <strong >Token</strong>
-                                    </div>
-                                    <div>
-                                        <strong title="文件切割重疊單位 : 段落之間的「重疊區」，避免重要內容剛好被切斷，讓上下文更連貫">Chunk Overlap : </strong> 
-                                        <span id="currentChunkOverlap" class="index-params-value">-</span> 
-                                        <strong >Token</strong> 
-                                    </div>
-                                    <div>
-                                        <strong>建立時間:</strong> 
-                                        <span id="indexCreateTime" class="index-params-value">-</span>
-                                    </div>
-                                    <div>
-                                        <strong>索引狀態:</strong> 
-                                        <span id="indexStatusInfo" class="index-params-value">-</span>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            
-                            <div id="indexSummary" class="index-summary scrollable-fade">
-                                <!-- 索引摘要顯示區 -->
-                            </div>
-                        </div>
-                        
-                        <!-- 權限設定 Tab -->
-                        <div id="permissionsTab" class="tab-pane scrollable-fade">
-                            <div class="permission-section">
-                                <h4>
-                                    <i class="fa-solid fa-shield-halved"></i> 
-                                    存取權限設定
-                                    <span class="badge badge-info">即將推出</span>
-                                </h4>
-                                <div class="permission-preview">
-                                    <p class="mb-2">未來功能預覽：</p>
-                                    <ul class="feature-list">
-                                        <li><i class="fas fa-check-circle text-success"></i> 部門級別存取控制</li>
-                                        <li><i class="fas fa-check-circle text-success"></i> 使用者群組管理</li>
-                                        <li><i class="fas fa-check-circle text-success"></i> 讀寫權限分離</li>
-                                        <li><i class="fas fa-check-circle text-success"></i> 存取記錄追蹤</li>
-                                    </ul>
-                                    <button class="btn btn-outline-primary btn-sm" onclick="Dialog.info('功能開發中，敬請期待！')">
-                                        <i class="fas fa-bell"></i> 功能上線通知我
+                                <div class="action-bar mb-md">
+                                    <button type="button" id="uploadBtn" class="btn btn-primary me-2">
+                                        <i class="fas fa-upload"></i> 上傳檔案
+                                    </button>
+                                    <button type="button" id="removeFilesBtn" onclick="removeSelectedFiles()" class="btn btn-danger">
+                                        <i class="fas fa-trash"></i> 移除選中檔案
                                     </button>
                                 </div>
+                                <div id="uploadResult" class="kb-upload-result"></div>
+                                <div class="file-list-container">
+                                    <div class="kb-checkbox-header">
+                                        <input type="checkbox" id="selectAllUploadedFilesCheckbox" onclick="toggleSelectAllUploadedFiles()" class="kb-checkbox" title="全選/取消全選所有檔案">
+                                        <h4 class="mb-0">檔案列表</h4>
+                                    </div>
+                                    <div id="fileCheckboxList" class="file-list scrollable-fade">
+                                        <!-- 檔案列表 -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 索引工具 Tab -->
+                            <div id="indexTab" class="tab-pane scrollable-fade">
+
+
+                                <div class="action-bar mb-md">
+                                    <!-- 建立索引按鈕會由 JS 包裝成 index-button-container -->
+                                    <button type="button" id="prepareSelectedBtn" class="btn btn-primary me-2">
+                                        <i class="fas fa-cogs"></i> 建立索引
+                                    </button>
+                                    <button type="button" id="goToQABtn" onclick="IndexModule.goToQAPage()" class="btn btn-primary me-2" disabled title="需要先建立索引">
+                                        <i class="fas fa-comments"></i> 前往問答
+                                    </button>
+                                    <button type="button" onclick="IndexModule.deleteIndex()" class="btn btn-danger me-2">
+                                        <i class="fas fa-trash"></i> 刪除索引
+                                    </button>
+                                    <button type="button" onclick="IndexModule.showIndexSummary100()" class="btn btn-info me-2">
+                                        <i class="fas fa-list"></i> 顯示摘要(前100筆)
+                                    </button>
+                                    <button type="button" onclick="document.getElementById('indexSummary').innerText = '';" class="btn btn-secondary">
+                                        <i class="fas fa-eraser"></i> 清空摘要
+                                    </button>
+                                    <button type="button" onclick="IndexModule.showCurrentKBIndex()" class="btn btn-warning me-2">
+                                        <i class="fas fa-file-alt"></i> 完整內容
+                                    </button>
+                                </div>
+
+                                <!-- 成功提示區域 -->
+                                <div id="indexSuccessTips" class="index-success-tips d-none">
+                                    <div class="success-message">
+                                        <i class="fas fa-check-circle"></i>
+                                        <span>索引建立成功！現在您可以：</span>
+                                    </div>
+                                    <div class="next-action-cards">
+                                        <div class="action-card" onclick="IndexModule.goToQAPage()">
+                                            <i class="fas fa-comments"></i>
+                                            <h4>前往問答</h4>
+                                            <p>開始使用此知識庫進行智能問答</p>
+                                        </div>
+                                        <div class="action-card" onclick="KBTabManager.switchTab('permissions')">
+                                            <i class="fas fa-shield-halved"></i>
+                                            <h4>權限設定</h4>
+                                            <p>設定知識庫的存取權限</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 索引參數資訊顯示區 -->
+                                <div id="indexParamsInfo" class="index-params-info d-none">
+                                    <h5>
+                                        <i class="fas fa-info-circle"></i> 當前索引參數
+                                    </h5>
+                                    <div class="index-params-grid">
+                                        <div>
+                                            <strong title="文件切割單位 : 一次切多大段文字給 AI 分析，切的越大上下文越完整，但可能超過處理限制、變慢或花更多資源，切得越小，越方便 AI 精準處理，但容易把上下文拆斷，失去連貫性">Chunk Size : </strong>
+                                            <span id="currentChunkSize" class="index-params-value">-</span>
+                                            <strong>Token</strong>
+                                        </div>
+                                        <div>
+                                            <strong title="文件切割重疊單位 : 段落之間的「重疊區」，避免重要內容剛好被切斷，讓上下文更連貫">Chunk Overlap : </strong>
+                                            <span id="currentChunkOverlap" class="index-params-value">-</span>
+                                            <strong>Token</strong>
+                                        </div>
+                                        <div>
+                                            <strong>建立時間:</strong>
+                                            <span id="indexCreateTime" class="index-params-value">-</span>
+                                        </div>
+                                        <div>
+                                            <strong>索引狀態:</strong>
+                                            <span id="indexStatusInfo" class="index-params-value">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                                <div id="indexSummary" class="index-summary scrollable-fade">
+                                    <!-- 索引摘要顯示區 -->
+                                </div>
+                            </div>
+
+                            <!-- 權限設定 Tab -->
+                            <div id="permissionsTab" class="tab-pane scrollable-fade">
+                                <div class="permission-section">
+                                    <h4>
+                                        <i class="fa-solid fa-shield-halved"></i>
+                                        存取權限設定
+                                        <span class="badge badge-info">即將推出</span>
+                                    </h4>
+                                    <div class="permission-preview">
+                                        <p class="mb-2">未來功能預覽：</p>
+                                        <ul class="feature-list">
+                                            <li><i class="fas fa-check-circle text-success"></i> 部門級別存取控制</li>
+                                            <li><i class="fas fa-check-circle text-success"></i> 使用者群組管理</li>
+                                            <li><i class="fas fa-check-circle text-success"></i> 讀寫權限分離</li>
+                                            <li><i class="fas fa-check-circle text-success"></i> 存取記錄追蹤</li>
+                                        </ul>
+                                        <button class="btn btn-outline-primary btn-sm" onclick="Dialog.info('功能開發中，敬請期待！')">
+                                            <i class="fas fa-bell"></i> 功能上線通知我
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </main>
+        </main>
 
-    <!-- 底部資訊 -->
-    <footer class="admin-footer">
-        <p>&copy; E-Help 知識庫智能管理系統. All rights reserved.</p>
-    </footer>
+        <!-- 底部資訊 -->
+        <footer class="admin-footer">
+            <p>&copy; E-Help 知識庫智能管理系統. All rights reserved.</p>
+        </footer>
 
-    <!-- 上傳檔案模態框（從 dashboard_admin.html 複製） -->
-    <div id="uploadFileModal" class="modal">
-        <div class="modal-content modal-content-md">
-            <!-- 上傳Loading覆蓋層 -->
-            <div id="uploadLoadingOverlay" class="upload-loading-overlay">
-                <div class="loader"></div>
-                <div class="loading-text">檔案內容分析處理中</div>
-                <div class="loading-detail">系統正在分析並處理您選擇的檔案，請耐心等待處理完成。此過程可能需要幾分鐘時間，請勿關閉此視窗。</div>
-            </div>
-
-            <div class="modal-header">
-                <h3>上傳檔案</h3>
-                <button class="modal-close" onclick="closeUploadModal()">
-                    <i class="fa-solid fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body modal-body-content">
-                <!-- 按鈕區域 -->
-                <div class="modal-button-group">
-                    <button type="button" id="selectFilesBtn" onclick="selectFiles()" class="btn btn-primary">選擇檔案</button>
-                    <button type="button" id="clearFilesBtn" onclick="clearSelectedFiles()" class="btn btn-secondary">清除檔案</button>
-                    <button type="button" id="startUploadBtn" onclick="startUpload()" class="btn btn-success">上傳</button>
-                    <button type="button" id="returnBtn" onclick="closeUploadModal()" class="btn btn-danger">返回</button>
+        <!-- 上傳檔案模態框（從 dashboard_admin.html 複製） -->
+        <div id="uploadFileModal" class="modal">
+            <div class="modal-content modal-content-md">
+                <!-- 上傳Loading覆蓋層 -->
+                <div id="uploadLoadingOverlay" class="upload-loading-overlay">
+                    <div class="loader"></div>
+                    <div class="loading-text">檔案內容分析處理中</div>
+                    <div class="loading-detail">系統正在分析並處理您選擇的檔案，請耐心等待處理完成。此過程可能需要幾分鐘時間，請勿關閉此視窗。</div>
                 </div>
 
-                <!-- 待上傳檔案清單 -->
-                <div class="mb-lg">
-                    <div class="kb-checkbox-header">
-                        <input type="checkbox" id="selectAllFilesCheckbox" onclick="toggleSelectAllFiles()" class="kb-checkbox" title="全選/取消全選所有檔案">
-                        <h4 class="mb-0 text-primary">待上傳檔案清單</h4>
+                <div class="modal-header">
+                    <h3>上傳檔案</h3>
+                    <button class="modal-close" onclick="closeUploadModal()">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body modal-body-content">
+                    <!-- 按鈕區域 -->
+                    <div class="modal-button-group">
+                        <button type="button" id="selectFilesBtn" onclick="selectFiles()" class="btn btn-primary">選擇檔案</button>
+                        <button type="button" id="clearFilesBtn" onclick="clearSelectedFiles()" class="btn btn-secondary">清除檔案</button>
+                        <button type="button" id="startUploadBtn" onclick="startUpload()" class="btn btn-success">上傳</button>
+                        <button type="button" id="returnBtn" onclick="closeUploadModal()" class="btn btn-danger">返回</button>
                     </div>
-                    <div id="pendingFilesList" class="modal-file-list scrollable-fade">
-                        <p class="modal-file-placeholder">尚未選擇任何檔案</p>
+
+                    <!-- 待上傳檔案清單 -->
+                    <div class="mb-lg">
+                        <div class="kb-checkbox-header">
+                            <input type="checkbox" id="selectAllFilesCheckbox" onclick="toggleSelectAllFiles()" class="kb-checkbox" title="全選/取消全選所有檔案">
+                            <h4 class="mb-0 text-primary">待上傳檔案清單</h4>
+                        </div>
+                        <div id="pendingFilesList" class="modal-file-list scrollable-fade">
+                            <p class="modal-file-placeholder">尚未選擇任何檔案</p>
+                        </div>
                     </div>
-                </div>
 
-                <!-- 錯誤訊息區域 -->
-                <div id="uploadErrorMessage" class="modal-error-message d-none"></div>
+                    <!-- 錯誤訊息區域 -->
+                    <div id="uploadErrorMessage" class="modal-error-message d-none"></div>
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- 移除檔案確認模態框 -->
-    <div id="removeFileModal" class="modal">
-        <div class="modal-content modal-content-sm">
-            <div class="modal-header">
-                <h3>確認移除檔案</h3>
-                <button class="modal-close" onclick="closeRemoveFileModal()">
-                    <i class="fa-solid fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <p class="modal-warning">
-                    <i class="fa-solid fa-triangle-exclamation mr-sm"></i>
-                    警告：此操作無法復原！
-                </p>
-                <p class="mb-md">您確定要刪除以下檔案嗎？</p>
-                <div id="filesToRemoveList" class="modal-file-list-sm scrollable-fade">
-                    <!-- 檔案列表會動態填入 -->
+        <!-- 移除檔案確認模態框 -->
+        <div id="removeFileModal" class="modal">
+            <div class="modal-content modal-content-sm">
+                <div class="modal-header">
+                    <h3>確認移除檔案</h3>
+                    <button class="modal-close" onclick="closeRemoveFileModal()">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
                 </div>
-                <p class="modal-info">
-                    <i class="fa-solid fa-info-circle mr-xs"></i>
-                    刪除檔案後，檔案的索引資料仍會存在，需重新建立索引。
-                </p>
-            </div>
-            <div class="modal-footer">
-                <button onclick="closeRemoveFileModal()" class="btn btn-secondary">取消</button>
-                <button onclick="confirmRemoveFiles()" class="btn btn-danger">
-                    <i class="fa-solid fa-trash mr-xs"></i>
-                    確認刪除
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 建立索引確認模態框 -->
-    <div id="buildIndexModal" class="modal">
-        <div class="modal-content modal-content-md">
-            <!-- 建立索引Loading覆蓋層 -->
-            <div id="buildIndexLoadingOverlay" class="build-index-loading-overlay">
-                <div class="loader"></div>
-                <div class="loading-text">索引建立處理中</div>
-                <div class="loading-detail">系統正在清除舊索引並建立新索引，請耐心等待處理完成。此過程可能需要數分鐘時間，請勿關閉此視窗。</div>
-            </div>
-
-            <div class="modal-header">
-                <h3>確認建立索引</h3>
-                <button class="modal-close" onclick="closeBuildIndexModal()">
-                    <i class="fa-solid fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body scrollable-fade">
-                <p class="modal-warning text-warning">
-                    <i class="fa-solid fa-exclamation-triangle mr-sm"></i>
-                    重要提醒：建立索引操作說明
-                </p>
-                <div class="modal-reminder-box">
-                    <p class="modal-reminder-text">
-                        <strong>本操作將執行以下步驟：</strong><br>
-                        1. 清除知識庫中現有的所有索引資料<br>
-                        2. 根據您勾選的檔案建立索引<br>
-                        3. 此過程可能需要數分鐘時間，請耐心等待
+                <div class="modal-body">
+                    <p class="modal-warning">
+                        <i class="fa-solid fa-triangle-exclamation mr-sm"></i>
+                        警告：此操作無法復原！
+                    </p>
+                    <p class="mb-md">您確定要刪除以下檔案嗎？</p>
+                    <div id="filesToRemoveList" class="modal-file-list-sm scrollable-fade">
+                        <!-- 檔案列表會動態填入 -->
+                    </div>
+                    <p class="modal-info">
+                        <i class="fa-solid fa-info-circle mr-xs"></i>
+                        刪除檔案後，檔案的索引資料仍會存在，需重新建立索引。
                     </p>
                 </div>
-                
-                <!-- 新增：chunk 參數設定區域 -->
-                <div class="modal-params-section" id="chunkParamsSection">
-                    <h4 onclick="IndexModule.toggleChunkParams()" class="modal-params-header">
-                        <span><i class="fas fa-sliders-h"></i> 索引參數設定</span>
-                        <i class="fas fa-chevron-down modal-params-toggle" id="chunkParamsToggleIcon"></i>
-                    </h4>
-                    <div class="modal-params-content" id="chunkParamsContent">
-                        <div class="modal-params-grid">
-                            <div>
-                                <label for="indexChunkSize" class="form-label" title="文件切割單位 : 一次切多大段文字給 AI 分析，切的越大上下文越完整，但可能超過處理限制、變慢或花更多資源，切得越小，越方便 AI 精準處理，但容易把上下文拆斷，失去連貫性">
-                                    Chunk Size
-                                    <span id="chunkSizeValue" class="chunk-value-display">(500)</span>
-                                </label>
-                                <input type="number" id="indexChunkSize" class="form-control" 
-                                       min="50" max="2000" value="500" 
-                                       title="文件切割大小（單位：token）">
-                                <small class="text-muted">文件切割大小，範圍：50-<span id="maxChunkSize">2000</span></small>
-                            </div>
-                            <div>
-                                <label for="indexChunkOverlap" class="form-label" title="文件切割重疊單位 : 段落之間的「重疊區」，避免重要內容剛好被切斷，讓上下文更連貫">
-                                    Chunk Overlap
-                                    <span id="chunkOverlapValue" class="chunk-value-display">(50)</span>
-                                </label>
-                                <input type="number" id="indexChunkOverlap" class="form-control" 
-                                       min="0" max="500" value="50"
-                                       title="文件切割重疊內容（單位：token）">
-                                <small class="text-muted">切割重疊大小，範圍：0-<span id="maxChunkOverlap">500</span></small>
-                            </div>
-                        </div>
-                        <div class="mt-sm">
-                            <button type="button" class="btn btn-sm btn-secondary" onclick="IndexModule.resetChunkParams()">
-                                <i class="fas fa-undo"></i> 恢復預設值
-                            </button>
-                        </div>
-                    </div>
+                <div class="modal-footer">
+                    <button onclick="closeRemoveFileModal()" class="btn btn-secondary">取消</button>
+                    <button onclick="confirmRemoveFiles()" class="btn btn-danger">
+                        <i class="fa-solid fa-trash mr-xs"></i>
+                        確認刪除
+                    </button>
                 </div>
-                
-                <!-- 索引說明引導區域 -->
-                <div id="indexExplainGuide" class="guide-tips-info">
-                    <div class="guide-info-header" onclick="GuideModule.toggleIndexExplain()">
-                        <i class="fas fa-question-circle"></i>
-                        <span>什麼是索引？為什麼需要建立索引？</span>
-                        <i class="fas fa-chevron-down guide-toggle-icon" id="indexExplainIcon"></i>
-                    </div>
-                    <div id="indexExplainContent" class="guide-info-content d-none">
-                        <p><strong>索引是什麼？</strong></p>
-                        <p>索引是將您上傳的文件轉換成 AI 可以理解和搜尋的格式，就像圖書館的目錄系統，幫助 AI 快速找到相關內容。</p>
-                        
-                        <p><strong>參數說明：</strong></p>
-                        <ul>
-                            <li><strong>Chunk Size（文件切割大小）</strong>：決定每次 AI 處理多少文字
-                                <ul>
-                                    <li>較大值（如 512）：保留更完整的上下文，但處理較慢</li>
-                                    <li>較小值（如 128）：處理更精準快速，但可能失去部分關聯</li>
-                                </ul>
-                            </li>
-                            <li><strong>Chunk Overlap（重疊大小）</strong>：相鄰段落的重複部分
-                                <ul>
-                                    <li>避免重要資訊剛好被切斷</li>
-                                    <li>建議值：Chunk Size 的 10%（如 50）</li>
-                                </ul>
-                            </li>
-                        </ul>
-                        
-                        <p class="guide-tip">💡 第一次使用建議保持預設值，之後可根據實際效果調整</p>
-                    </div>
-                </div>
-                
-                <p class="mb-md font-weight-bold">將要建立索引的檔案：</p>
-                <div id="filesToIndexList" class="modal-file-list-sm scrollable-fade">
-                    <!-- 檔案列表會動態填入 -->
-                </div>
-                <p class="modal-info mt-md">
-                    <i class="fa-solid fa-info-circle mr-xs"></i>
-                    處理期間請勿關閉此頁面，系統將自動顯示處理進度。
-                </p>
-            </div>
-            <div class="modal-footer">
-                <button onclick="closeBuildIndexModal(true)" class="btn btn-secondary">取消</button>
-                <button onclick="confirmBuildIndex()" class="btn btn-info">
-                    <i class="fa-solid fa-cogs mr-xs"></i>
-                    確認建立索引
-                </button>
             </div>
         </div>
-    </div>
 
-    <!-- 隱藏的檔案輸入元素 -->
-    <input type="file" id="hiddenFileInput" multiple class="d-none" accept=".pdf,.doc,.docx,.txt,.md">
+        <!-- 建立索引確認模態框 -->
+        <div id="buildIndexModal" class="modal">
+            <div class="modal-content modal-content-md">
+                <!-- 建立索引Loading覆蓋層 -->
+                <div id="buildIndexLoadingOverlay" class="build-index-loading-overlay">
+                    <div class="loader"></div>
+                    <div class="loading-text">索引建立處理中</div>
+                    <div class="loading-detail">系統正在清除舊索引並建立新索引，請耐心等待處理完成。此過程可能需要數分鐘時間，請勿關閉此視窗。</div>
+                </div>
 
-    <!-- 載入 Dialog 元件 -->
-    <script src="/js/components/dialog.js"></script>
-    
+                <div class="modal-header">
+                    <h3>確認建立索引</h3>
+                    <button class="modal-close" onclick="closeBuildIndexModal()">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body scrollable-fade">
+                    <p class="modal-warning text-warning">
+                        <i class="fa-solid fa-exclamation-triangle mr-sm"></i>
+                        重要提醒：建立索引操作說明
+                    </p>
+                    <div class="modal-reminder-box">
+                        <p class="modal-reminder-text">
+                            <strong>本操作將執行以下步驟：</strong><br>
+                            1. 清除知識庫中現有的所有索引資料<br>
+                            2. 根據您勾選的檔案建立索引<br>
+                            3. 此過程可能需要數分鐘時間，請耐心等待
+                        </p>
+                    </div>
+
+                    <!-- 新增：chunk 參數設定區域 -->
+                    <div class="modal-params-section" id="chunkParamsSection">
+                        <h4 onclick="IndexModule.toggleChunkParams()" class="modal-params-header">
+                            <span><i class="fas fa-sliders-h"></i> 索引參數設定</span>
+                            <i class="fas fa-chevron-down modal-params-toggle" id="chunkParamsToggleIcon"></i>
+                        </h4>
+                        <div class="modal-params-content" id="chunkParamsContent">
+                            <div class="modal-params-grid">
+                                <div>
+                                    <label for="indexChunkSize" class="form-label" title="文件切割單位 : 一次切多大段文字給 AI 分析，切的越大上下文越完整，但可能超過處理限制、變慢或花更多資源，切得越小，越方便 AI 精準處理，但容易把上下文拆斷，失去連貫性">
+                                        Chunk Size
+                                        <span id="chunkSizeValue" class="chunk-value-display">(500)</span>
+                                    </label>
+                                    <input type="number" id="indexChunkSize" class="form-control" min="50" max="2000" value="500" title="文件切割大小（單位：token）">
+                                    <small class="text-muted">文件切割大小，範圍：50-<span id="maxChunkSize">2000</span></small>
+                                </div>
+                                <div>
+                                    <label for="indexChunkOverlap" class="form-label" title="文件切割重疊單位 : 段落之間的「重疊區」，避免重要內容剛好被切斷，讓上下文更連貫">
+                                        Chunk Overlap
+                                        <span id="chunkOverlapValue" class="chunk-value-display">(50)</span>
+                                    </label>
+                                    <input type="number" id="indexChunkOverlap" class="form-control" min="0" max="500" value="50" title="文件切割重疊內容（單位：token）">
+                                    <small class="text-muted">切割重疊大小，範圍：0-<span id="maxChunkOverlap">500</span></small>
+                                </div>
+                            </div>
+                            <div class="mt-sm">
+                                <button type="button" class="btn btn-sm btn-secondary" onclick="IndexModule.resetChunkParams()">
+                                    <i class="fas fa-undo"></i> 恢復預設值
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 索引說明引導區域 -->
+                    <div id="indexExplainGuide" class="guide-tips-info">
+                        <div class="guide-info-header" onclick="GuideModule.toggleIndexExplain()">
+                            <i class="fas fa-question-circle"></i>
+                            <span>什麼是索引？為什麼需要建立索引？</span>
+                            <i class="fas fa-chevron-down guide-toggle-icon" id="indexExplainIcon"></i>
+                        </div>
+                        <div id="indexExplainContent" class="guide-info-content d-none">
+                            <p><strong>索引是什麼？</strong></p>
+                            <p>索引是將您上傳的文件轉換成 AI 可以理解和搜尋的格式，就像圖書館的目錄系統，幫助 AI 快速找到相關內容。</p>
+
+                            <p><strong>參數說明：</strong></p>
+                            <ul>
+                                <li><strong>Chunk Size（文件切割大小）</strong>：決定每次 AI 處理多少文字
+                                    <ul>
+                                        <li>較大值（如 512）：保留更完整的上下文，但處理較慢</li>
+                                        <li>較小值（如 128）：處理更精準快速，但可能失去部分關聯</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Chunk Overlap（重疊大小）</strong>：相鄰段落的重複部分
+                                    <ul>
+                                        <li>避免重要資訊剛好被切斷</li>
+                                        <li>建議值：Chunk Size 的 10%（如 50）</li>
+                                    </ul>
+                                </li>
+                            </ul>
+
+                            <p class="guide-tip">💡 第一次使用建議保持預設值，之後可根據實際效果調整</p>
+                        </div>
+                    </div>
+
+                    <p class="mb-md font-weight-bold">將要建立索引的檔案：</p>
+                    <div id="filesToIndexList" class="modal-file-list-sm scrollable-fade">
+                        <!-- 檔案列表會動態填入 -->
+                    </div>
+                    <p class="modal-info mt-md">
+                        <i class="fa-solid fa-info-circle mr-xs"></i>
+                        處理期間請勿關閉此頁面，系統將自動顯示處理進度。
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button onclick="closeBuildIndexModal(true)" class="btn btn-secondary">取消</button>
+                    <button onclick="confirmBuildIndex()" class="btn btn-info">
+                        <i class="fa-solid fa-cogs mr-xs"></i>
+                        確認建立索引
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 隱藏的檔案輸入元素 -->
+        <input type="file" id="hiddenFileInput" multiple class="d-none" accept=".pdf,.doc,.docx,.txt,.md">
+
+    </div> <!-- 結束 pageContent -->
+
     <!-- 載入腳本 -->
     <script>
         // 臨時的全域函數，等待模組載入
-        window.returnToAdmin = function() {
+        window.returnToAdmin = function () {
             window.location.href = '/admin';
         };
-                
+
         // 內嵌簡單的載入函數（避免快取問題）
         function loadWithTimestamp(src) {
             const script = document.createElement('script');
@@ -671,40 +669,59 @@
                 document.head.appendChild(script);
             });
         }
-        
+
         // 依序載入模組
-        (async function() {
+        (async function () {
             try {
                 // 基礎模組
-                await loadWithTimestamp('/js/modules/script-loader.js');
-                
-                // 載入公共模組
-                await ScriptLoader.loadModulesInOrder([
-                    '/js/modules/common-ui.js',
-                    '/js/modules/user-menu-module.js',
-                    '/js/modules/guide-module.js'
+                await loadWithTimestamp('/js/modules/resource-loader.js');
+
+                // 動態載入所有 CSS
+                await ResourceLoader.loadStyles([
+                    '/css/core/all.min.css',
+                    '/css/core/base.css',
+                    '/css/core/components.css',
+                    '/css/core/layouts.css',
+                    '/css/core/utilities.css',
+                    '/css/components/dialog.css',
+                    '/css/themes/theme-variables.css',
+                    '/css/pages/admin.css',
+                    '/css/pages/dashboard.css',
+                    '/css/pages/knowledge-base.css'
                 ]);
-                
+
+                // 隱藏頁面載入器，顯示內容
+                document.getElementById('pageLoader').classList.add('hidden');
+                document.getElementById('pageContent').classList.add('visible');
+
+                // 載入公共模組
+                await ResourceLoader.loadModulesInOrder([
+                    '/js/components/dialog.js',
+                    '/js/modules/common-ui.js',
+                    '/js/modules/guide-module.js',
+                    '/js/modules/user-menu-module.js',
+                ]);
+
                 // 載入受保護的管理員模組
-                await ScriptLoader.loadProtectedAdminScriptsInOrder([
+                await ResourceLoader.loadProtectedAdminScriptsInOrder([
                     'knowledge-base/knowledge-base.js',  // 已包含頁面初始化邏輯
                     'knowledge-base/knowledge-base-drawer-manager.js',  // 抽屜管理器
                     'knowledge-base/knowledge-base-index-module.js'
                 ]);
-                
+
                 // 只保留隱藏載入動畫
                 CommonUI.hideSpinner();
-                
+
                 // 初始化滾動條淡出淡入效果
                 if (CommonUI.initScrollFadeEffect) {
                     CommonUI.initScrollFadeEffect();
                 }
-                
+
                 // 所有模組載入完成後，手動初始化頁面
                 if (window.initKnowledgeBasePage) {
                     window.initKnowledgeBasePage();
                 }
-                
+
                 // 初始化引導模組
                 if (window.GuideModule) {
                     window.GuideModule.init();

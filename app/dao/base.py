@@ -95,8 +95,9 @@ class BaseDAO:
             logger.error(f"執行查詢失敗: {e}")
             return []
 
-    def execute_update(self, query: str, params: tuple = None) -> bool:
-        """執行更新操作"""
+    def execute_update(self, query: str, params: tuple = None) -> int:
+        """執行更新操作，回傳受影響的行數"""
+        connection = None
         try:
             connection = self.db_manager.get_connection()
             with connection.cursor() as cursor:
@@ -104,13 +105,15 @@ class BaseDAO:
                     cursor.execute(query, params)
                 else:
                     cursor.execute(query)
+                affected_rows = cursor.rowcount
             connection.commit()
-            return True
+            logger.debug(f"更新操作完成，影響行數: {affected_rows}")
+            return affected_rows
         except Exception as e:
             if connection:
                 connection.rollback()
             logger.error(f"執行更新失敗: {e}")
-            return False
+            return -1
 
     def execute_insert(self, query: str, params: tuple = None) -> int:
         """執行插入操作並回傳插入的 ID"""

@@ -33,6 +33,11 @@ python-jose[cryptography]>=3.3.0
 cryptography>=41.0.0
 passlib[bcrypt]>=1.7.4
 bcrypt<4.0
+# Email 驗證
+pydantic[email]>=2.0.0
+email-validator>=2.0.0
 # .env環境變數處理
 python-dotenv>=1.0.0
+# 排程任務
+APScheduler>=3.10.0
 

@@ -125,78 +125,147 @@ def query_knowledge_base(
         for passage in top_passages:
             chunk = passage_to_chunk.get(passage)
             if chunk:
-                md_files.add(chunk.get("markdown_file", ""))
-                src_files.add(chunk.get("source_file", ""))
+                markdown_file = chunk.get("markdown_file", "")
+                source_file = chunk.get("source_file", "")
+                if markdown_file:  # 只添加非空的檔案名
+                    md_files.add(markdown_file)
+                if source_file:  # 只添加非空的檔案名
+                    src_files.add(source_file)
                 chunk_context += chunk["content"]
         
         context = chunk_context
         
+        # 載入對話歷史
+        conversation_history = []
+        if query_data.conv_id and kb:
+            # 從知識庫設定讀取歷史筆數限制
+            history_limit = kb.get("conversation_history_limit", 0)
+            
+            if history_limit > 0:
+                history_records = conversation_dao.get_conversations_by_conv_id(query_data.conv_id)
+                # 取最近 N 筆對話，只載入純淨的回答內容
+                for record in history_records[-history_limit:]:
+                    clean_answer = record["answer"]
+                    # 移除 HTML 前綴標籤（如果存在舊資料）
+                    if clean_answer.startswith('<i class="fa-solid fa-robot"> 回覆如下 : </i><BR/><BR/>'):
+                        clean_answer = clean_answer.replace('<i class="fa-solid fa-robot"> 回覆如下 : </i><BR/><BR/>', '', 1)
+                    
+                    # 移除引用來源連結（如果存在舊資料）
+                    if '\n\n引用來源：' in clean_answer:
+                        clean_answer = clean_answer.split('\n\n引用來源：')[0]
+                    
+                    conversation_history.extend([
+                        {"role": "user", "content": record["question"]},
+                        {"role": "assistant", "content": clean_answer.strip()}
+                    ])
+                logger.info(f"載入 {len(conversation_history)//2} 筆歷史對話（知識庫 {kb['name']} 限制 {history_limit} 筆）")
+
+        # 加入當前系統時間
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        time_context = f"當前時間：{current_time}\n\n"
+
         # 使用知識庫特定的 system_prompt，如果沒有則使用預設的
         prompt_template = (
             kb_system_prompt if kb_system_prompt else config.get("system_prompt", "")
         )
         
         system_prompt = (
+            time_context + 
             prompt_template.replace("{context}", context)
             .replace("{question}", query_data.question)
             .replace("{keyword}", query_data.keyword or "")
         )
         
+        # 建構完整的 messages
         messages = [
             {"role": "system", "content": system_prompt},
+            *conversation_history,  # 插入歷史對話
             {"role": "user", "content": query_data.question},
         ]
         
+        # 提前初始化 Ollama 客戶端和模型選項
+        logger.info("初始化 Ollama 客戶端")
+        client = get_ollama_client()
+        model_options = get_model_options()
+        model_name = config.get("llm_model", "gemma2:9b")
+        
         def stream_generator():
             try:
-                full_answer = '<i class="fa-solid fa-robot"> 回覆如下 : </i><BR/>'
+                # 前端顯示用的完整回答（包含HTML標籤）
+                full_display_answer = '<i class="fa-solid fa-robot"> 回覆如下 : </i><BR/><BR/>'
+                # 純淨的 LLM 回答內容（用於儲存和歷史對話）
+                clean_answer = ""
+                
                 yield json.dumps(
                     {"prompt": system_prompt, "answer": "", "thinking": ""}
                 ) + "\n"
                 
-                logger.debug("start call ollama")
-                client = get_ollama_client()
+                logger.info("開始呼叫 Ollama LLM")
                 stream = client.chat(
-                    model=config.get("llm_model", "gemma2:9b"),
+                    model=model_name,
                     messages=messages,
                     think=query_data.think,
                     stream=True,
-                    options=get_model_options(),
+                    options=model_options,
                 )
-                logger.debug("end call ollama")
+                
+                # 等待第一個回應再傳送 HTML 前綴
+                first_response = True
+                logger.info("開始處理 LLM 串流回應")
                 
                 for chunk in stream:
                     if chunk and getattr(chunk, "message", None):
-                        full_answer += chunk.message.content
+                        # 第一個回應時，先傳送 HTML 前綴
+                        if first_response:
+                            logger.info("收到 LLM 第一個回應，傳送前綴")
+                            yield json.dumps(
+                                {"content": '<i class="fa-solid fa-robot"> 回覆如下 : </i><BR/><BR/>'}
+                            ) + "\n"
+                            first_response = False
+                        
+                        content = chunk.message.content
+                        full_display_answer += content
+                        clean_answer += content
                         yield json.dumps(
                             {
-                                "content": chunk.message.content,
+                                "content": content,
                                 "thinking": chunk.message.thinking or "",
                             }
                         ) + "\n"
                 
-                # 回覆最後加上引用來源超連結
+                # 處理引用來源
+                sources_list = []
+                logger.info(f"處理引用來源 - src_files: {src_files}")
                 if src_files:
                     links = []
                     for src in src_files:
                         if src and src.lower().endswith(".md"):
-                            links.append(
-                                f'<a href="/md_viewer?file={src}" target="_blank">{src}</a>'
-                            )
+                            link = f'<a href="/md_viewer?file={src}" target="_blank">{src}</a>'
+                            links.append(link)
+                            sources_list.append({"file": src, "type": "md", "url": f"/md_viewer?file={src}"})
                         elif src:
-                            links.append(
-                                f'<a href="/api/document/file/{src}?kb_id={query_data.kb_id}" target="_blank">{src}</a>'
-                            )
+                            link = f'<a href="/api/document/file/{src}?kb_id={query_data.kb_id}" target="_blank">{src}</a>'
+                            links.append(link)
+                            sources_list.append({"file": src, "type": "doc", "url": f"/api/document/file/{src}?kb_id={query_data.kb_id}"})
+                    
+                    logger.info(f"產生的引用連結: {links}")
                     if links:
-                        source_content = "\n\n引用來源：" + "、".join(links)
-                        full_answer += source_content
+                        source_content = "<br><br>引用來源：" + "、".join(links)
+                        full_display_answer += source_content
+                        logger.info(f"傳送引用來源內容，長度: {len(source_content)}")
                         yield json.dumps({"content": source_content}) + "\n"
+                else:
+                    logger.info("沒有找到 src_files")
                 
-                # 儲存對話記錄
+                # 儲存對話記錄 - 分別儲存純淨內容和引用來源
                 try:
                     from app.dao.conversation import conversation_dao
                     conversation_dao.store_conversation(
-                        query_data.conv_id, query_data.question, full_answer, current_user["id"]
+                        query_data.conv_id, 
+                        query_data.question, 
+                        clean_answer,  # 儲存純淨內容
+                        current_user["id"],
+                        sources_list  # 儲存引用來源資訊
                     )
                 except Exception as e:
                     logger.error(f"儲存對話記錄失敗: {e}")

@@ -83,8 +83,6 @@
 }
 
 .drawer-toggle-btn:hover {
-    background-color: var(--primary);
-    color: white;
     transform: scale(1.1);
 }
 

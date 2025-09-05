@@ -283,6 +283,20 @@ select.form-control {
   box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
 }
 
+/* 錯誤訊息樣式 */
+.invalid-feedback {
+  display: none;
+  width: 100%;
+  margin-top: 0.25rem;
+  font-size: var(--font-size-sm);
+  color: var(--danger);
+  line-height: 1.4;
+}
+
+.invalid-feedback.show {
+  display: block;
+}
+
 .form-text {
   display: block;
   margin-top: var(--spacing-xs);
@@ -419,6 +433,17 @@ select.form-control {
 
 .modal-close:hover {
   color: var(--text-primary);
+}
+
+/* 大尺寸模態框 */
+.modal-lg {
+  max-width: 800px;
+  width: 95%;
+}
+
+.modal-xl {
+  max-width: 1140px;  
+  width: 98%;
 }
 
 

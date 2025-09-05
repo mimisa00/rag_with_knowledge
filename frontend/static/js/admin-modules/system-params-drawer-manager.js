@@ -6,7 +6,7 @@ const ParamDrawerManager = (function() {
     'use strict';
     
     // 私有變數
-    let isDrawerOpen = false;
+    let isDrawerOpen = true;
     let currentCategory = 'request';
     
     // 分類配置

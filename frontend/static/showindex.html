@@ -4,20 +4,46 @@
 <head>
     <meta charset="UTF-8" />
     <title>Index Summary</title>
-    <script src="js/lib/marked.min.js"></script>
-    <link rel="stylesheet" href="css/components/showindex.css">
+    <!-- 靜態載入頁面載入器樣式（避免 FOUC） -->
+    <link rel="stylesheet" href="/css/components/page-loader.css">
+    <!-- 其他 CSS 將動態載入 -->
 </head>
 
 <body>
-    <h1>Index Summary</h1>
-    <div class="status" id="status">載入中...</div>
-    <div id="content"></div>
+    <!-- 頁面載入器 -->
+    <div id="pageLoader" class="page-loader-overlay">
+        <div class="page-loader-content">
+            <div class="page-loader-spinner"></div>
+            <div class="page-loader-text">載入中...</div>
+        </div>
+    </div>
 
+    <!-- 頁面內容容器 -->
+    <div id="pageContent" class="page-content">
+        <h1>Index Summary</h1>
+        <div class="status" id="status">載入中...</div>
+        <div id="content"></div>
+
+    </div> <!-- 結束 pageContent -->
+
+    <!-- 模組化載入機制 -->
     <script>
+        // 內嵌簡單的載入函數（避免快取問題）
+        function loadWithTimestamp(src) {
+            const script = document.createElement('script');
+            script.src = `${src}?_t=${Date.now()}`;
+            return new Promise((resolve, reject) => {
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+
         function getQueryParam(name) {
             const url = new URL(window.location.href);
             return url.searchParams.get(name);
         }
+
         async function loadSummary() {
             const status = document.getElementById('status');
             const content = document.getElementById('content');
@@ -43,7 +69,41 @@
             }
         }
 
-        window.onload = loadSummary;
+        // 依序載入模組
+        (async function () {
+            try {
+                // 基礎模組
+                await loadWithTimestamp('/js/modules/resource-loader.js');
+
+                // 動態載入所有 CSS
+                await ResourceLoader.loadStyles([
+                    '/css/core/all.min.css',
+                    '/css/core/base.css',
+                    '/css/core/components.css',
+                    '/css/core/layouts.css',
+                    '/css/core/utilities.css',
+                    '/css/themes/theme-variables.css',
+                    '/css/components/showindex.css'
+                ]);
+
+                // 隱藏頁面載入器，顯示內容
+                document.getElementById('pageLoader').classList.add('hidden');
+                document.getElementById('pageContent').classList.add('visible');
+
+                // 載入公共模組
+                await ResourceLoader.loadModulesInOrder([
+                    '/js/lib/marked.min.js',
+                ]);
+
+                // marked.js 載入完成後，執行載入摘要
+                await loadSummary();
+
+                console.log('showindex 模組載入完成');
+            } catch (error) {
+                console.error('模組載入失敗:', error);
+                document.getElementById('status').textContent = '模組載入失敗：' + error.message;
+            }
+        })();
     </script>
 </body>
 

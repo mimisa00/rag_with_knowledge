@@ -5,148 +5,145 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>E-Helper</title>
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="css/core/all.min.css">
-    
-    <!-- Core CSS Architecture -->
-    <link rel="stylesheet" href="css/themes/theme-variables.css">
-    <link rel="stylesheet" href="css/core/base.css">
-    <link rel="stylesheet" href="css/core/components.css">
-    <link rel="stylesheet" href="css/core/utilities.css">
-    <link rel="stylesheet" href="css/core/layouts.css">
-    
-    <!-- Dashboard Shared Styles -->
-    <link rel="stylesheet" href="css/pages/dashboard.css">
-    
-    <!-- Admin Specific Styles -->
-    <link rel="stylesheet" href="css/pages/dashboard_admin.css">
+    <!-- 靜態載入頁面載入器樣式（避免 FOUC） -->
+    <link rel="stylesheet" href="/css/components/page-loader.css">
+    <!-- 其他 CSS 將動態載入 -->
 </head>
 
 <body class="page-wrapper">
-
-    <!-- 頂部導航欄 -->
-    <nav class="navbar admin-navbar">
-        <div class="navbar-brand">
-            <i class="fa-solid fa-comments mr-sm"></i>
-            <span>E-Helper</span>
-        </div>
-        <div class="navbar-info">
-            <span id="userInfo" class="user-info" onclick="openUserMenu()">
-                <i class="fas fa-user-circle"></i>
-                <span id="username">載入中...</span>
-                <span id="userRole" class="user-role"></span>
-            </span>
-        </div>
-    </nav>
-
-    <!-- 個人功能抽屜 -->
-    <div id="userMenuDrawer" onclick="closeUserMenu()" class="user-menu-drawer">
-        <div class="user-menu-header">
-            <span id="userMenuUsername"></span>
-        </div>
-        <div class="user-menu-content">
-            <button onclick="showChangePasswordModal()" class="menu-item">
-                <i class="fa-solid fa-key"></i>
-                <span>變更密碼</span>
-            </button>
-            <hr>
-            <button onclick="logout()" class="menu-item">
-                <i class="fa-solid fa-sign-out-alt"></i>
-                <span>登出</span>
-            </button>
+    <!-- 頁面載入器 -->
+    <div id="pageLoader" class="page-loader-overlay">
+        <div class="page-loader-content">
+            <div class="page-loader-spinner"></div>
+            <div class="page-loader-text">載入中...</div>
         </div>
     </div>
 
-    <!-- 變更密碼模態框 -->
-    <div id="changePasswordModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>變更密碼</h3>
-                <button class="modal-close" onclick="closeChangePasswordModal()">
-                    <i class="fa-solid fa-times"></i>
+    <!-- 頁面內容容器 -->
+    <div id="pageContent" class="page-content">
+
+        <!-- 頂部導航欄 -->
+        <nav class="navbar admin-navbar">
+            <div class="navbar-brand">
+                <i class="fa-solid fa-comments mr-sm"></i>
+                <span>E-Helper</span>
+            </div>
+            <div class="navbar-info">
+                <span id="userInfo" class="user-info" onclick="openUserMenu()">
+                    <i class="fas fa-user-circle"></i>
+                    <span id="username">載入中...</span>
+                    <span id="userRole" class="user-role"></span>
+                </span>
+            </div>
+        </nav>
+
+        <!-- 個人功能抽屜 -->
+        <div id="userMenuDrawer" onclick="closeUserMenu()" class="user-menu-drawer">
+            <div class="user-menu-header">
+                <span id="userMenuUsername"></span>
+            </div>
+            <div class="user-menu-content">
+                <button onclick="showChangePasswordModal()" class="menu-item">
+                    <i class="fa-solid fa-key"></i>
+                    <span>變更密碼</span>
+                </button>
+                <hr>
+                <button onclick="logout()" class="menu-item">
+                    <i class="fa-solid fa-sign-out-alt"></i>
+                    <span>登出</span>
                 </button>
             </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label for="oldPassword" class="form-label">舊密碼</label>
-                    <input type="password" id="oldPassword" class="form-control" required>
-                </div>
-                <div class="form-group">
-                    <label for="newPassword" class="form-label">新密碼</label>
-                    <input type="password" id="newPassword" class="form-control" required minlength="6">
-                </div>
-                <div class="form-group">
-                    <label for="confirmNewPassword" class="form-label">確認新密碼</label>
-                    <input type="password" id="confirmNewPassword" class="form-control" required minlength="6">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button onclick="closeChangePasswordModal()" class="btn btn-secondary">取消</button>
-                <button onclick="changePassword()" class="btn btn-primary">確認變更</button>
-            </div>
-        </div>
-    </div>
-
-
-
-    <div class="dashboard-layout">
-
-        <!-- 左側抽屜容器 -->
-        <div id="drawerContainer" class="drawer-closed">
-            <!-- 抽屜頂端按鈕 -->
-            <div id="drawerToggleButtons">
-                <button onclick="QAModule.toggleDrawer()" class="drawer-toggle-btn"><i class="fas fa-bars"></i></button>
-                <button title="對話記憶" class="drawer-toggle-btn" onclick="QAModule.showDrawerContent('memoryDrawer','admin')"><i class="fa-solid fa-folder"></i></button>
-                <button title="系統提示" class="drawer-toggle-btn" onclick="QAModule.showDrawerContent('promptDrawer','admin')"><i class="fa-solid fa-terminal"></i></button>
-            </div>
-
-            <!-- 抽屜內容 -->
-            <div id="drawerContent">
-                <HR>
-                <!-- 對話記憶區 -->
-                <div id="memoryDrawer" class="drawer-panel">
-                    <button title="新增對話" class="drawer-toggle-btn" onclick="QAModule.createNewConversation()"><i class="fas fa-solid fa-plus"></i></button>
-                    <ul id="conversationList" class="conversation-list scrollable-fade"></ul>
-                </div>
-
-                <!-- Prompt 區 -->
-                <div id="promptDrawer" class="drawer-panel">
-                    <button class="drawer-toggle-btn" onclick="document.getElementById('actualprompt').innerText = '';" title="清除"><i class="fa-solid fa-eraser"></i></button>
-                    <div id="actualprompt" class="scrollable-fade"></div>
-                </div>
-            </div>
         </div>
 
-        <!-- 右側：問答區 -->
-        <div id="qaContent" class="dashboard-content">
-            <div class="qa-layout">
-                <!-- 知識庫選擇區 -->
-                <div class="qa-header">
-                    <i class="fa-solid fa-database text-success mr-sm icon-lg"></i>
-                    <div class="flex-1">
-                        <select id="qaKnowledgeBaseSelect" class="form-control">
-                            <option value="">載入中...</option>
-                        </select>
+        <!-- 變更密碼模態框 -->
+        <div id="changePasswordModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>變更密碼</h3>
+                    <button class="modal-close" onclick="closeChangePasswordModal()">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="oldPassword" class="form-label">舊密碼</label>
+                        <input type="password" id="oldPassword" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="newPassword" class="form-label">新密碼</label>
+                        <input type="password" id="newPassword" class="form-control" required minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmNewPassword" class="form-label">確認新密碼</label>
+                        <input type="password" id="confirmNewPassword" class="form-control" required minlength="6">
                     </div>
                 </div>
-                <div class="d-flex align-start p-xs">
-                    <div id="nounAnalysis" aria-live="polite" aria-atomic="true" class="flex-1 scrollable-fade">已關閉名詞分析</div>
+                <div class="modal-footer">
+                    <button onclick="closeChangePasswordModal()" class="btn btn-secondary">取消</button>
+                    <button onclick="changePassword()" class="btn btn-primary">確認變更</button>
                 </div>
-                <div id="thinkToggleSection" class="d-none align-start p-xs">
-                    <div id="thinkResponse" aria-live="polite" aria-atomic="true" class="flex-1 scrollable-fade">已關閉推理</div>
-                </div>
-                <div id="answer" aria-live="polite" aria-atomic="true" class="qa-content scrollable-fade">
-                </div>
-            </div>
-            <div class="qa-input">
-                <textarea id="question" rows="3" placeholder="請輸入問題..." aria-required="true" class="form-control mb-sm"></textarea>
-                <button type="button" id="sendBtn" class="btn btn-primary">送出問題</button>
             </div>
         </div>
-    </div>
 
-    <!-- 引入 marked.js -->
-    <script src="js/lib/marked.min.js"></script>
+
+
+        <div class="dashboard-layout">
+
+            <!-- 左側抽屜容器 -->
+            <div id="drawerContainer" class="drawer-closed">
+                <!-- 抽屜頂端按鈕 -->
+                <div id="drawerToggleButtons">
+                    <button onclick="QAModule.toggleDrawer()" class="drawer-toggle-btn"><i class="fas fa-bars"></i></button>
+                    <button title="對話記憶" class="drawer-toggle-btn" onclick="QAModule.showDrawerContent('memoryDrawer','admin')"><i class="fa-solid fa-folder"></i></button>
+                    <button title="系統提示" class="drawer-toggle-btn" onclick="QAModule.showDrawerContent('promptDrawer','admin')"><i class="fa-solid fa-terminal"></i></button>
+                </div>
+
+                <!-- 抽屜內容 -->
+                <div id="drawerContent">
+                    <HR>
+                    <!-- 對話記憶區 -->
+                    <div id="memoryDrawer" class="drawer-panel">
+                        <button title="新增對話" class="drawer-toggle-btn" onclick="QAModule.createNewConversation()"><i class="fas fa-solid fa-plus"></i></button>
+                        <ul id="conversationList" class="conversation-list scrollable-fade"></ul>
+                    </div>
+
+                    <!-- Prompt 區 -->
+                    <div id="promptDrawer" class="drawer-panel">
+                        <button class="drawer-toggle-btn" onclick="document.getElementById('actualprompt').innerText = '';" title="清除"><i class="fa-solid fa-eraser"></i></button>
+                        <div id="actualprompt" class="scrollable-fade"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右側：問答區 -->
+            <div id="qaContent" class="dashboard-content">
+                <div class="qa-layout">
+                    <!-- 知識庫選擇區 -->
+                    <div class="qa-header">
+                        <i class="fa-solid fa-database text-success mr-sm icon-lg"></i>
+                        <div class="flex-1">
+                            <select id="qaKnowledgeBaseSelect" class="form-control">
+                                <option value="">載入中...</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="d-flex align-start p-xs">
+                        <div id="nounAnalysis" aria-live="polite" aria-atomic="true" class="flex-1 scrollable-fade">已關閉名詞分析</div>
+                    </div>
+                    <div id="thinkToggleSection" class="d-none align-start p-xs">
+                        <div id="thinkResponse" aria-live="polite" aria-atomic="true" class="flex-1 scrollable-fade">已關閉推理</div>
+                    </div>
+                    <div id="answer" aria-live="polite" aria-atomic="true" class="qa-content scrollable-fade">
+                    </div>
+                </div>
+                <div class="qa-input">
+                    <textarea id="question" rows="3" placeholder="請輸入問題..." aria-required="true" class="form-control mb-sm"></textarea>
+                    <button type="button" id="sendBtn" class="btn btn-primary">送出問題</button>
+                </div>
+            </div>
+        </div>
+
+    </div> <!-- 結束 pageContent -->
 
     <!-- 模組化載入機制 -->
     <script>
@@ -177,17 +174,34 @@
         (async function () {
             try {
                 // 基礎模組
-                await loadWithTimestamp('/js/modules/script-loader.js');
+                await loadWithTimestamp('/js/modules/resource-loader.js');
+
+                // 動態載入所有 CSS
+                await ResourceLoader.loadStyles([
+                    '/css/core/all.min.css',
+                    '/css/core/base.css',
+                    '/css/core/components.css',
+                    '/css/core/layouts.css',
+                    '/css/core/utilities.css',
+                    '/css/themes/theme-variables.css',
+                    '/css/pages/dashboard.css',
+                    '/css/pages/dashboard_admin.css'
+                ]);
+
+                // 隱藏頁面載入器，顯示內容
+                document.getElementById('pageLoader').classList.add('hidden');
+                document.getElementById('pageContent').classList.add('visible');
 
                 // 載入公共模組
-                await ScriptLoader.loadModulesInOrder([
+                await ResourceLoader.loadModulesInOrder([
                     '/js/modules/common-ui.js',
                     '/js/modules/user-menu-module.js',
-                    '/js/modules/qa-module.js'
+                    '/js/modules/qa-module.js',
+                    '/js/lib/marked.min.js',
                 ]);
 
                 // 載入受保護的管理員模組
-                await ScriptLoader.loadProtectedAdminScriptsInOrder([
+                await ResourceLoader.loadProtectedAdminScriptsInOrder([
                     'admin-common-ui.js',           // 管理員擴展UI
                 ]);
 
@@ -195,12 +209,12 @@
                 CommonUI.hideSpinner();
                 UserMenu.init();
                 QAModule.init();
-                
+
                 // 初始化滾動條淡出淡入效果
                 if (CommonUI.initScrollFadeEffect) {
                     CommonUI.initScrollFadeEffect();
                 }
-                
+
                 console.log('所有模組載入完成');
             } catch (error) {
                 console.error('模組載入失敗:', error);

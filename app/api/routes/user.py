@@ -30,19 +30,25 @@ def api_login(login_data: LoginRequest, response: Response):
             detail="用戶名或密碼錯誤"
         )
 
-    # 創建 JWT token
+    # 更新登入時間
+    user_dao.update_login_time(user["id"])
+
+    # 創建包含時間戳的 JWT token
     token = auth_manager.create_access_token(
         data={"sub": str(user["id"]), "username": user["username"]}
     )
 
     # 從環境變數讀取 cookie 安全設定
     cookie_secure = os.getenv("COOKIE_SECURE", "false").lower() == "true"
+    
+    # 從 token 設定獲取最大生命週期
+    settings = auth_manager.get_token_settings()
 
     response.set_cookie(
         key="access_token",
         value=token,
         httponly=True,
-        max_age=60 * 60 * 24,  # 一天
+        max_age=settings['max_lifetime'],  # 使用動態設定的最大生命週期
         secure=cookie_secure,  # 從環境變數控制
         samesite="lax",
     )

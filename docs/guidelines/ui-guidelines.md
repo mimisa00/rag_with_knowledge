@@ -96,6 +96,15 @@ element.style.backgroundColor = '#667eea';  // 禁止硬編碼顏色
 </div>
 ```
 
+### Modal 完整規範
+- **居中顯示**：`.modal-content { margin: 10% auto; }`
+- **高度限制**：`.modal-content { max-height: 90vh; overflow: auto; }`
+- **響應式調整**：小螢幕（<768px）使用 `margin: 5% auto;`
+- **背景遮罩**：`.modal { background-color: rgba(0, 0, 0, 0.5); }`
+- **層級管理**：`.modal { z-index: var(--z-modal-backdrop); }`
+- **動畫效果**：支援 `fadeIn` 和 `slideUp` 動畫
+- **必要元素**：關閉按鈕（.modal-close）、適當的滾動處理
+
 ### 變更密碼 Modal 標準結構
 - 必須包含關閉按鈕 `modal-close`
 - 輸入框使用 `form-control` class
@@ -135,17 +144,148 @@ element.style.backgroundColor = '#667eea';  // 禁止硬編碼顏色
 
 - **公共模組** (`/js/modules/`)：所有用戶可存取
 
-### Dialog 元件使用
-```javascript
-// 顯示訊息
-Dialog.show('訊息內容');
-Dialog.success('操作成功');
-Dialog.error('操作失敗');
-Dialog.warning('警告訊息');
-Dialog.info('提示訊息');
+### Dialog 元件完整使用規範
+- **JavaScript** (`/frontend/static/js/components/dialog.js`)
+- **css** (`/frontend/static/css/components/dialog.css`)
+  
 
-// 確認對話框
-Dialog.confirm('確認要刪除嗎？', () => {
-    // 確認後的操作
-});
+#### 禁止使用原生對話框
+**絕對禁止** 在任何地方使用瀏覽器原生對話框：
+```javascript
+// ❌ 禁止使用
+alert('訊息內容');
+confirm('確認嗎？');
+prompt('請輸入：');
+
+// ✅ 正確使用
+Dialog.error('訊息內容');
+Dialog.confirm('確認嗎？', callback);
 ```
+
+#### 統一訊息通知標準
+
+##### 基本訊息顯示
+```javascript
+// 成功訊息（綠色圖標）
+Dialog.success('操作成功');
+Dialog.success('密碼變更成功', '操作成功'); // 自定義標題
+
+// 錯誤訊息（紅色圖標）
+Dialog.error('操作失敗');
+Dialog.error('密碼變更失敗：密碼長度不足', '操作失敗');
+
+// 警告訊息（黃色圖標）
+Dialog.warning('請注意資料格式');
+Dialog.warning('此操作不可復原', '注意');
+
+// 資訊訊息（藍色圖標）
+Dialog.info('系統維護中');
+Dialog.info('您有新的訊息通知', '提示');
+```
+
+##### 確認對話框
+```javascript
+// 基本確認
+Dialog.confirm('確認要刪除此項目嗎？', () => {
+    // 確認後執行的操作
+    deleteItem();
+});
+
+// 異步確認（推薦用法）
+const confirmed = await Dialog.confirm('確認要執行此操作嗎？');
+if (confirmed) {
+    await performAction();
+}
+
+// 自定義按鈕文字
+Dialog.confirm('確認要清空資料庫嗎？', callback, {
+    confirmText: '清空',
+    cancelText: '保留'
+});
+
+// 帶取消回調的確認
+Dialog.confirm('確認離開編輯頁面嗎？', 
+    () => { window.location.href = '/list'; }, // 確認回調
+    {
+        onCancel: () => { console.log('使用者選擇繼續編輯'); } // 取消回調
+    }
+);
+```
+
+#### Dialog API 完整說明
+
+##### 基礎方法
+- `Dialog.show(message, options)` - 顯示基本訊息
+- `Dialog.success(message, title, options)` - 顯示成功訊息
+- `Dialog.error(message, title, options)` - 顯示錯誤訊息
+- `Dialog.warning(message, title, options)` - 顯示警告訊息
+- `Dialog.info(message, title, options)` - 顯示資訊訊息
+- `Dialog.confirm(message, onConfirm, options)` - 顯示確認對話框
+
+##### Options 參數
+```javascript
+{
+    title: '自定義標題',        // 覆蓋預設標題
+    type: 'success',           // 訊息類型：info, success, warning, error
+    confirmText: '確認',       // 確認按鈕文字
+    cancelText: '取消',        // 取消按鈕文字
+    allowHTML: false,          // 是否允許 HTML（預設 false，保持安全）
+    onCancel: callback,        // 取消回調函數
+    closeButton: true,         // 是否顯示關閉按鈕
+    icon: true                 // 是否顯示圖標
+}
+```
+
+#### 實作範例
+
+##### 表單驗證錯誤
+```javascript
+// 驗證失敗
+if (!email.includes('@')) {
+    Dialog.error('請輸入有效的電子郵件地址', '格式錯誤');
+    return;
+}
+```
+
+##### AJAX 請求處理
+```javascript
+try {
+    const response = await fetch('/api/users', {
+        method: 'POST',
+        body: JSON.stringify(userData)
+    });
+    
+    if (response.ok) {
+        Dialog.success('用戶創建成功');
+    } else {
+        const error = await response.json();
+        Dialog.error(`創建失敗：${error.message}`);
+    }
+} catch (error) {
+    Dialog.error(`網路錯誤：${error.message}`);
+}
+```
+
+##### 危險操作確認
+```javascript
+async function deleteUser(userId) {
+    const confirmed = await Dialog.confirm(
+        '確認要刪除此用戶嗎？此操作不可復原。',
+        null,
+        {
+            confirmText: '刪除',
+            cancelText: '保留',
+            type: 'error' // 使用錯誤樣式強調危險性
+        }
+    );
+    
+    if (confirmed) {
+        try {
+            await api.deleteUser(userId);
+            Dialog.success('用戶已成功刪除');
+            refreshUserList();
+        } catch (error) {
+            Dialog.error(`刪除失敗：${error.message}`);
+        }
+    }
+}

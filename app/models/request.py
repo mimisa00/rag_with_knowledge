@@ -1,7 +1,7 @@
 """
 請求模型定義
 """
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 
 
@@ -35,6 +35,7 @@ class KnowledgeBaseCreateRequest(BaseModel):
     id: str
     name: str
     system_prompt: str = ""
+    conversation_history_limit: Optional[int] = 0
     note: str = ""
 
 
@@ -43,6 +44,7 @@ class KnowledgeBaseUpdateRequest(BaseModel):
     name: Optional[str] = None
     status: Optional[str] = None
     system_prompt: Optional[str] = None
+    conversation_history_limit: Optional[int] = None
     note: Optional[str] = None
 
 
@@ -74,3 +76,10 @@ class DocumentUploadRequest(BaseModel):
 class AdminUserUpdateRequest(BaseModel):
     """管理員用戶更新請求模型"""
     role: str
+
+
+class AdminUserEditRequest(BaseModel):
+    """管理員用戶編輯請求模型"""
+    username: Optional[str] = Field(None, min_length=1, max_length=100, description="用戶姓名")
+    email: Optional[EmailStr] = Field(None, description="電子郵件地址")
+    is_active: Optional[bool] = Field(None, description="帳號啟用狀態")

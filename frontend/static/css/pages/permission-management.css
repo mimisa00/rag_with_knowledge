@@ -117,11 +117,6 @@
     justify-content: center;
 }
 
-.drawer-toggle-btn:hover {
-    background-color: var(--primary);
-    color: white;
-    transform: scale(1.1);
-}
 
 /* 抽屜內容 */
 #permDrawerContent {
@@ -931,10 +926,6 @@
     margin-bottom: 0.5rem;
     font-weight: 500;
     color: var(--text-primary);
-}
-
-.required {
-    color: #dc3545;
 }
 
 /* 模態框擴展 */

@@ -3,6 +3,1433 @@
    從 organization.css 拆分出來的員工專屬樣式
    ======================================== */
 
+/* ===== 待處理帳號提醒樣式 ===== */
+.pending-accounts-banner-inline {
+    display: flex;
+    align-items: center;
+    background: #fff8e1;
+    border: 0px solid #ffb74d;
+    border-radius: 0.5rem;
+    padding: 0.3rem 0.5rem;
+    color: #e65100;
+    font-size: 0.875rem;
+    white-space: nowrap;
+}
+
+.pending-accounts-banner-inline .banner-text {
+    margin-right: 0.5rem;
+}
+
+.pending-accounts-banner .alert {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0;
+}
+
+.pending-accounts-banner .alert-warning {
+    background-color: #fff8e1;
+    border-color: #ffb74d;
+    color: #e65100;
+}
+
+.pending-accounts-banner .btn-outline-warning {
+    border-color: #ff9800;
+    color: #ff9800;
+}
+
+.pending-accounts-banner .btn-outline-warning:hover {
+    background-color: #ff9800;
+    color: white;
+}
+
+.pending-accounts-banner .btn-text {
+    background: none;
+    border: none;
+    color: #666;
+    padding: 0.25rem 0.5rem;
+}
+
+.pending-accounts-banner .btn-text:hover {
+    color: #333;
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+}
+
+/* ===== Section Header 調整 ===== */
+.section-header {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+}
+
+/* ===== 帳號狀態顯示樣式 ===== */
+.account-status-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.375rem 0.75rem;
+}
+
+.account-status-icon i {
+    font-size: 1.25rem;
+}
+
+.account-status-icon .text-success {
+    color: #28a745 !important;
+}
+
+.account-status-icon .text-warning {
+    color: #ffc107 !important;
+}
+
+.account-status-icon .text-info {
+    color: #17a2b8 !important;
+}
+
+.account-status-icon .text-danger {
+    color: #dc3545 !important;
+}
+
+.account-status-icon .text-muted {
+    color: #6c757d !important;
+}
+
+.form-text.text-success {
+    color: #28a745 !important;
+}
+
+.form-text.text-warning {
+    color: #856404 !important;
+}
+
+.form-text.text-info {
+    color: #0c5460 !important;
+}
+
+.form-text.text-danger {
+    color: #721c24 !important;
+}
+
+/* ===== 帳號建議選擇樣式 ===== */
+.account-suggestions {
+    margin-bottom: 1rem;
+}
+
+.account-suggestions .alert-info {
+    background-color: #e3f2fd;
+    border-color: #90caf9;
+    color: #0d47a1;
+}
+
+.account-suggestions select {
+    margin-top: 0.5rem;
+}
+
+/* ===== 待處理帳號清單樣式 ===== */
+.pending-accounts-list {
+    padding-top: 5px;
+    overflow-y: auto;
+}
+
+.pending-account-card {
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background-color: #fafafa;
+    transition: all 0.2s ease;
+}
+
+.pending-account-card:hover {
+    border-color: #2196f3;
+    background-color: #f5f5f5;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.account-info {
+    flex: 1;
+    width: 100%;
+}
+
+.account-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.account-header h5 {
+    margin: 0;
+    color: #333;
+    font-weight: 600;
+}
+
+.account-details p {
+    margin: 0.25rem 0;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.account-actions {
+    margin-left: 0;
+    margin-top: 1rem;
+    text-align: right;
+}
+
+/* ===== 空狀態樣式 ===== */
+.empty-state {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: #666;
+}
+
+.empty-state i {
+    margin-bottom: 1rem;
+}
+
+.empty-state p {
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+}
+
+.empty-state small {
+    font-size: 0.9rem;
+}
+
+/* ===== 響應式設計 ===== */
+@media (max-width: 768px) {
+    /* Section Header 響應式調整 */
+    .section-header {
+        flex-wrap: wrap;
+    }
+    
+    .header-left {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        width: 100%;
+    }
+    
+    /* Banner 響應式調整 */
+    .pending-accounts-banner-inline {
+        flex-wrap: wrap;
+        white-space: normal;
+        padding: 0.75rem;
+        gap: 0.5rem;
+        width: 100%;
+        margin-top: 0.5rem;
+    }
+    
+    .pending-accounts-banner-inline .banner-text {
+        margin-right: 0;
+        margin-bottom: 0.5rem;
+        width: 100%;
+    }
+    
+    .pending-accounts-banner .alert {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .account-actions {
+        text-align: left;
+    }
+    
+    .account-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+}
+
+/* ========================================
+   新的兩欄式佈局 (仿照角色管理)
+   ======================================== */
+.employees-container {
+    display: grid;
+    grid-template-columns: 1fr 600px;
+    gap: 2rem;
+    height: calc(100vh - 250px);
+}
+
+/* 左側部門樹面板 */
+.emp-tree-panel {
+    background: white;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    height: calc(100vh - 380px);
+}
+
+.emp-tree-panel .tree-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.emp-tree-panel .tree-search-box {
+    display: flex;
+    flex: 1;
+    max-width: 400px;
+    position: relative;
+}
+
+.emp-tree-panel .tree-search-box input {
+    flex: 1;
+    padding-right: 40px;
+    border-radius: 20px;
+}
+
+.emp-tree-panel .tree-search-box .btn-search {
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--primary);
+    cursor: pointer;
+    padding: 5px 10px;
+}
+
+.emp-tree-panel .tree-search-box .btn-search:hover {
+    color: var(--primary-dark);
+}
+
+/* 員工樹狀結構統計區域 */
+.emp-tree-panel .tree-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background: var(--bg-light);
+    border-radius: 6px;
+    font-size: 0.875rem;
+    border: 1px solid var(--border-color);
+}
+
+.emp-tree-panel .tree-stats .stat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.emp-tree-panel .tree-stats .stat-item strong {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.emp-tree-panel .tree-stats .stat-item i {
+    font-size: 0.875rem;
+}
+
+.emp-tree-panel .tree-stats .toggle-inactive-btn {
+    margin-left: 0.5rem;
+    padding: 2px 6px;
+    font-size: 0.75rem;
+}
+
+.emp-tree-panel .tree-stats .toggle-inactive-btn {
+    background: none;
+    border: none;
+    color: #999;
+    cursor: pointer;
+    padding: 0 0.5rem;
+    margin-left: 0.5rem;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.emp-tree-panel .tree-stats .toggle-inactive-btn:hover {
+    color: var(--primary);
+    transform: scale(1.1);
+}
+
+.emp-tree-panel .tree-stats .toggle-inactive-btn.active {
+    color: var(--primary);
+}
+
+.emp-tree-panel .tree-stats .toggle-inactive-btn.active i::before {
+    content: '\f06e';
+    /* fa-eye icon */
+}
+
+/* Tooltip for toggle button */
+.emp-tree-panel .tree-stats .toggle-inactive-btn::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    margin-bottom: 0.25rem;
+}
+
+.emp-tree-panel .tree-stats .toggle-inactive-btn:hover::after {
+    opacity: 1;
+}
+
+.emp-tree-panel .panel-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.emp-tree-panel .panel-actions .btn {
+    padding: 4px 8px;
+    font-size: 0.875rem;
+}
+
+/* 部門樹容器 */
+.emp-tree-container {
+    background: white;
+    border-radius: 8px;
+    padding-left: 0.0rem;
+    padding-right: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    height: calc(100vh - 380px);
+}
+
+/* ========================================
+   樹狀結構節點 - 與角色管理統一
+   ======================================== */
+#employeeTreeContainer .tree-node {
+    margin: 2px 0;
+}
+
+#employeeTreeContainer .node-content {
+    display: flex;
+    align-items: center;
+    padding: 0.375rem;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+    cursor: pointer;
+}
+
+#employeeTreeContainer .node-content:hover {
+    background-color: var(--bg-hover);
+}
+
+#employeeTreeContainer .node-content.selected {
+    background-color: rgba(102, 126, 234, 0.1);
+    border: 1px solid var(--primary);
+}
+
+/* 移除 focus 樣式，避免點擊箭頭時意外觸發 focus 外觀 */
+/* #employeeTreeContainer .node-content:focus {
+    background-color: rgba(102, 126, 234, 0.1);
+    border: 1px solid var(--primary);
+} */
+
+/* 展開/收合按鈕樣式 */
+#employeeTreeContainer .node-toggle {
+    width: 20px;
+    text-align: center;
+    cursor: pointer;
+    color: var(--text-secondary);
+    display: inline-block;
+}
+
+#employeeTreeContainer .node-toggle:hover {
+    color: var(--primary);
+}
+
+#employeeTreeContainer .node-toggle.invisible {
+    visibility: hidden;
+    pointer-events: none;
+}
+
+#employeeTreeContainer .node-toggle i {
+    transition: transform 0.2s ease;
+    font-size: 0.75rem;
+}
+
+/* 節點圖標樣式 */
+#employeeTreeContainer .node-icon {
+    width: 20px;
+    text-align: center;
+    color: var(--primary);
+}
+
+#employeeTreeContainer .node-name {
+    flex: 1;
+    margin-left: 0.25rem;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+/* 停用狀態樣式 */
+#employeeTreeContainer .tree-node.inactive .node-content {
+    opacity: 0.6;
+    background: #f8f8f8;
+}
+
+#employeeTreeContainer .tree-node.inactive .node-name {
+    color: #999;
+    font-style: italic;
+}
+
+/* 樹狀結構子節點容器 */
+#employeeTreeContainer .tree-children {
+    margin-left: 1.5rem;
+    display: none;
+}
+
+#employeeTreeContainer .tree-children.expanded {
+    display: block;
+}
+
+/* 員工節點樣式 - 採用角色節點風格 */
+.employee-tree-node {
+    padding: 5px 5px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    margin: 2px 0;
+    border-radius: 4px;
+}
+
+.employee-tree-node:hover {
+    background: var(--bg-hover);
+    padding-left: 16px;
+}
+
+.employee-tree-node.selected {
+    background-color: rgba(102, 126, 234, 0.1);
+    border-radius: 4px;
+    padding-left: 16px;
+}
+
+.employee-tree-node.inactive {
+    opacity: 0.6;
+    font-style: italic;
+}
+
+.employee-tree-node i {
+    font-size: 0.9rem;
+    margin-right: 0.5rem;
+}
+
+.employee-tree-node .user-name {
+    flex: 1;
+}
+
+.employee-tree-node .node-actions {
+    display: flex;
+    gap: 0.25rem;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.employee-tree-node:hover .node-actions {
+    opacity: 1;
+}
+
+/* ========== 主管角色節點特殊樣式 ========== */
+.employee-tree-node.manager-node {
+    font-weight: 500;
+}
+
+/* 主管圖標使用 warning 色 */
+.employee-tree-node.manager-node > i.fa-user-tie {
+    color: var(--warning);
+}
+
+/* 主管名稱使用 warning 色 */
+.employee-tree-node.manager-node .role-name {
+    font-weight: 600;
+}
+
+/* hover 時使用深色 warning */
+.employee-tree-node.manager-node:hover > i.fa-user-tie {
+    color: var(--warning);
+}
+
+/* 選中狀態時保持 warning 色 */
+.employee-tree-node.manager-node.selected > i.fa-user-tie {
+    color: var(--warning);
+    font-weight: 600;
+}
+
+/* 停用的主管節點顏色稍微變淡 */
+.employee-tree-node.manager-node.inactive > i.fa-user-tie {
+    color: var(--warning-light);
+    opacity: 0.7;
+}
+
+/* 按鈕圖標樣式 */
+.btn-icon {
+    background: none;
+    border: none;
+    padding: 0.25rem;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: all 0.2s;
+    border-radius: 4px;
+}
+
+.btn-icon:hover {
+    background: var(--bg-hover);
+    color: var(--primary);
+}
+
+.btn-icon.disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+}
+
+/* 搜尋高亮樣式 - 與部門/角色管理統一 */
+#employeeTreeContainer .tree-node.highlight .node-content {
+    background: linear-gradient(90deg,
+            rgba(102, 126, 234, 0.08) 0%,
+            rgba(102, 126, 234, 0.03) 100%);
+    border-left: 3px solid rgba(102, 126, 234, 0.8);
+    border-radius: 4px;
+    animation: gentle-slide-in 0.4s ease-out;
+    transition: background 0.2s ease;
+}
+
+/* 員工節點高亮樣式 */
+#employeeTreeContainer .employee-tree-node.highlight {
+    background: linear-gradient(90deg,
+            rgba(255, 193, 7, 0.15) 0%,
+            rgba(255, 193, 7, 0.05) 100%);
+    border-left: 3px solid #ffc107;
+    border-radius: 4px;
+    animation: employee-highlight 0.5s ease-out;
+    box-shadow: 0 2px 8px rgba(255, 193, 7, 0.2);
+    padding-left: 16px !important;
+}
+
+
+/* 部門節點 focus 高亮樣式（點擊員工節點時觸發） */
+#employeeTreeContainer .tree-node.focus .node-content {
+    background: linear-gradient(90deg,
+            rgba(102, 126, 234, 0.12) 0%,
+            rgba(102, 126, 234, 0.06) 100%);
+    border-left: 4px solid var(--primary);
+    border-radius: 4px;
+    animation: department-focus 0.6s ease-out;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+}
+
+@keyframes department-focus {
+    0% {
+        transform: translateX(0);
+        box-shadow: 0 0 0 rgba(102, 126, 234, 0);
+    }
+
+    30% {
+        transform: translateX(5px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    100% {
+        transform: translateX(0);
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+    }
+}
+
+/* hover 時稍微加強效果 */
+#employeeTreeContainer .tree-node.highlight .node-content:hover {
+    background: linear-gradient(90deg,
+            rgba(102, 126, 234, 0.12) 0%,
+            rgba(102, 126, 234, 0.05) 100%);
+}
+
+/* 柔和的滑入動畫 */
+@keyframes gentle-slide-in {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* 右側員工卡片面板 */
+.emp-cards-panel {
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 20px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    height: calc(100vh - 370px);
+}
+
+.cards-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.cards-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.cards-title h3 {
+    margin-bottom: 0.8rem;
+    color: var(--text-primary);
+}
+
+.cards-title .badge {
+    margin-bottom: 0.8rem;
+}
+
+.cards-filters {
+    align-items: center;
+    right: 0;
+    z-index: 5;
+    margin-bottom: 0.8rem;
+}
+
+/* 排序下拉選單柔和樣式與動畫 */
+.cards-filters select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background: var(--bg-main);
+    border: 0px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 6px 24px 6px 10px;
+    min-width: 120px;
+    height: 25px;
+    line-height: 1.0;
+    transition: all var(--transition-fast);
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 12px;
+    box-shadow: var(--shadow-xs);
+}
+
+/* 懸停狀態增強動畫 */
+.cards-filters select:hover {
+    color: var(--primary);
+    border-color: rgba(var(--primary-rgb), 0.6);
+    background: linear-gradient(135deg, rgba(var(--bg-main), 0.95) 0%, rgba(var(--primary-rgb), 0.08) 100%);
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23667eea' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 15px;
+    box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.15), 0 2px 4px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px) scale(1.02);
+    animation: subtle-pulse 0.6s ease-in-out;
+}
+
+@keyframes subtle-pulse {
+
+    0%,
+    100% {
+        box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.15), 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    50% {
+        box-shadow: 0 6px 16px rgba(var(--primary-rgb), 0.2), 0 3px 6px rgba(0, 0, 0, 0.12);
+    }
+}
+
+/* 焦點狀態與箭頭旋轉動畫 */
+.cards-filters select:focus {
+    outline: none;
+    color: var(--primary);
+    border-color: var(--primary);
+    background: rgba(var(--bg-main), 0.98);
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.15), 0 6px 20px rgba(var(--primary-rgb), 0.1);
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23667eea' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='18,15 12,9 6,15'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 15px;
+    transform: translateY(-1px) scale(1.01);
+}
+
+/* 點擊時的脈衝動畫 */
+.cards-filters select:active {
+    transform: translateY(0) scale(0.98);
+    transition: all 0.15s cubic-bezier(0.4, 0.0, 0.2, 1);
+    box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.2);
+}
+
+/* 下拉選項列表增強動畫 */
+.cards-filters select option {
+    background: var(--bg-main);
+    color: var(--text-primary);
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-normal);
+    border: none;
+    margin: 2px 0;
+    font-weight: 400;
+    line-height: 1.4;
+}
+
+.cards-filters select option:hover,
+.cards-filters select option:focus {
+    background: linear-gradient(135deg,
+            rgba(var(--primary-rgb), 0.12) 0%,
+            rgba(var(--primary-rgb), 0.06) 100%);
+    color: var(--primary);
+    font-weight: 500;
+    transform: translateX(3px);
+}
+
+.cards-filters select option:checked,
+.cards-filters select option:selected {
+    background: linear-gradient(135deg,
+            rgba(var(--primary-rgb), 0.18) 0%,
+            rgba(var(--primary-rgb), 0.10) 100%);
+    color: var(--primary);
+    font-weight: 600;
+    box-shadow: inset 2px 0 0 var(--primary);
+}
+
+#employeeCardsContainer {
+    flex: 1;
+    overflow-y: auto;
+}
+
+/* 員工卡片網格 */
+.employee-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 15px;
+    padding: 10px;
+}
+
+/* 員工卡片樣式 */
+.employee-card {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: all 0.3s;
+    cursor: move;
+}
+
+.employee-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+/* 員工卡片高亮樣式 */
+.employee-card.highlight {
+    background: linear-gradient(90deg,
+            rgba(102, 126, 234, 0.08) 0%,
+            rgba(102, 126, 234, 0.03) 100%);
+    border-left: 4px solid var(--primary);
+    transform: scale(1.02);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.2);
+    animation: employee-card-highlight 0.5s ease-out;
+}
+
+@keyframes employee-card-highlight {
+    0% {
+        transform: scale(1) translateY(0);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    50% {
+        transform: scale(1.05) translateY(-4px);
+        box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+    }
+
+    100% {
+        transform: scale(1.02) translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.2);
+    }
+}
+
+.employee-card.inactive {
+    opacity: 0.7;
+    background: #f5f5f5;
+}
+
+.employee-card.dragging {
+    opacity: 0.5;
+}
+
+.employee-card .card-header {
+    position: relative;
+    padding: 15px;
+    background: linear-gradient(135deg, #e8f4f8, var(--primary));
+    text-align: center;
+}
+
+.employee-card .card-avatar {
+    text-align: center;
+}
+
+.employee-card .card-status {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+.status-indicator {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.status-indicator.active {
+    background: #28a745;
+    box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.2);
+}
+
+.status-indicator.inactive {
+    background: #dc3545;
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.2);
+}
+
+.employee-card .card-body {
+    padding: 15px;
+}
+
+.employee-card .card-name {
+    margin: 0 0 5px 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.employee-card .card-title,
+.employee-card .card-department,
+.employee-card .card-email {
+    margin: 5px 0;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.employee-card .card-title {
+    color: #888;
+    font-style: italic;
+}
+
+.employee-card .card-department i,
+.employee-card .card-email i {
+    width: 16px;
+    text-align: center;
+    margin-right: 5px;
+    color: #999;
+}
+
+.employee-card .card-roles,
+.employee-card .card-permissions {
+    margin-top: 10px;
+}
+
+.employee-card .card-roles label,
+.employee-card .card-permissions label {
+    display: block;
+    font-size: 0.8rem;
+    color: #999;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.employee-card .badges-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.employee-card .badge {
+    font-size: 0.75rem;
+    padding: 3px 6px;
+}
+
+/* 員工卡片中的 badge 容器樣式 */
+.employee-card .employee-badges-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 10px 0;
+    flex-wrap: wrap;
+}
+
+.employee-card .employee-roles-section,
+.employee-card .employee-permissions-section {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    position: relative;
+}
+
+/* 員工卡片中的展開容器 */
+.employee-card .employee-badge-expandable {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    position: relative;
+    cursor: pointer;
+}
+
+.employee-card .employee-badge-more {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 16px;
+    background: rgba(0, 0, 0, 0.1);
+    color: var(--text-muted);
+    border-radius: 8px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    padding: 1px 4px;
+    transition: all var(--transition-fast);
+}
+
+.employee-card .employee-badge-expandable:hover .employee-badge-more {
+    background: var(--primary);
+    color: white;
+    transform: scale(1.1);
+}
+
+/* 員工卡片中的展開內容 */
+.employee-card .employee-badge-expanded {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 1000;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    box-shadow: none;
+    padding: 4px;
+    margin-top: 4px;
+    min-width: auto;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all var(--transition-normal);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.employee-card .employee-badge-expanded.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    background: transparent;
+    box-shadow: none;
+    border: none;
+}
+
+/* 權限區塊的展開內容位置調整 */
+.employee-card .employee-permissions-section .employee-badge-expanded {
+    right: 0;
+    left: auto;
+    background: transparent;
+    box-shadow: none;
+    border: none;
+}
+
+/* 員工卡片中的角色標籤 */
+.employee-card .employee-role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 3px 6px;
+    border-radius: 8px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    border: 1px solid;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+}
+
+.employee-card .employee-role-badge i {
+    font-size: 8px;
+}
+
+/* 員工卡片中的主要角色樣式 */
+.employee-card .employee-role-badge.primary-role {
+    border-width: 1.5px;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.employee-card .employee-role-badge.primary-role .fa-star {
+    font-size: 7px;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* 員工卡片中的權限標籤 */
+.employee-card .employee-permission-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 3px 6px;
+    border-radius: 8px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    border: 1px solid;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+}
+
+.employee-card .employee-permission-badge i {
+    font-size: 7px;
+}
+
+.employee-card .card-meta {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.employee-card .card-footer {
+    padding: 10px 15px;
+    background: #f8f9fa;
+    border-top: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.employee-card .card-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.employee-card .card-actions .btn {
+    padding: 4px 8px;
+    font-size: 0.8rem;
+}
+
+/* 空狀態 */
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    color: #999;
+}
+
+.empty-state i {
+    margin-bottom: 15px;
+}
+
+/* ========================
+   角色選擇模態框樹狀結構樣式
+   ======================== */
+
+/* 角色樹容器 - 緊湊樣式 */
+#rolesTreeContainer {
+    margin: 0;
+}
+
+#rolesTreeContainer .tree-node {
+    margin: 0;
+}
+
+#rolesTreeContainer .node-content {
+    padding: 3px 6px;
+    line-height: 1.2;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.9rem;
+    background: transparent; /* 確保預設無背景 */
+    border: none; /* 移除預設邊框 */
+}
+
+/* 核取方塊樣式 */
+#rolesTreeContainer .form-check-input {
+    margin: 0;
+    width: 14px;
+    height: 14px;
+}
+
+#rolesTreeContainer .form-check-label {
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+/* 節點懸停效果 - 僅適用於部門節點 */
+#rolesTreeContainer .dept-node .node-content:hover {
+    background-color: var(--bg-hover);
+    border-radius: 3px;
+}
+
+/* 角色節點整行懸停效果 */
+#rolesTreeContainer .role-node .node-content:hover {
+    background-color: rgba(var(--primary-rgb), 0.08);
+    transform: translateX(2px);
+    transition: all 0.1s ease;
+}
+
+/* 角色節點選中狀態 */
+#rolesTreeContainer .role-node .node-content:has(input:checked) {
+    background-color: rgba(var(--primary-rgb), 0.05);
+    padding-left: 5px;
+}
+
+/* 部門節點樣式 */
+#rolesTreeContainer .dept-node .node-content {
+    font-weight: 500;
+    padding-top: 3px;
+    padding-left: 0px;
+    background: transparent;
+    border: none;
+    transition: all 0.2s ease;
+}
+
+/* 部門節點懸停效果 - 當有子節點時 */
+#rolesTreeContainer .dept-node .node-content[onclick]:hover {
+    background-color: rgba(var(--primary-rgb), 0.05);
+    border-radius: 3px;
+    transform: translateX(2px);
+}
+
+/* 部門樹狀結構中的角色節點 - 簡化樣式 */
+#rolesTreeContainer .role-node {
+    margin-left: 20px;
+    position: relative;
+    padding: 0px 12px;
+    margin-left: 9px;
+    background-color: white;
+    border-left: 0px solid var(--primary);
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+}
+
+#rolesTreeContainer .role-node .node-content {
+    padding: 6px 10px;
+    background: transparent;
+    border: none;
+    width: 100%; /* 確保點擊區域覆蓋整行 */
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.1s ease;
+}
+
+#rolesTreeContainer .role-node.selected {
+    background: var(--primary-light);
+    border-left-color: var(--primary-dark);
+}
+
+#rolesTreeContainer .role-node i {
+    font-size: 1.1rem;
+}
+
+#rolesTreeContainer .role-node .badge {
+    margin-left: auto;
+}
+
+/* 拖拉時的視覺效果 */
+#rolesTreeContainer .role-node.dragging {
+    opacity: 0.5;
+    cursor: grabbing;
+    transform: scale(1.05);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+#rolesTreeContainer  .role-node.drag-ghost {
+    position: fixed;
+    pointer-events: none;
+    z-index: 1001;
+    background: rgba(255, 255, 255, 0.95);
+    border: 2px solid #2196f3;
+    border-radius: 6px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    transform: rotate(-2deg) scale(0.95);
+}
+
+/* 拖曳過程中其他角色的淡化效果 */
+#rolesTreeContainer  .role-node:not(.dragging) {
+    transition: opacity 0.2s ease;
+}
+
+
+/* 搜尋高亮樣式 - 只在搜尋時顯示 */
+/* 部門高亮 - 藍色 */
+#rolesTreeContainer .tree-node.search-highlight-dept .node-content {
+    background: linear-gradient(90deg,
+            rgba(13, 110, 253, 0.15) 0%,
+            rgba(13, 110, 253, 0.05) 100%);
+    border-left: 3px solid #0d6efd;
+    border-radius: 3px;
+    padding-left: 6px;
+}
+
+/* 角色高亮 - 黃色 */
+#rolesTreeContainer .tree-node.search-highlight-role .node-content {
+    background: linear-gradient(90deg,
+            rgba(255, 193, 7, 0.15) 0%,
+            rgba(255, 193, 7, 0.05) 100%);
+    border-left: 3px solid #ffc107;
+    border-radius: 3px;
+    padding-left: 6px;
+}
+
+/* 舊的通用高亮樣式（保留向後兼容） */
+#rolesTreeContainer .tree-node.search-highlight .node-content {
+    background: linear-gradient(90deg,
+            rgba(255, 193, 7, 0.15) 0%,
+            rgba(255, 193, 7, 0.05) 100%);
+    border-left: 3px solid #ffc107;
+    border-radius: 3px;
+    padding-left: 6px;
+}
+
+/* 節點子容器 */
+#rolesTreeContainer .node-children {
+    margin: 0;
+}
+
+/* 節點切換圖標 */
+#rolesTreeContainer .node-toggle {
+    width: 16px;
+    text-align: center;
+    display: inline-block;
+    pointer-events: none;  /* 防止單獨點擊，讓點擊事件由父節點處理 */
+}
+
+#rolesTreeContainer .node-toggle i {
+    transition: transform 0.2s;
+    color: var(--text-secondary);
+}
+
+/* 當父節點懸停時，圖標也變色 */
+#rolesTreeContainer .dept-node .node-content[onclick]:hover .node-toggle i {
+    color: var(--primary);
+}
+
+/* 節點空白佔位符 */
+#rolesTreeContainer .node-spacer {
+    display: inline-block;
+    width: 16px;
+}
+
+/* 節點名稱 */
+#rolesTreeContainer .node-name {
+    flex: 1;
+}
+
+/* 角色數量徽章 - 更小 */
+#rolesTreeContainer .badge {
+    font-size: 0.75rem;
+    padding: 1px 4px;
+    line-height: 1;
+}
+
+/* 工具列按鈕分組 - 搜尋框右側內嵌樣式 */
+.tree-toolbar .tree-actions-inline {
+    display: flex;
+    gap: 4px;
+    margin-left: 8px;
+    padding-left: 8px;
+    border-left: 1px solid var(--border-color);
+}
+
+.tree-toolbar .tree-actions-inline .btn {
+    padding: 4px 8px;
+    font-size: 0.875rem;
+    background: transparent;
+    color: var(--text-secondary);
+    transition: all 0.2s;
+}
+
+.tree-toolbar .tree-actions-inline .btn:hover {
+    background: var(--bg-hover);
+    color: var(--primary);
+}
+
+/* 保留原始 tree-actions 樣式以兼容其他區域 */
+#rolesTreeContainer .tree-actions {
+    display: flex;
+    gap: 4px;
+}
+
+/* 圖標大小調整 */
+#rolesTreeContainer .fas {
+    font-size: 0.85rem;
+}
+
+/* 響應式設計 */
+@media (max-width: 1200px) {
+    .employees-container {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+
+    .emp-tree-panel {
+        max-height: 400px;
+    }
+
+    .employee-cards-grid {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    }
+}
+
 /* ========================================
    員工資訊管理主容器
    ======================================== */
@@ -14,30 +1441,9 @@
     display: flex;
     flex-direction: column;
     height: calc(100vh - 375px);
-    min-height: 500px; /* 添加最小高度確保可用性 */
+    min-height: 500px;
+    /* 添加最小高度確保可用性 */
     overflow: hidden;
-}
-
-/* ========================================
-   用戶統計
-   ======================================== */
-#employees-section .user-stats {
-    display: flex;
-    gap: 1.5rem;
-    margin-bottom: 1rem;
-    padding: 0.5rem;
-    background: var(--bg-light);
-    border-radius: 4px;
-    font-size: 0.875rem;
-}
-
-.user-stats .org-layout .stat-item {
-    color: var(--text-secondary);
-}
-
-.user-stats .stat-item strong {
-    color: var(--primary);
-    font-weight: 600;
 }
 
 /* ========================================
@@ -127,7 +1533,8 @@
     flex-shrink: 0;
     display: block;
     background: linear-gradient(135deg, var(--primary-dark) 0%, var(--secondary) 100%);
-    padding-right: 8px; /* 預留 scrollbar 寬度 */
+    padding-right: 8px;
+    /* 預留 scrollbar 寬度 */
 }
 
 .user-table-wrapper .data-table tbody {
@@ -506,12 +1913,18 @@
     opacity: 1;
     visibility: visible;
     transform: translateY(0);
+    background: transparent;
+    box-shadow: none;
+    border: none;
 }
 
 /* 權限區塊的展開內容位置調整 */
 .employee-permissions-section .employee-badge-expanded {
     right: 0;
     left: auto;
+    background: transparent;
+    box-shadow: none;
+    border: none;
 }
 
 /* 員工角色區域（保留向後相容性） */
@@ -546,6 +1959,24 @@
     color: #8b6914;
     border-color: rgba(255, 215, 0, 0.4);
     box-shadow: 0 2px 6px rgba(255, 215, 0, 0.3);
+}
+
+/* 主要角色樣式加強 */
+.employee-role-badge.primary-role {
+    border-width: 2px;
+    font-weight: 600;
+    position: relative;
+    padding-left: 8px;
+    background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+}
+
+.employee-role-badge.role-staff.primary-role {
+    background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+}
+
+.employee-role-badge.primary-role .fa-star {
+    color: rgba(255, 255, 255, 0.9);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .employee-role-badge.role-manager:hover {
@@ -717,6 +2148,7 @@
         opacity: 0;
         transform: translateY(20px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -880,24 +2312,24 @@
         padding-left: 0.25rem;
         padding-right: 0.25rem;
     }
-    
+
     .section-toolbar {
         flex-direction: column;
     }
-    
+
     .user-search-box {
         max-width: 100%;
     }
-    
+
     .filters {
         flex-wrap: wrap;
         width: 100%;
     }
-    
+
     .filters select {
         flex: 1;
     }
-    
+
     .employee-hover-list {
         grid-template-columns: 1fr;
     }
@@ -908,15 +2340,15 @@
         height: calc(100vh - 350px);
         min-height: 400px;
     }
-    
+
     .user-table-wrapper .data-table tbody {
         min-height: 250px;
     }
-    
+
     #employees-section .user-table-wrapper {
         min-height: 300px;
     }
-    
+
     .user-table-wrapper .data-table {
         min-height: 300px;
     }
@@ -927,16 +2359,141 @@
         height: calc(100vh - 300px);
         min-height: 300px;
     }
-    
+
     .user-table-wrapper .data-table tbody {
         min-height: 200px;
     }
-    
+
     #employees-section .user-table-wrapper {
         min-height: 250px;
     }
-    
+
     .user-table-wrapper .data-table {
         min-height: 250px;
+    }
+}
+
+/* ========================================
+   員工詳情模態框樣式
+   ======================================== */
+.employee-detail-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.detail-section {
+    background: var(--bg-light);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    transition: all var(--transition-fast);
+}
+
+.detail-section:hover {
+    border-color: rgba(var(--primary-rgb), 0.3);
+    box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.1);
+}
+
+.detail-section-title {
+    margin: 0 0 1rem 0;
+    color: var(--primary);
+    font-size: 1.1rem;
+    font-weight: var(--font-weight-semibold);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--primary);
+}
+
+.detail-section-title i {
+    font-size: 1rem;
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.detail-item.full-width {
+    grid-column: 1 / -1;
+}
+
+.detail-item label {
+    font-weight: var(--font-weight-medium);
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.detail-value {
+    color: var(--text-primary);
+    font-size: var(--font-size-base);
+    line-height: 1.4;
+}
+
+.detail-value a {
+    color: var(--primary);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+}
+
+.detail-value a:hover {
+    color: var(--primary-dark);
+    text-decoration: underline;
+}
+
+.badges-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.badges-container .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    transition: all var(--transition-fast);
+}
+
+.badges-container .badge:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.badges-container .badge i {
+    font-size: 0.875rem;
+}
+
+/* 響應式調整 */
+@media (max-width: 768px) {
+    .detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .detail-section {
+        padding: 1rem;
+    }
+
+    .employee-detail-grid {
+        gap: 1.5rem;
+    }
+
+    .cards-filters select {
+        min-width: 120px;
+        font-size: 0.8rem;
     }
 }

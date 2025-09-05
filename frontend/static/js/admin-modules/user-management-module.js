@@ -22,6 +22,12 @@
         loadUsers: async function() {
             const accountManagerContainer = document.getElementById('accountManagerContainer');
             
+            // 檢查容器是否存在，如果不存在則跳過（新架構可能不需要此功能）
+            if (!accountManagerContainer) {
+                console.warn('accountManagerContainer 不存在，跳過 loadUsers - 可能使用新的頁面架構');
+                return;
+            }
+            
             if (window.CommonUI) {
                 window.CommonUI.showSpinner('載入帳號資料...');
             }
@@ -43,6 +49,12 @@
         // 渲染用戶表格
         renderUserTable: function() {
             const accountManagerContainer = document.getElementById('accountManagerContainer');
+            
+            // 檢查容器是否存在
+            if (!accountManagerContainer) {
+                console.warn('accountManagerContainer 不存在，跳過 renderUserTable');
+                return;
+            }
             
             if (!Array.isArray(allUsers) || allUsers.length === 0) {
                 accountManagerContainer.innerHTML = '<div>查無帳號資料</div>';
@@ -86,10 +98,7 @@
               </td>
               <td style='border:1px solid #ccc;padding:8px;'>${user.created_at ? user.created_at.replace('T', ' ').slice(0, 19) : ''}</td>
               <td style='border:1px solid #ccc;padding:8px;'>
-                ${isActive
-                    ? `<button onclick="AccountModule.deactivateUser(${user.id})" style="background:#e74c3c;color:white;padding:4px 10px;border-radius:4px;">停用</button>`
-                    : `<button onclick="AccountModule.activateUser(${user.id})" style="background:#27ae60;color:white;padding:4px 10px;border-radius:4px;">啟用</button>`}
-                <button onclick="AccountModule.openAdminChangePasswordModal(${user.id}, '${user.username}')" style="background:#3498db;color:white;padding:4px 10px;border-radius:4px;">變更密碼</button>
+                ${this.renderUserActionButtons(user, isActive)}
               </td>
             </tr>`;
             }
@@ -124,23 +133,25 @@
                       <h3>管理員變更密碼</h3>
                       <i class="fa-solid fa-key"></i>
                     </div>
-                    <div class="modal-body">
-                      <div class="form-group">
-                        <label id="adminChangePasswordUsernameLabel"></label>
+                    <form id="adminChangePasswordForm" onsubmit="return AccountModule.adminChangePasswordSubmit(event)">
+                      <div class="modal-body">
+                        <div class="form-group">
+                          <label id="adminChangePasswordUsernameLabel"></label>
+                        </div>
+                        <div class="form-group">
+                          <label for="adminNewPassword">新密碼</label>
+                          <input type="password" id="adminNewPassword" required minlength="6">
+                        </div>
+                        <div class="form-group">
+                          <label for="adminConfirmNewPassword">確認新密碼</label>
+                          <input type="password" id="adminConfirmNewPassword" required minlength="6">
+                        </div>
                       </div>
-                      <div class="form-group">
-                        <label for="adminNewPassword">新密碼</label>
-                        <input type="password" id="adminNewPassword" required minlength="6">
+                      <div class="modal-footer">
+                        <button type="button" onclick="AccountModule.closeAdminChangePasswordModal()" class="btn-secondary">取消</button>
+                        <button type="submit" class="btn-primary">確認變更</button>
                       </div>
-                      <div class="form-group">
-                        <label for="adminConfirmNewPassword">確認新密碼</label>
-                        <input type="password" id="adminConfirmNewPassword" required minlength="6">
-                      </div>
-                    </div>
-                    <div class="modal-footer">
-                      <button onclick="AccountModule.closeAdminChangePasswordModal()" class="btn-secondary">取消</button>
-                      <button onclick="AccountModule.adminChangePasswordSubmit()" class="btn-primary">確認變更</button>
-                    </div>
+                    </form>
                   </div>
                 </div>
               `;
@@ -162,7 +173,9 @@
 
         // 啟用用戶
         activateUser: async function(userId) {
-            if (!confirm('確定要啟用此帳號？')) return;
+            const confirmed = await Dialog.confirm('確定要啟用此帳號？');
+            if (!confirmed) return;
+            
             if (window.CommonUI) {
                 window.CommonUI.showSpinner('啟用帳號...');
             }
@@ -174,7 +187,7 @@
                 if (idx !== -1) allUsers[idx].is_active = true;
                 this.renderUserTable();
             } catch (e) {
-                alert('帳號啟用失敗：' + e.message);
+                Dialog.error('帳號啟用失敗：' + e.message);
             } finally {
                 if (window.CommonUI) {
                     window.CommonUI.stopSpinner();
@@ -184,19 +197,34 @@
 
         // 停用用戶
         deactivateUser: async function(userId) {
-            if (!confirm('確定要停用此帳號？')) return;
+            // 防止管理員停用自己的帳號（處理類型轉換）
+            const currentUserId = window.currentUser ? parseInt(window.currentUser.id) : null;
+            const targetUserId = parseInt(userId);
+            
+            if (currentUserId && targetUserId === currentUserId) {
+                Dialog.warning('系統安全限制：無法停用當前登入的管理員帳號，這會導致您失去系統存取權限並被鎖在系統外面。如需停用此帳號，請聯繫其他管理員進行操作。');
+                return;
+            }
+            
+            const confirmed = await Dialog.confirm('確定要停用此帳號？');
+            if (!confirmed) return;
+            
             if (window.CommonUI) {
                 window.CommonUI.showSpinner('停用帳號...');
             }
             try {
                 const res = await fetch(`/api/admin/users/${userId}/deactivate`, { method: 'PUT' });
-                if (!res.ok) throw new Error('停用失敗');
+                if (!res.ok) {
+                    const errorData = await res.json().catch(() => ({}));
+                    throw new Error(errorData.detail || '停用失敗');
+                }
                 // 更新本地資料
                 const idx = allUsers.findIndex(u => u.id === userId);
                 if (idx !== -1) allUsers[idx].is_active = false;
                 this.renderUserTable();
+                Dialog.success('帳號已成功停用');
             } catch (e) {
-                alert('帳號停用失敗：' + e.message);
+                Dialog.error('帳號停用失敗：' + e.message);
             } finally {
                 if (window.CommonUI) {
                     window.CommonUI.stopSpinner();
@@ -221,7 +249,7 @@
                 if (idx !== -1) allUsers[idx].role = newRole;
                 this.renderUserTable();
             } catch (e) {
-                alert('角色更新失敗：' + e.message);
+                Dialog.error('角色更新失敗：' + e.message);
             } finally {
                 if (window.CommonUI) {
                     window.CommonUI.stopSpinner();
@@ -244,22 +272,50 @@
         },
 
         // 提交管理員變更密碼
-        adminChangePasswordSubmit: async function() {
-            const userId = window._adminChangePasswordUserId;
-            const newPassword = document.getElementById('adminNewPassword').value;
-            const confirmNewPassword = document.getElementById('adminConfirmNewPassword').value;
+        adminChangePasswordSubmit: async function(event) {
+            // 阻止表單預設提交行為
+            if (event) {
+                event.preventDefault();
+            }
             
-            if (!newPassword || !confirmNewPassword) {
-                alert('請填寫所有欄位！');
-                return;
+            const userId = window._adminChangePasswordUserId;
+            const newPasswordInput = document.getElementById('adminNewPassword');
+            const confirmNewPasswordInput = document.getElementById('adminConfirmNewPassword');
+            
+            // 檢查輸入欄位是否存在
+            if (!newPasswordInput || !confirmNewPasswordInput) {
+                console.error('密碼輸入欄位不存在');
+                return false;
             }
+            
+            const newPassword = newPasswordInput.value;
+            const confirmNewPassword = confirmNewPasswordInput.value;
+            
+            // 嘗試使用 HTML5 驗證
+            const form = document.getElementById('adminChangePasswordForm');
+            if (form) {
+                if (!form.checkValidity()) {
+                    form.reportValidity(); // 顯示瀏覽器原生驗證訊息
+                    return false;
+                }
+            } else {
+                // 備用驗證：檢查輸入欄位的 required 和 minlength 屬性
+                if (!newPasswordInput.checkValidity()) {
+                    newPasswordInput.reportValidity();
+                    return false;
+                }
+                if (!confirmNewPasswordInput.checkValidity()) {
+                    confirmNewPasswordInput.reportValidity();
+                    return false;
+                }
+            }
+            
+            // 邏輯驗證：密碼一致性檢查
             if (newPassword !== confirmNewPassword) {
-                alert('新密碼與確認密碼不一致！');
-                return;
-            }
-            if (newPassword.length < 6) {
-                alert('新密碼長度至少需要6個字符！');
-                return;
+                if (window.Dialog) {
+                    Dialog.error('新密碼與確認密碼不一致！');
+                } 
+                return false;
             }
             
             if (window.CommonUI) {
@@ -268,23 +324,55 @@
             try {
                 const response = await fetch(`/api/admin/users/${userId}/change-password`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',  // 包含 cookies 進行認證
                     body: JSON.stringify({ new_password: newPassword })
                 });
                 if (response.ok) {
-                    alert('密碼變更成功！');
+                    // 使用 Dialog 顯示成功訊息
+                    Dialog.success('密碼變更成功！');
                     this.closeAdminChangePasswordModal();
                 } else {
                     const errorData = await response.json();
-                    alert(`密碼變更失敗：${errorData.detail || '未知錯誤'}`);
+                    // 使用 Dialog 顯示錯誤訊息
+                    Dialog.error(`密碼變更失敗：${errorData.detail || '未知錯誤'}`);
                 }
             } catch (error) {
-                alert(`密碼變更失敗：${error.message}`);
+                // 使用 Dialog 顯示錯誤訊息
+                Dialog.error(`密碼變更失敗：${error.message}`);
             } finally {
                 if (window.CommonUI) {
                     window.CommonUI.stopSpinner();
                 }
             }
+            
+            return false; // 阻止表單提交
+        },
+
+        // 渲染使用者操作按鈕
+        renderUserActionButtons: function(user, isActive) {
+            const currentUserId = window.currentUser ? parseInt(window.currentUser.id) : null;
+            const targetUserId = parseInt(user.id);
+            const isCurrentUser = currentUserId && targetUserId === currentUserId;
+            
+            let html = '';
+            
+            if (isActive) {
+                if (isCurrentUser) {
+                    // 當前使用者不能停用自己
+                    html += `<button disabled class="user-action-btn user-action-btn-disabled" title="不能停用自己的帳號">停用</button>`;
+                } else {
+                    html += `<button onclick="AccountModule.deactivateUser(${user.id})" class="user-action-btn user-action-btn-deactivate">停用</button>`;
+                }
+            } else {
+                html += `<button onclick="AccountModule.activateUser(${user.id})" class="user-action-btn user-action-btn-activate">啟用</button>`;
+            }
+            
+            html += `<button onclick="AccountModule.openAdminChangePasswordModal(${user.id}, '${user.username}')" class="user-action-btn user-action-btn-password">變更密碼</button>`;
+            
+            return html;
         },
 
         // 綁定事件

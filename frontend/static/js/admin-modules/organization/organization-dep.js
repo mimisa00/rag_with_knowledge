@@ -473,7 +473,7 @@ const OrganizationDepartmentModule = (function() {
                 return;
             }
             
-            // 處理節點內容點擊（選中節點並展開/收合）
+            // 處理節點內容點擊（優化展開/收合互動邏輯）
             const nodeContent = e.target.closest('.node-content');
             if (nodeContent) {
                 // 防止點擊按鈕或展開按鈕時觸發
@@ -483,15 +483,30 @@ const OrganizationDepartmentModule = (function() {
                 
                 e.stopPropagation();
                 const node = nodeContent.closest('.tree-node');
+                const nodeId = node.dataset.id;
+                const wasSelected = nodeContent.classList.contains('selected');
+                const hasChildren = node.querySelector('.tree-children');
+                const isExpanded = hasChildren && hasChildren.classList.contains('expanded');
                 
-                // 先選中節點
+                // 總是更新選中狀態和顯示詳情
                 document.querySelectorAll('.node-content').forEach(c => c.classList.remove('selected'));
                 nodeContent.classList.add('selected');
-                const nodeId = node.dataset.id;
                 showDepartmentDetails(nodeId);
                 
-                // 再切換展開/收合狀態
-                toggleNodeExpansion(node);
+                if (wasSelected) {
+                    // 重複點擊已選中的節點：切換展開/收合狀態
+                    toggleNodeExpansion(node);
+                } else if (hasChildren && !isExpanded) {
+                    // 首次點擊未選中且有子節點的未展開節點：只展開不收合
+                    const children = node.querySelector('.tree-children');
+                    const toggle = node.querySelector('.node-toggle i');
+                    if (children && toggle) {
+                        children.classList.add('expanded');
+                        toggle.classList.remove('fa-chevron-right');
+                        toggle.classList.add('fa-chevron-down');
+                    }
+                }
+                // 其他情況（首次點擊已展開節點或無子節點）：只選中，不操作展開狀態
             }
         };
         

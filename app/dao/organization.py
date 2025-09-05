@@ -137,6 +137,39 @@ class DepartmentDAO(BaseDAO):
             logger.error(f"列出部門失敗: {e}")
             return []
     
+    def _update_children_paths(self, parent_dept_id: int, parent_path: str, parent_level: int) -> bool:
+        """遞迴更新所有子部門的路徑和層級"""
+        try:
+            # 查找所有直接子部門
+            query = "SELECT id, name FROM departments WHERE parent_id = %s AND is_active = TRUE"
+            children = self.execute_query(query, (parent_dept_id,))
+            
+            for child in children:
+                new_child_path = f"{parent_path}/{child['name']}"
+                new_child_level = parent_level + 1
+                
+                # 更新子部門路徑和層級
+                update_query = """
+                    UPDATE departments 
+                    SET path = %s, level = %s, updated_at = NOW()
+                    WHERE id = %s
+                """
+                success = self.execute_update(update_query, (new_child_path, new_child_level, child['id']))
+                
+                if success:
+                    logger.info(f"Updated child department {child['name']} path to {new_child_path}")
+                    # 遞迴更新這個子部門的子部門
+                    self._update_children_paths(child['id'], new_child_path, new_child_level)
+                else:
+                    logger.error(f"Failed to update child department {child['id']}")
+                    return False
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error updating children paths: {e}")
+            return False
+
     def update_department(self, dept_id: int, updates: Dict[str, Any]) -> bool:
         """更新部門"""
         try:
@@ -151,6 +184,8 @@ class DepartmentDAO(BaseDAO):
                 current = results[0]
                 parent_id = updates.get('parent_id', current['parent_id'])
                 name = updates.get('name', current['name'])
+                new_path = None
+                new_level = None
                 
                 # 明確檢查 parent_id 是否為 None 或 0（表示頂層部門）
                 if parent_id is not None and parent_id != 0:
@@ -158,16 +193,20 @@ class DepartmentDAO(BaseDAO):
                     parent_results = self.execute_query(query, (parent_id,))
                     if parent_results:
                         parent = parent_results[0]
-                        updates['level'] = parent['level'] + 1
-                        updates['path'] = f"{parent['path']}/{name}"
+                        new_level = parent['level'] + 1
+                        new_path = f"{parent['path']}/{name}"
+                        updates['level'] = new_level
+                        updates['path'] = new_path
                     else:
                         # 父部門不存在
                         logger.error(f"父部門 {parent_id} 不存在")
                         return False
                 else:
                     # 移到頂層
-                    updates['level'] = 0
-                    updates['path'] = f"/{name}"
+                    new_level = 0
+                    new_path = f"/{name}"
+                    updates['level'] = new_level
+                    updates['path'] = new_path
                     updates['parent_id'] = None  # 確保設為 NULL
             
             # 處理 metadata
@@ -190,8 +229,16 @@ class DepartmentDAO(BaseDAO):
             """
             
             success = self.execute_update(query, tuple(values))
+            
             if success:
                 logger.info(f"部門 {dept_id} 更新成功")
+                
+                # 如果路徑或層級有變更，需要更新所有子部門
+                if new_path is not None and new_level is not None:
+                    children_success = self._update_children_paths(dept_id, new_path, new_level)
+                    if not children_success:
+                        logger.warning(f"部門 {dept_id} 更新成功，但子部門路徑更新部分失敗")
+                
             return success
             
         except Exception as e:
@@ -418,8 +465,8 @@ class UserOrganizationDAO(BaseDAO):
                 INSERT INTO user_extensions (
                     user_id, department_id, external_id, employee_no,
                     title, manager_id, auth_source, password_strategy,
-                    activation_token, activation_expires, metadata
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    activation_token, activation_expires, activation_scheduled, metadata
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """
             
             metadata_json = json.dumps(user_extension.metadata) if user_extension.metadata else None
@@ -430,7 +477,7 @@ class UserOrganizationDAO(BaseDAO):
                 user_extension.title, user_extension.manager_id,
                 user_extension.auth_source, user_extension.password_strategy,
                 user_extension.activation_token, user_extension.activation_expires,
-                metadata_json
+                user_extension.activation_scheduled, metadata_json
             ))
             
             if result >= 0:
@@ -460,6 +507,23 @@ class UserOrganizationDAO(BaseDAO):
             return None
         except Exception as e:
             logger.error(f"取得使用者擴充資訊失敗: {e}")
+            return None
+    
+    def get_user_by_employee_no(self, employee_no: str) -> Optional[Dict[str, Any]]:
+        """根據員工編號取得使用者資訊"""
+        try:
+            query = """
+                SELECT u.*, ue.department_id, ue.employee_no, ue.title,
+                       d.name as department_name
+                FROM users u
+                JOIN user_extensions ue ON u.id = ue.user_id
+                LEFT JOIN departments d ON ue.department_id = d.id
+                WHERE ue.employee_no = %s
+            """
+            results = self.execute_query(query, (employee_no,))
+            return results[0] if results else None
+        except Exception as e:
+            logger.error(f"根據員工編號取得使用者資訊失敗: {e}")
             return None
     
     def update_user_extension(self, user_id: int, updates: Dict[str, Any]) -> bool:
@@ -605,6 +669,113 @@ class UserOrganizationDAO(BaseDAO):
         except Exception as e:
             logger.error(f"列出權限群組使用者失敗: {e}")
             return []
+    
+    def get_pending_users(self) -> List[Dict[str, Any]]:
+        """取得待完成設定的帳號清單"""
+        try:
+            query = """
+                SELECT u.id, u.loginid, u.username, u.email, u.is_active,
+                       u.created_at,
+                       ue.department_id, ue.employee_no, ue.title,
+                       d.name as department_name,
+                       CASE 
+                           WHEN ue.user_id IS NULL THEN 'no_extension'
+                           WHEN ue.department_id IS NULL THEN 'no_department'
+                           WHEN udr.id IS NULL THEN 'no_primary_role'
+                           ELSE 'complete'
+                       END as status
+                FROM users u
+                LEFT JOIN user_extensions ue ON u.id = ue.user_id
+                LEFT JOIN departments d ON ue.department_id = d.id
+                LEFT JOIN user_department_roles udr ON u.id = udr.user_id AND udr.is_primary = 1
+                WHERE u.is_active = 1
+                AND (ue.user_id IS NULL OR ue.department_id IS NULL OR udr.id IS NULL)
+                ORDER BY u.created_at DESC
+            """
+            results = self.execute_query(query)
+            
+            # 為每個使用者添加缺失欄位資訊
+            for user in results:
+                missing_fields = []
+                if user['status'] == 'no_extension':
+                    missing_fields = ['employee info', 'department', 'title', 'primary role']
+                elif user['status'] == 'no_department':
+                    missing_fields = ['department', 'primary role']
+                elif user['status'] == 'no_primary_role':
+                    missing_fields = ['primary role']
+                
+                user['missing_fields'] = missing_fields
+            
+            return results
+            
+        except Exception as e:
+            logger.error(f"取得待處理帳號失敗: {e}")
+            return []
+    
+    def check_user_completeness(self, loginid: str) -> Dict[str, Any]:
+        """檢查特定帳號完整性"""
+        try:
+            query = """
+                SELECT u.id, u.loginid, u.username, u.email, u.is_active,
+                       u.created_at,
+                       ue.department_id, ue.employee_no, ue.title,
+                       d.name as department_name,
+                       CASE 
+                           WHEN ue.user_id IS NULL THEN 'no_extension'
+                           WHEN ue.department_id IS NULL THEN 'no_department'
+                           WHEN udr.id IS NULL THEN 'no_primary_role'
+                           ELSE 'complete'
+                       END as status
+                FROM users u
+                LEFT JOIN user_extensions ue ON u.id = ue.user_id
+                LEFT JOIN departments d ON ue.department_id = d.id
+                LEFT JOIN user_department_roles udr ON u.id = udr.user_id AND udr.is_primary = 1
+                WHERE u.loginid = %s
+            """
+            results = self.execute_query(query, (loginid,))
+            
+            if not results:
+                return {
+                    'exists': False,
+                    'status': 'not_found',
+                    'message': '帳號不存在'
+                }
+            
+            user = results[0]
+            missing_fields = []
+            has_employee_info = user['status'] != 'no_extension'
+            
+            if user['status'] == 'no_extension':
+                missing_fields = ['employee info', 'department', 'title', 'primary role']
+            elif user['status'] == 'no_department':
+                missing_fields = ['department', 'primary role']
+            elif user['status'] == 'no_primary_role':
+                missing_fields = ['primary role']
+            
+            return {
+                'exists': True,
+                'user_id': user['id'],
+                'loginid': user['loginid'],
+                'username': user['username'],
+                'email': user['email'],
+                'is_active': user['is_active'],
+                'status': user['status'],
+                'hasEmployeeInfo': has_employee_info,
+                'department_id': user['department_id'],
+                'department_name': user['department_name'],
+                'employee_no': user['employee_no'],
+                'title': user['title'],
+                'missing_fields': missing_fields,
+                'message': '帳號存在' if user['status'] == 'complete' else '帳號存在但未完成設定'
+            }
+            
+        except Exception as e:
+            logger.error(f"檢查帳號完整性失敗: {e}")
+            return {
+                'exists': False,
+                'status': 'error',
+                'message': f'檢查失敗: {str(e)}'
+            }
 
 
 class SystemModeDAO(BaseDAO):
@@ -675,7 +846,7 @@ class AuditLogDAO(BaseDAO):
                 ) VALUES (%s, %s, %s, %s, %s, %s, %s)
             """
             
-            changes_json = json.dumps(audit_log.changes) if audit_log.changes else None
+            changes_json = json.dumps(audit_log.changes, default=str) if audit_log.changes else None
             
             result = self.execute_insert(query, (
                 audit_log.user_id, audit_log.action, audit_log.target_type,

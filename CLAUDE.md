@@ -20,7 +20,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Docker 環境測試及調試
 ```bash
-# 重啟後端（快速測試）
+# 如果有修改 python 需重啟後端
 docker restart backend
 
 # 查看日誌
@@ -44,18 +44,20 @@ docker compose down
 - **安全隔離**：管理員模組需透過 API 存取
 
 ### 技術棧
-- **後端**：FastAPI + Python 3.8+
+- **後端**：FastAPI + Python 3.8+W
 - **LLM**：Ollama
 - **向量資料庫**：FAISS
 - **資料庫**：MariaDB 10.11
 - **文檔處理**：Docling（PDF → Markdown）
 
-## UI 設計系統
-
-- **設計指南**: 參見 `/doc/ui-guidelines.md`
-
-## 詳細文件
-
+### 詳細文件
 - **API 設計**:    `/app/api/routes/` 
 - **資料庫結構**:   `/init-db/*.sql`
 - **Docker 設定**: `docker-compose.yml`
+- **UI 設計系統**: `/docs/guidelines/ui-guidelines.md`
+- **架構設計**:    `/docs/guidelines/arch-guidelines.md`
+- **重構指南**:    `/docs/guidelines/refactoring-guidelines.md`
+- **測試指南**:    `/docs/guidelines/test-guidelines.md`
+
+### 注意事項
+- 當檔案大於1000行時，就應該要依據重構指南，進行模組拆分

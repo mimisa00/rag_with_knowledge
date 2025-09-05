@@ -14,6 +14,13 @@ logger = get_logger(__name__)
 router = APIRouter()
 
 
+def validate_system_prompt(prompt: str) -> bool:
+    """驗證系統提示詞是否包含必要的佔位符"""
+    if not prompt:
+        return False
+    return '{context}' in prompt and '{question}' in prompt
+
+
 @router.get("/knowledge-bases")
 def get_available_knowledge_bases(
     current_user: Dict[str, Any] = Depends(get_current_user),
@@ -84,9 +91,20 @@ def create_knowledge_base(
     if len(kb_data.system_prompt) > 1024:
         raise HTTPException(status_code=400, detail="系統提示詞長度不能超過1024字元")
     
+    # 驗證必須包含 {context} 和 {question}
+    if not validate_system_prompt(kb_data.system_prompt):
+        raise HTTPException(
+            status_code=400, 
+            detail="系統提示詞必須包含 {context} 和 {question} 佔位符"
+        )
+    
     # 創建知識庫
     success = knowledge_base_dao.create_knowledge_base(
-        kb_data.id, kb_data.name, kb_data.system_prompt, kb_data.note
+        kb_id=kb_data.id,
+        name=kb_data.name,
+        system_prompt=kb_data.system_prompt,
+        conversation_history_limit=kb_data.conversation_history_limit,
+        note=kb_data.note
     )
     
     if not success:
@@ -156,13 +174,26 @@ def update_knowledge_base(
     # 驗證 system_prompt 長度
     if kb_data.system_prompt is not None and len(kb_data.system_prompt) > 1024:
         raise HTTPException(status_code=400, detail="系統提示詞長度不能超過1024字元")
+    
+    # 驗證必須包含 {context} 和 {question}
+    if kb_data.system_prompt is not None:
+        if not validate_system_prompt(kb_data.system_prompt):
+            raise HTTPException(
+                status_code=400, 
+                detail="系統提示詞必須包含 {context} 和 {question} 佔位符"
+            )
 
     # 驗證 status 值
     if kb_data.status is not None and kb_data.status not in ["enable", "disable"]:
         raise HTTPException(status_code=400, detail="狀態值必須為 enable 或 disable")
 
     success = knowledge_base_dao.update_knowledge_base(
-        kb_id, kb_data.name, kb_data.status, kb_data.system_prompt, kb_data.note
+        kb_id=kb_id,
+        name=kb_data.name,
+        status=kb_data.status,
+        system_prompt=kb_data.system_prompt,
+        conversation_history_limit=kb_data.conversation_history_limit,
+        note=kb_data.note
     )
 
     if not success:

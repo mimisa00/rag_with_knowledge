@@ -73,11 +73,6 @@
     margin-bottom: 10px;
 }
 
-.drawer-toggle-btn:hover {
-    background-color: var(--primary);
-    color: white;
-    transform: scale(1.1);
-}
 
 #paramDrawerContent {
     padding: var(--spacing-md);

@@ -5,134 +5,365 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>帳號管理 - E-Helper</title>
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="../css/core/all.min.css">
-    <!-- 新的 CSS 架構 -->
-    <link rel="stylesheet" href="../css/themes/theme-variables.css">
-    <link rel="stylesheet" href="../css/core/base.css">
-    <link rel="stylesheet" href="../css/core/components.css">
-    <link rel="stylesheet" href="../css/core/utilities.css">
-    <link rel="stylesheet" href="../css/core/layouts.css">
-    <!-- 引入 admin.css 作為基礎樣式（導航欄等） -->
-    <link rel="stylesheet" href="../css/pages/admin.css">
-    <!-- 引入獨立的載入器樣式 -->
-    <link rel="stylesheet" href="../css/components/spinner-loader.css">
-    <!-- 引入 Dashboard 抽屜樣式 -->
-    <link rel="stylesheet" href="../css/pages/dashboard.css">
-    <!-- 引入帳號管理頁面專用樣式 -->
-    <link rel="stylesheet" href="../css/pages/user-management.css">
-    <!-- 引入 Dialog 元件樣式 -->
-    <link rel="stylesheet" href="/css/components/dialog.css">
+    <!-- 靜態載入頁面載入器樣式（避免 FOUC） -->
+    <link rel="stylesheet" href="/css/components/page-loader.css">
+    <link rel="stylesheet" href="/css/components/spinner-loader.css">
+    <!-- 其他 CSS 將動態載入 -->
 </head>
 
-<body>
-    <!-- 載入指示器 -->
+<body class="admin-layout">
+    <!-- 頁面載入器 -->
+    <div id="pageLoader" class="page-loader-overlay">
+        <div class="page-loader-content">
+            <div class="page-loader-spinner"></div>
+            <div class="page-loader-text">系統載入中...</div>
+        </div>
+    </div>
+
+    <!-- 局部載入指示器 -->
     <div id="loader-overlay" class="loader-overlay">
         <div class="loader"></div>
-        <div class="loader-text">系統載入中...</div>
+        <div class="loader-text">載入中...</div>
     </div>
 
-    <!-- 頂部導航欄 -->
-    <nav class="admin-navbar">
-        <div class="navbar-brand">
-            <i class="fas fa-users"></i>
-            <span>帳號管理</span>
-        </div>
-        <div class="navbar-info">
-            <span id="userInfo" class="user-info" onclick="openUserMenu()">
-                <i class="fas fa-user-circle"></i>
-                <span id="username">載入中...</span>
-                <span id="userRole" class="user-role"></span>
-            </span>
-        </div>
-    </nav>
+    <!-- 頁面內容容器 -->
+    <div id="pageContent" class="page-content">
 
-    <!-- 麵包屑導航 -->
-    <div class="breadcrumb">
-        <div class="breadcrumb-items">
-            <div class="breadcrumb-item">
-                <a href="/dashboard" class="breadcrumb-link">
-                    <i class="fas fa-home"></i>
-                    <span>首頁</span>
-                </a>
+        <!-- 頂部導航欄 -->
+        <nav class="admin-navbar">
+            <div class="navbar-brand">
+                <i class="fas fa-users"></i>
+                <span>帳號管理</span>
             </div>
-            <span class="breadcrumb-separator">
-                <i class="fas fa-chevron-right"></i>
-            </span>
-            <div class="breadcrumb-item">
-                <a href="/admin" class="breadcrumb-link">
-                    <span>系統管理中心</span>
-                </a>
+            <div class="navbar-info">
+                <span id="userInfo" class="user-info" onclick="openUserMenu()">
+                    <i class="fas fa-user-circle"></i>
+                    <span id="username">載入中...</span>
+                    <span id="userRole" class="user-role"></span>
+                </span>
             </div>
-            <span class="breadcrumb-separator">
-                <i class="fas fa-chevron-right"></i>
-            </span>
-            <div class="breadcrumb-item">
-                <span class="breadcrumb-current">帳號管理</span>
-            </div>
-        </div>
-    </div>
+        </nav>
 
-    <!-- 個人功能抽屜 -->
-    <div id="userMenuDrawer" onclick="closeUserMenu()" class="user-menu-drawer">
-        <div class="user-menu-header">
-            <span id="userMenuUsername"></span>
-        </div>
-        <div class="user-menu-content">
-            <button onclick="showChangePasswordModal()" class="menu-item">
-                <i class="fa-solid fa-key"></i>
-                <span>變更密碼</span>
-            </button>
-            <hr>
-            <button onclick="logout()" class="menu-item">
-                <i class="fa-solid fa-sign-out-alt"></i>
-                <span>登出</span>
-            </button>
-        </div>
-    </div>
-
-    <!-- 變更密碼模態框 -->
-    <div id="changePasswordModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>變更密碼</h3>
-                <i class="fa-solid fa-key"></i>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label for="oldPassword">舊密碼</label>
-                    <input type="password" id="oldPassword" required>
+        <!-- 麵包屑導航 -->
+        <div class="breadcrumb">
+            <div class="breadcrumb-items">
+                <div class="breadcrumb-item">
+                    <a href="/dashboard" class="breadcrumb-link">
+                        <i class="fas fa-home"></i>
+                        <span>首頁</span>
+                    </a>
                 </div>
-                <div class="form-group">
-                    <label for="newPassword">新密碼</label>
-                    <input type="password" id="newPassword" required minlength="6">
+                <span class="breadcrumb-separator">
+                    <i class="fas fa-chevron-right"></i>
+                </span>
+                <div class="breadcrumb-item">
+                    <a href="/admin" class="breadcrumb-link">
+                        <span>系統管理中心</span>
+                    </a>
                 </div>
-                <div class="form-group">
-                    <label for="confirmNewPassword">確認新密碼</label>
-                    <input type="password" id="confirmNewPassword" required minlength="6">
+                <span class="breadcrumb-separator">
+                    <i class="fas fa-chevron-right"></i>
+                </span>
+                <div class="breadcrumb-item">
+                    <span class="breadcrumb-current">帳號管理</span>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button onclick="closeChangePasswordModal()" class="btn-secondary">取消</button>
-                <button onclick="changePassword()" class="btn-primary">確認變更</button>
+        </div>
+
+        <!-- 個人功能抽屜 -->
+        <div id="userMenuDrawer" onclick="closeUserMenu()" class="user-menu-drawer">
+            <div class="user-menu-header">
+                <span id="userMenuUsername"></span>
+            </div>
+            <div class="user-menu-content">
+                <button onclick="showChangePasswordModal()" class="menu-item">
+                    <i class="fa-solid fa-key"></i>
+                    <span>變更密碼</span>
+                </button>
+                <hr>
+                <button onclick="logout()" class="menu-item">
+                    <i class="fa-solid fa-sign-out-alt"></i>
+                    <span>登出</span>
+                </button>
             </div>
         </div>
-    </div>
 
-    <!-- 主要內容區 -->
-    <main class="admin-main">
-        <div class="admin-container">
-            <div id="accountManagerContainer" class="account-container"></div>
+        <!-- 變更密碼模態框 -->
+        <div id="changePasswordModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>變更密碼</h3>
+                    <button class="modal-close" onclick="closeChangePasswordModal()">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="oldPassword" class="form-label">舊密碼</label>
+                        <input type="password" id="oldPassword" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="newPassword" class="form-label">新密碼</label>
+                        <input type="password" id="newPassword" class="form-control" required minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmNewPassword" class="form-label">確認新密碼</label>
+                        <input type="password" id="confirmNewPassword" class="form-control" required minlength="6">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button onclick="closeChangePasswordModal()" class="btn btn-secondary">取消</button>
+                    <button onclick="changePassword()" class="btn btn-primary">確認變更</button>
+                </div>
+            </div>
         </div>
-    </main>
 
-    <!-- 載入腳本 -->
+        <!-- 主要內容區 -->
+        <main class="admin-main">
+            <!-- 抽屜式布局 -->
+            <div class="user-layout">
+                <!-- 左側抽屜容器 -->
+                <div id="userDrawerContainer" class="drawer-open">
+                    <!-- 抽屜控制按鈕 -->
+                    <div id="userDrawerButtons">
+                        <button onclick="UserDrawerManager.toggleDrawer()" class="drawer-toggle-btn" title="展開/收合">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                    </div>
+
+                    <!-- 抽屜內容 -->
+                    <div id="userDrawerContent">
+                        <h4>帳號管理</h4>
+                        <nav class="user-menu">
+                            <!-- 總覽 -->
+                            <div class="menu-section">
+                                <div class="menu-section-title">總覽</div>
+                                <a href="#" class="user-menu-item active" data-section="all-users">
+                                    <i class="fas fa-users"></i>
+                                    <span>全部帳號</span>
+                                    <span class="menu-badge" id="totalUserCount">0</span>
+                                </a>
+                                <a href="#" class="user-menu-item" data-section="admin-users">
+                                    <i class="fas fa-user-shield"></i>
+                                    <span>系統管理員</span>
+                                    <span class="menu-badge" id="adminUserCount">0</span>
+                                </a>
+                            </div>
+
+                            <!-- 使用分析 -->
+                            <div class="menu-section">
+                                <div class="menu-section-title">使用分析</div>
+                                <a href="#" class="user-menu-item" data-section="login-stats">
+                                    <i class="fas fa-chart-line"></i>
+                                    <span>登入統計</span>
+                                </a>
+                                <a href="#" class="user-menu-item" data-section="recent-registrations">
+                                    <i class="fas fa-user-plus"></i>
+                                    <span>近期註冊</span>
+                                    <span class="menu-badge badge-info" id="recentRegCount">0</span>
+                                </a>
+                                <a href="#" class="user-menu-item" data-section="anomaly-monitor">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <span>異常監控</span>
+                                    <span class="menu-badge badge-warning" id="anomalyCount">0</span>
+                                </a>
+                                <a href="#" class="user-menu-item" data-section="registration-trends">
+                                    <i class="fas fa-chart-area"></i>
+                                    <span>註冊趨勢</span>
+                                </a>
+                            </div>
+                        </nav>
+                    </div>
+                </div>
+
+                <!-- 右側主工作區 -->
+                <div class="user-main-content">
+                    <!-- 狀態列 -->
+                    <div class="user-status-bar">
+                        <div class="current-section-info">
+                            <i id="sectionIcon" class="fas fa-users"></i>
+                            <span id="sectionTitle">全部帳號</span>
+                        </div>
+                        <div class="section-stats">
+                            <span class="stat-item" id="statTotal">
+                                <i class="fas fa-users"></i>
+                                <span>0</span> 個帳號
+                            </span>
+                            <span class="stat-item" id="statActive">
+                                <i class="fas fa-check-circle" style="color: #28a745;"></i>
+                                <span>0</span> 個啟用
+                            </span>
+                            <span class="stat-item" id="statInactive">
+                                <i class="fas fa-times-circle" style="color: #dc3545;"></i>
+                                <span>0</span> 個停用
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- 全部帳號區塊 -->
+                    <section id="all-users-section" class="content-section active">
+                        <div class="section-content">
+                            <div class="users-container">
+                                <!-- 左側：時間軸組織樹 -->
+                                <div class="timeline-tree-panel">
+                                    <div class="tree-toolbar">
+                                        <!-- 搜尋框 -->
+                                        <div class="tree-search-box">
+                                            <input type="text" class="form-control" id="userSearchInput" placeholder="搜尋帳號、姓名或Email...">
+                                            <button class="btn btn-search" onclick="UserTimelineTree.searchUsers()">
+                                                <i class="fa-solid fa-search"></i>
+                                            </button>
+                                        </div>
+
+                                        <div class="panel-actions">
+                                            <button id="filterBtn" class="btn btn-sm btn-outline" onclick="UserTimelineTree.toggleFilter()" title="只顯示停用帳號">
+                                                <i class="fas fa-users"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline" onclick="UserTimelineTree.expandAll()" title="展開全部">
+                                                <i class="fas fa-expand-alt"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline" onclick="UserTimelineTree.collapseAll()" title="收合全部">
+                                                <i class="fas fa-compress-alt"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline" onclick="UserTimelineTree.refresh()" title="重新整理">
+                                                <i class="fas fa-sync-alt"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- 統計資訊 -->
+                                    <div class="tree-stats">
+                                        <span class="stat-item">
+                                            <i class="fas fa-calendar-alt"></i>
+                                            <span id="yearCount">0</span> 個年份
+                                        </span>
+                                        <span class="stat-item" id="searchResultCount" style="display:none;">
+                                            找到 <strong>0</strong> 個符合結果
+                                        </span>
+                                    </div>
+
+                                    <div class="timeline-tree-container scrollable-fade" id="timelineTreeContainer">
+                                        <!-- 動態載入時間軸樹 -->
+                                        <div class="loading-spinner">
+                                            <div class="spinner"></div>
+                                            <p>載入帳號資料中...</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 右側：帳號詳情面板 -->
+                                <div class="user-details-panel" id="userDetailsPanel">
+                                    <div class="details-card">
+                                        <h3>帳號資訊</h3>
+                                        <div class="details-content">
+                                            <p class="text-muted">請選擇一個帳號查看詳情</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- 系統管理員區塊 -->
+                    <section id="admin-users-section" class="content-section">
+                        <div class="section-content">
+                            <div id="adminUsersContainer">
+                                <!-- 動態載入管理員列表 -->
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- 登入統計區塊 -->
+                    <section id="login-stats-section" class="content-section">
+                        <div class="section-content">
+                            <div id="loginStatsContainer">
+                                <!-- 動態載入登入統計圖表 -->
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- 近期註冊區塊 -->
+                    <section id="recent-registrations-section" class="content-section">
+                        <div class="section-header">
+                            <div class="date-range-selector">
+                                <label>時間範圍：</label>
+                                <select id="recentDaysSelect" onchange="UserAnalytics.updateRecentRegistrations()">
+                                    <option value="7" selected>最近 7 天</option>
+                                    <option value="14">最近 14 天</option>
+                                    <option value="30">最近 30 天</option>
+                                    <option value="90">最近 90 天</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="section-content">
+                            <div id="recentRegistrationsContainer">
+                                <!-- 動態載入近期註冊列表 -->
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- 異常監控區塊 -->
+                    <section id="anomaly-monitor-section" class="content-section">
+                        <div class="section-content">
+                            <div id="anomalyMonitorContainer">
+                                <!-- 動態載入異常監控資料 -->
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- 註冊趨勢區塊 -->
+                    <section id="registration-trends-section" class="content-section">
+                        <div class="section-content">
+                            <div id="registrationTrendsContainer">
+                                <!-- 動態載入註冊趨勢圖表 -->
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </main>
+
+        <!-- 底部資訊 -->
+        <footer class="admin-footer">
+            <p>&copy; E-Help 知識庫智能管理系統. All rights reserved.</p>
+        </footer>
+
+        <!-- 管理員變更密碼模態框 -->
+        <div id="adminChangePasswordModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>變更密碼</h3>
+                    <button class="modal-close" onclick="AccountModule.closeAdminChangePasswordModal()">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div id="adminChangePasswordUsernameLabel" style="margin-bottom: 15px; font-weight: bold; color: #495057;"></div>
+                    <div class="form-group">
+                        <label for="adminNewPassword" class="form-label">新密碼</label>
+                        <input type="password" id="adminNewPassword" class="form-control" required minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label for="adminConfirmNewPassword" class="form-label">確認新密碼</label>
+                        <input type="password" id="adminConfirmNewPassword" class="form-control" required minlength="6">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button onclick="AccountModule.closeAdminChangePasswordModal()" class="btn btn-secondary">取消</button>
+                    <button onclick="AccountModule.adminChangePasswordSubmit()" class="btn btn-primary">確認變更</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 載入腳本 -->
+    </div> <!-- 結束 pageContent -->
+
     <script>
         // 臨時的全域函數，等待模組載入
-        window.returnToAdmin = function() {
+        window.returnToAdmin = function () {
             window.location.href = '/admin';
         };
-                
+
         // 內嵌簡單的載入函數（避免快取問題）
         function loadWithTimestamp(src) {
             const script = document.createElement('script');
@@ -143,37 +374,81 @@
                 document.head.appendChild(script);
             });
         }
-        
+
         // 依序載入模組
-        (async function() {
+        (async function () {
             try {
                 // 基礎模組
-                await loadWithTimestamp('/js/modules/script-loader.js');
-                
-                // 載入公共模組
-                await ScriptLoader.loadModulesInOrder([
+                await loadWithTimestamp('/js/modules/resource-loader.js');
+
+                // 動態載入所有 CSS
+                await ResourceLoader.loadStyles([
+                    '/css/core/all.min.css',
+                    '/css/core/base.css',
+                    '/css/core/components.css',
+                    '/css/core/layouts.css',
+                    '/css/core/utilities.css',
+                    '/css/components/dialog.css',
+                    '/css/themes/theme-variables.css',
+                    '/css/pages/admin.css',
+                    '/css/pages/dashboard.css',
+                    '/css/pages/user-management.css',
+                    '/css/components/user-management-analytics.css'
+                ]);
+
+                // 隱藏頁面載入器，顯示內容
+                document.getElementById('pageLoader').classList.add('hidden');
+                document.getElementById('pageContent').classList.add('visible');
+
+                // 載入公共模組和必要組件
+                await ResourceLoader.loadModulesInOrder([
+                    '/js/components/dialog.js',        // 必須優先載入 Dialog 組件
                     '/js/modules/common-ui.js',
                     '/js/modules/user-menu-module.js'
                 ]);
-                
+
                 // 載入受保護的管理員模組
-                await ScriptLoader.loadProtectedAdminScriptsInOrder([
-                    'user-management.js',               // 頁面初始化腳本
-                    'user-management-module.js',
+                await ResourceLoader.loadProtectedAdminScriptsInOrder([
+                    'user-management-module.js',             // 原有帳號管理模組（必須優先載入）
+                    'user-management-drawer-manager.js',     // 抽屜管理器
+                    'user-management-timeline-tree.js',      // 時間軸組織樹
+                    'user-management-details.js',            // 帳號詳情面板
+                    'user-management-analytics.js',          // 使用分析模組
+                    'user-management.js',                    // 頁面初始化腳本（最後載入）
                 ]);
-                
+
                 // 初始化模組
                 CommonUI.hideSpinner();
-                AccountModule.init();
-                UserMenu.init();
                 
+                // 初始化各模組
+                if (window.UserDrawerManager) {
+                    UserDrawerManager.init();
+                }
+                if (window.UserTimelineTree) {
+                    UserTimelineTree.init();
+                }
+                if (window.UserDetailsPanel) {
+                    UserDetailsPanel.init();
+                }
+                if (window.UserAnalytics) {
+                    UserAnalytics.init();
+                }
+                
+                // 保留原有模組（用於兼容）
+                if (window.AccountModule) {
+                    AccountModule.init();
+                }
+                UserMenu.init();
+
                 console.log('帳號管理頁面模組載入完成');
             } catch (error) {
                 console.error('模組載入失敗:', error);
                 // 如果是權限問題，可能需要重新登入
                 if (error.message && error.message.includes('無權限')) {
-                    alert('您沒有權限存取管理員功能，請重新登入');
-                    window.location.href = '/login';
+                    Dialog.error('您沒有權限存取管理員功能，請重新登入');
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 2000);
                 }
             }
         })();

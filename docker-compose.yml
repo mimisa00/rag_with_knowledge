@@ -16,6 +16,11 @@ services:
       - ./init-db:/docker-entrypoint-initdb.d
     restart: unless-stopped
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "2m"
+        max-file: "5"
 
   ollama:
     image: ollama/ollama
@@ -27,6 +32,11 @@ services:
     volumes:
       - ./ollama:/root/.ollama
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "2m"
+        max-file: "5"
     deploy:
       resources:
         reservations:
@@ -37,7 +47,8 @@ services:
 
 
   backend:
-    build: ./backend
+    #build: ./backend
+    image: rag_with_ollama-backend:latest
     container_name: backend
     ports:
       - "${BACKEND_PORT}:8080"
@@ -65,6 +76,11 @@ services:
       - ./logs:/backend/logs
       - .env:/backend/.env
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "2m"
+        max-file: "5"
     deploy:
       resources:
         reservations:

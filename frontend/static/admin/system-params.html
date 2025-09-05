@@ -5,476 +5,496 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>系統參數管理 - E-Helper</title>
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="../css/core/all.min.css">
-    <!-- 新的 CSS 架構 -->
-    <link rel="stylesheet" href="../css/themes/theme-variables.css">
-    <link rel="stylesheet" href="../css/core/base.css">
-    <link rel="stylesheet" href="../css/core/components.css">
-    <link rel="stylesheet" href="../css/core/utilities.css">
-    <link rel="stylesheet" href="../css/core/layouts.css">
-    <!-- 引入 admin.css 作為基礎樣式（導航欄等） -->
-    <link rel="stylesheet" href="../css/pages/admin.css">
-    <!-- 引入獨立的載入器樣式 -->
-    <link rel="stylesheet" href="../css/components/spinner-loader.css">
-    <!-- 引入 Dashboard 抽屜樣式 -->
-    <link rel="stylesheet" href="../css/pages/dashboard.css">
-    <!-- 引入系統參數管理頁面專用樣式 -->
-    <link rel="stylesheet" href="../css/pages/system-params.css">
-    <!-- 引入 Dialog 元件樣式 -->
-    <link rel="stylesheet" href="/css/components/dialog.css">
+    <!-- 靜態載入頁面載入器樣式（避免 FOUC） -->
+    <link rel="stylesheet" href="/css/components/page-loader.css">
+    <link rel="stylesheet" href="/css/components/spinner-loader.css">
+    <!-- 其他 CSS 將動態載入 -->
 </head>
 
 <body class="admin-layout">
-    <!-- 載入指示器 -->
+    <!-- 頁面載入器 -->
+    <div id="pageLoader" class="page-loader-overlay">
+        <div class="page-loader-content">
+            <div class="page-loader-spinner"></div>
+            <div class="page-loader-text">系統載入中...</div>
+        </div>
+    </div>
+
+    <!-- 局部載入指示器 -->
     <div id="loader-overlay" class="loader-overlay">
         <div class="loader"></div>
-        <div class="loader-text">系統載入中...</div>
+        <div class="loader-text">載入中...</div>
     </div>
 
-    <!-- 頂部導航欄 -->
-    <nav class="admin-navbar">
-        <div class="navbar-brand">
-            <i class="fas fa-sliders-h"></i>
-            <span>系統參數管理</span>
-        </div>
-        <div class="navbar-info">
-            <span id="userInfo" class="user-info" onclick="openUserMenu()">
-                <i class="fas fa-user-circle"></i>
-                <span id="username">載入中...</span>
-                <span id="userRole" class="user-role"></span>
-            </span>
-        </div>
-    </nav>
+    <!-- 頁面內容容器 -->
+    <div id="pageContent" class="page-content">
 
-    <!-- 麵包屑導航 -->
-    <div class="breadcrumb">
-        <div class="breadcrumb-items">
-            <div class="breadcrumb-item">
-                <a href="/dashboard" class="breadcrumb-link">
-                    <i class="fas fa-home"></i>
-                    <span>首頁</span>
-                </a>
+        <!-- 頂部導航欄 -->
+        <nav class="admin-navbar">
+            <div class="navbar-brand">
+                <i class="fas fa-sliders-h"></i>
+                <span>系統參數管理</span>
             </div>
-            <span class="breadcrumb-separator">
-                <i class="fas fa-chevron-right"></i>
-            </span>
-            <div class="breadcrumb-item">
-                <a href="/admin" class="breadcrumb-link">
-                    <span>系統管理中心</span>
-                </a>
+            <div class="navbar-info">
+                <span id="userInfo" class="user-info" onclick="openUserMenu()">
+                    <i class="fas fa-user-circle"></i>
+                    <span id="username">載入中...</span>
+                    <span id="userRole" class="user-role"></span>
+                </span>
             </div>
-            <span class="breadcrumb-separator">
-                <i class="fas fa-chevron-right"></i>
-            </span>
-            <div class="breadcrumb-item">
-                <a href="javascript:void(0)" onclick="ParamDrawerManager.switchCategory('request')" class="breadcrumb-link">
-                    <span>系統參數管理</span>
-                </a>
-            </div>
-            <!-- 動態分類項目 -->
-            <span id="categoryBreadcrumbSeparator" class="breadcrumb-separator">
-                <i class="fas fa-chevron-right"></i>
-            </span>
-            <div id="categoryBreadcrumbItem" class="breadcrumb-item">
-                <span id="categoryBreadcrumb" class="breadcrumb-current">請求控制</span>
-            </div>
-        </div>
-    </div>
+        </nav>
 
-    <!-- 個人功能抽屜 -->
-    <div id="userMenuDrawer" onclick="closeUserMenu()" class="user-menu-drawer">
-        <div class="user-menu-header">
-            <span id="userMenuUsername"></span>
+        <!-- 麵包屑導航 -->
+        <div class="breadcrumb">
+            <div class="breadcrumb-items">
+                <div class="breadcrumb-item">
+                    <a href="/dashboard" class="breadcrumb-link">
+                        <i class="fas fa-home"></i>
+                        <span>首頁</span>
+                    </a>
+                </div>
+                <span class="breadcrumb-separator">
+                    <i class="fas fa-chevron-right"></i>
+                </span>
+                <div class="breadcrumb-item">
+                    <a href="/admin" class="breadcrumb-link">
+                        <span>系統管理中心</span>
+                    </a>
+                </div>
+                <span class="breadcrumb-separator">
+                    <i class="fas fa-chevron-right"></i>
+                </span>
+                <div class="breadcrumb-item">
+                    <a href="javascript:void(0)" onclick="ParamDrawerManager.switchCategory('request')" class="breadcrumb-link">
+                        <span>系統參數管理</span>
+                    </a>
+                </div>
+                <!-- 動態分類項目 -->
+                <span id="categoryBreadcrumbSeparator" class="breadcrumb-separator">
+                    <i class="fas fa-chevron-right"></i>
+                </span>
+                <div id="categoryBreadcrumbItem" class="breadcrumb-item">
+                    <span id="categoryBreadcrumb" class="breadcrumb-current">請求控制</span>
+                </div>
+            </div>
         </div>
-        <div class="user-menu-content">
-            <button onclick="showChangePasswordModal()" class="menu-item">
-                <i class="fa-solid fa-key"></i>
-                <span>變更密碼</span>
-            </button>
-            <hr>
-            <button onclick="logout()" class="menu-item">
-                <i class="fa-solid fa-sign-out-alt"></i>
-                <span>登出</span>
-            </button>
-        </div>
-    </div>
 
-    <!-- 變更密碼模態框 -->
-    <div id="changePasswordModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>變更密碼</h3>
-                <button class="modal-close" onclick="closeChangePasswordModal()">
-                    <i class="fa-solid fa-times"></i>
+        <!-- 個人功能抽屜 -->
+        <div id="userMenuDrawer" onclick="closeUserMenu()" class="user-menu-drawer">
+            <div class="user-menu-header">
+                <span id="userMenuUsername"></span>
+            </div>
+            <div class="user-menu-content">
+                <button onclick="showChangePasswordModal()" class="menu-item">
+                    <i class="fa-solid fa-key"></i>
+                    <span>變更密碼</span>
+                </button>
+                <hr>
+                <button onclick="logout()" class="menu-item">
+                    <i class="fa-solid fa-sign-out-alt"></i>
+                    <span>登出</span>
                 </button>
             </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label for="oldPassword" class="form-label">舊密碼</label>
-                    <input type="password" id="oldPassword" class="form-control" required>
-                </div>
-                <div class="form-group">
-                    <label for="newPassword" class="form-label">新密碼</label>
-                    <input type="password" id="newPassword" class="form-control" required minlength="6">
-                </div>
-                <div class="form-group">
-                    <label for="confirmNewPassword" class="form-label">確認新密碼</label>
-                    <input type="password" id="confirmNewPassword" class="form-control" required minlength="6">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button onclick="closeChangePasswordModal()" class="btn btn-secondary">取消</button>
-                <button onclick="changePassword()" class="btn btn-primary">確認變更</button>
-            </div>
         </div>
-    </div>
 
-    <!-- 主要內容區 -->
-    <main class="admin-main">
-        <!-- 新的抽屜式布局 -->
-        <div class="param-layout">
-            <!-- 左側抽屜容器 -->
-            <div id="paramDrawerContainer" class="drawer-open">
-                <!-- 抽屜控制按鈕 -->
-                <div id="paramDrawerButtons">
-                    <button onclick="ParamDrawerManager.toggleDrawer()" class="drawer-toggle-btn" title="展開/收合">
-                        <i class="fas fa-bars"></i>
+        <!-- 變更密碼模態框 -->
+        <div id="changePasswordModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>變更密碼</h3>
+                    <button class="modal-close" onclick="closeChangePasswordModal()">
+                        <i class="fa-solid fa-times"></i>
                     </button>
                 </div>
-                
-                <!-- 抽屜內容 -->
-                <div id="paramDrawerContent">
-                    <h4>參數分類</h4>
-                    <div class="param-categories">
-                        <button type="button" id="updateConfigBtn" class="btn btn-danger mb-md w-100 ">
-                            <i class="fas fa-save"></i> 儲存參數
-                        </button>
-                        <div class="category-item active" data-category="request" onclick="ParamDrawerManager.switchCategory('request')">
-                            <i class="fas fa-network-wired"></i>
-                            <span>請求控制</span>
-                            <span class="category-badge">2</span>
-                        </div>
-                        <div class="category-item" data-category="file" onclick="ParamDrawerManager.switchCategory('file')">
-                            <i class="fas fa-file-alt"></i>
-                            <span>文檔處理</span>
-                            <span class="category-badge">1</span>
-                        </div>
-                        <div class="category-item" data-category="embedding" onclick="ParamDrawerManager.switchCategory('embedding')">
-                            <i class="fas fa-project-diagram"></i>
-                            <span>嵌入設定</span>
-                            <span class="category-badge">5</span>
-                        </div>
-                        <div class="category-item" data-category="llm" onclick="ParamDrawerManager.switchCategory('llm')">
-                            <i class="fas fa-robot"></i>
-                            <span>模型設定</span>
-                            <span class="category-badge">11</span>
-                        </div>
-                        <div class="category-item" data-category="prompt" onclick="ParamDrawerManager.switchCategory('prompt')">
-                            <i class="fas fa-comment-dots"></i>
-                            <span>提示詞</span>
-                            <span class="category-badge">1</span>
-                        </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="oldPassword" class="form-label">舊密碼</label>
+                        <input type="password" id="oldPassword" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="newPassword" class="form-label">新密碼</label>
+                        <input type="password" id="newPassword" class="form-control" required minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmNewPassword" class="form-label">確認新密碼</label>
+                        <input type="password" id="confirmNewPassword" class="form-control" required minlength="6">
                     </div>
                 </div>
-            </div>
-            
-            <!-- 右側主工作區 -->
-            <div class="param-main-content">
-                <!-- 狀態列 -->
-                <div class="param-status-bar">
-                    <div class="current-category-info">
-                        <i id="categoryIcon" class="fas fa-network-wired"></i>
-                        <span id="categoryTitle">請求控制設定</span>
-                    </div>
-                </div>
-                
-                <!-- 參數表單區 -->
-                <div class="param-content scrollable-fade">
-                    <form id="paramForm">
-                        <!-- 請求控制分類 -->
-                        <div id="requestCategory" class="param-category-section active">
-                            <div class="param-cards-grid">
-                                <div class="param-card">
-                                    <div class="param-card-header">
-                                        <span class="param-importance critical">🔴</span>
-                                        <h4>系統並發限制</h4>
-                                    </div>
-                                    <div class="param-card-body">
-                                        <label for="llm_req_limit_total" class="form-label">llm_req_limit_total</label>
-                                        <input id="llm_req_limit_total" type="number" name="llm_req_limit_total" value="3" class="form-control">
-                                        <small class="param-help">控制系統整體同時最多只能被請求的次數</small>
-                                    </div>
-                                </div>
-                                
-                                <div class="param-card">
-                                    <div class="param-card-header">
-                                        <span class="param-importance critical">🔴</span>
-                                        <h4>用戶並發限制</h4>
-                                    </div>
-                                    <div class="param-card-body">
-                                        <label for="llm_req_limit_user" class="form-label">llm_req_limit_user</label>
-                                        <input id="llm_req_limit_user" type="number" name="llm_req_limit_user" value="1" class="form-control">
-                                        <small class="param-help">控制使用者同時最多只能請求的次數</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- 文檔處理分類 -->
-                        <div id="fileCategory" class="param-category-section">
-                            <div class="param-cards-grid">
-                                <div class="param-card">
-                                    <div class="param-card-header">
-                                        <span class="param-importance normal">🟢</span>
-                                        <h4>圖片匯出模式</h4>
-                                    </div>
-                                    <div class="param-card-body">
-                                        <label for="docling_image_export_mode" class="form-label">docling_image_export_mode</label>
-                                        <select id="docling_image_export_mode" name="docling_image_export_mode" class="form-control">
-                                            <option value="placeholder" selected>placeholder</option>
-                                            <option value="embedded">embedded</option>
-                                            <option value="referenced">referenced</option>
-                                        </select>
-                                        <small class="param-help">截取圖案的內容如果有圖片透過什麼方式呈現</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- 嵌入設定分類 -->
-                        <div id="embeddingCategory" class="param-category-section">
-                            <div class="param-cards-grid">
-                                <div class="param-card">
-                                    <div class="param-card-header">
-                                        <span class="param-importance important">🟡</span>
-                                        <h4>嵌入模型</h4>
-                                    </div>
-                                    <div class="param-card-body">
-                                        <label for="embedding_model" class="form-label">embedding_model</label>
-                                        <input id="embedding_model" type="text" name="embedding_model" value="intfloat/multilingual-e5-large" class="form-control">
-                                        <small class="param-help">文件分詞模型</small>
-                                    </div>
-                                </div>
-                                
-                                <div class="param-card">
-                                    <div class="param-card-header">
-                                        <span class="param-importance important">🟡</span>
-                                        <h4>文件切割設定</h4>
-                                    </div>
-                                    <div class="param-card-body">
-                                        <div class="mb-sm">
-                                            <label for="chunk_size" class="form-label">chunk_size</label>
-                                            <input id="chunk_size" type="number" name="chunk_size" value="500" class="form-control">
-                                            <small class="param-help">文件切割大小（單位：token）</small>
-                                        </div>
-                                        <div>
-                                            <label for="chunk_overlap" class="form-label">chunk_overlap</label>
-                                            <input id="chunk_overlap" type="number" name="chunk_overlap" value="50" class="form-control">
-                                            <small class="param-help">文件切割重疊內容（單位：token）</small>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="param-card">
-                                    <div class="param-card-header">
-                                        <span class="param-importance important">🟡</span>
-                                        <h4>檢索設定</h4>
-                                    </div>
-                                    <div class="param-card-body">
-                                        <div class="mb-sm">
-                                            <label for="idx_result_count" class="form-label">idx_result_count</label>
-                                            <input id="idx_result_count" type="number" name="idx_result_count" value="3" class="form-control">
-                                            <small class="param-help">向量資料庫查詢 chunk 總數</small>
-                                        </div>
-                                        <div>
-                                            <label for="rerank_top_k_final" class="form-label">rerank_top_k_final</label>
-                                            <input id="rerank_top_k_final" type="number" name="rerank_top_k_final" value="3" class="form-control">
-                                            <small class="param-help">BGE 重新排序後取出最相關個數</small>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- LLM 模型設定分類 -->
-                        <div id="llmCategory" class="param-category-section">
-                            <div class="param-cards-grid">
-                                <div class="param-card">
-                                    <div class="param-card-header">
-                                        <span class="param-importance critical">🔴</span>
-                                        <h4>模型選擇</h4>
-                                    </div>
-                                    <div class="param-card-body">
-                                        <div class="mb-sm">
-                                            <label for="llm_model_select" class="form-label">LLM Model</label>
-                                            <select id="llm_model_select" name="llm_model" class="form-control">
-                                                <option value="gpt-oss:20b">gpt-oss:20b</option>
-                                                <option value="gemma3:4b">gemma3:4b</option>
-                                                <option value="gemma3:12b">gemma3:12b</option>
-                                                <option value="gemma3:27b">gemma3:27b</option>
-                                                <option value="qwen3:4b">qwen3:4b thinking</option>
-                                                <option value="qwen3:8b">qwen3:8b thinking</option>
-                                                <option value="qwen3:14b">qwen3:14b thinking</option>
-                                                <option value="mistral:latest">mistral</option>
-                                                <option value="llama3.1:8b">llama3.1:8b</option>
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label for="is_enable_think" class="form-label">啟用推理</label>
-                                            <select id="is_enable_think" name="is_enable_think" class="form-control">
-                                                <option value="False">off</option>
-                                                <option value="True">on</option>
-                                            </select>
-                                            <small class="param-help">部分模型支援推理功能</small>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="param-card">
-                                    <div class="param-card-header">
-                                        <span class="param-importance critical">🔴</span>
-                                        <h4>生成控制</h4>
-                                    </div>
-                                    <div class="param-card-body">
-                                        <div class="mb-sm">
-                                            <label for="temperature" class="form-label">temperature</label>
-                                            <input id="temperature" type="number" name="temperature" value="0.5" step="0.1" min="0" max="2" class="form-control">
-                                            <small class="param-help">模型溫度（0-2，越高越有創意）</small>
-                                        </div>
-                                        <div class="mb-sm">
-                                            <label for="num_ctx" class="form-label">num_ctx</label>
-                                            <input id="num_ctx" type="number" name="num_ctx" value="4096" class="form-control">
-                                            <small class="param-help">上下文視窗大小</small>
-                                        </div>
-                                        <div>
-                                            <label for="num_predict" class="form-label">num_predict</label>
-                                            <input id="num_predict" type="number" name="num_predict" value="1024" class="form-control">
-                                            <small class="param-help">最大生成 token 數量</small>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="param-card">
-                                    <div class="param-card-header">
-                                        <span class="param-importance important">🟡</span>
-                                        <h4>採樣參數</h4>
-                                    </div>
-                                    <div class="param-card-body">
-                                        <div class="mb-sm">
-                                            <label for="top_k" class="form-label">top_k</label>
-                                            <input id="top_k" type="number" name="top_k" value="10" class="form-control">
-                                            <small class="param-help">降低無意義內容機率（預設：40）</small>
-                                        </div>
-                                        <div class="mb-sm">
-                                            <label for="top_p" class="form-label">top_p</label>
-                                            <input id="top_p" type="number" name="top_p" value="0.9" step="0.1" min="0" max="1" class="form-control">
-                                            <small class="param-help">採樣多樣性（0-1）</small>
-                                        </div>
-                                        <div>
-                                            <label for="min_p" class="form-label">min_p</label>
-                                            <input id="min_p" type="number" name="min_p" value="0.0" step="0.01" min="0" max="1" class="form-control">
-                                            <small class="param-help">最低機率閾值</small>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="param-card">
-                                    <div class="param-card-header">
-                                        <span class="param-importance normal">🟢</span>
-                                        <h4>重複控制</h4>
-                                    </div>
-                                    <div class="param-card-body">
-                                        <div class="mb-sm">
-                                            <label for="repeat_last_n" class="form-label">repeat_last_n</label>
-                                            <input id="repeat_last_n" type="number" name="repeat_last_n" value="64" class="form-control">
-                                            <small class="param-help">回看文字長度避免重複</small>
-                                        </div>
-                                        <div>
-                                            <label for="repeat_penalty" class="form-label">repeat_penalty</label>
-                                            <input id="repeat_penalty" type="number" name="repeat_penalty" value="1.1" step="0.1" min="0" max="2" class="form-control">
-                                            <small class="param-help">重複內容懲罰強度</small>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="param-card">
-                                    <div class="param-card-header">
-                                        <span class="param-importance normal">🟢</span>
-                                        <h4>其他設定</h4>
-                                    </div>
-                                    <div class="param-card-body">
-                                        <div class="mb-sm">
-                                            <label for="seed" class="form-label">seed</label>
-                                            <input id="seed" type="number" name="seed" value="0" class="form-control">
-                                            <small class="param-help">隨機數種子（0為隨機）</small>
-                                        </div>
-                                        <div>
-                                            <label for="stop" class="form-label">stop</label>
-                                            <input id="stop" type="text" name="stop" value="<|endoftext|>" class="form-control">
-                                            <small class="param-help">停止字串</small>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- 提示詞分類 -->
-                        <div id="promptCategory" class="param-category-section">
-                            <div class="param-card param-card-wide">
-                                <div class="param-card-header">
-                                    <span class="param-importance critical">🔴</span>
-                                    <h4>名詞分析提示詞</h4>
-                                </div>
-                                <div class="param-card-body">
-                                    <label for="noun_analysis_prompt" class="form-label">noun_analysis_prompt</label>
-                                    <textarea id="noun_analysis_prompt" name="noun_analysis_prompt" rows="20" class="form-control param-prompt-textarea">### Task:...</textarea>
-                                    <small class="param-help">用於分析使用者問題裡名詞並產生多種同義詞。<br>
-                                    注意：{query.question} 是使用者的問題，該變數不可以調整。</small>
-                                </div>
-                            </div>
-                        </div>
-                    </form>
+                <div class="modal-footer">
+                    <button onclick="closeChangePasswordModal()" class="btn btn-secondary">取消</button>
+                    <button onclick="changePassword()" class="btn btn-primary">確認變更</button>
                 </div>
             </div>
         </div>
-    </main>
 
-    <!-- 底部資訊 -->
-    <footer class="admin-footer">
-        <p>&copy; E-Help 知識庫智能管理系統. All rights reserved.</p>
-    </footer>
+        <!-- 主要內容區 -->
+        <main class="admin-main">
+            <!-- 新的抽屜式布局 -->
+            <div class="param-layout">
+                <!-- 左側抽屜容器 -->
+                <div id="paramDrawerContainer" class="drawer-open">
+                    <!-- 抽屜控制按鈕 -->
+                    <div id="paramDrawerButtons">
+                        <button onclick="ParamDrawerManager.toggleDrawer()" class="drawer-toggle-btn" title="展開/收合">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                    </div>
 
-    <!-- 載入 Dialog 元件 -->
-    <script src="/js/components/dialog.js"></script>
-    
+                    <!-- 抽屜內容 -->
+                    <div id="paramDrawerContent">
+                        <h4>參數分類</h4>
+                        <div class="param-categories">
+                            <button type="button" id="updateConfigBtn" class="btn btn-danger mb-md w-100 ">
+                                <i class="fas fa-save"></i> 儲存參數
+                            </button>
+                            <div class="category-item active" data-category="request" onclick="ParamDrawerManager.switchCategory('request')">
+                                <i class="fas fa-network-wired"></i>
+                                <span>請求控制</span>
+                                <span class="category-badge">3</span>
+                            </div>
+                            <div class="category-item" data-category="file" onclick="ParamDrawerManager.switchCategory('file')">
+                                <i class="fas fa-file-alt"></i>
+                                <span>文檔處理</span>
+                                <span class="category-badge">1</span>
+                            </div>
+                            <div class="category-item" data-category="embedding" onclick="ParamDrawerManager.switchCategory('embedding')">
+                                <i class="fas fa-project-diagram"></i>
+                                <span>嵌入設定</span>
+                                <span class="category-badge">3</span>
+                            </div>
+                            <div class="category-item" data-category="llm" onclick="ParamDrawerManager.switchCategory('llm')">
+                                <i class="fas fa-robot"></i>
+                                <span>模型設定</span>
+                                <span class="category-badge">11</span>
+                            </div>
+                            <div class="category-item" data-category="prompt" onclick="ParamDrawerManager.switchCategory('prompt')">
+                                <i class="fas fa-comment-dots"></i>
+                                <span>提示詞</span>
+                                <span class="category-badge">1</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 右側主工作區 -->
+                <div class="param-main-content">
+                    <!-- 狀態列 -->
+                    <div class="param-status-bar">
+                        <div class="current-category-info">
+                            <i id="categoryIcon" class="fas fa-network-wired"></i>
+                            <span id="categoryTitle">請求控制設定</span>
+                        </div>
+                    </div>
+
+                    <!-- 參數表單區 -->
+                    <div class="param-content scrollable-fade">
+                        <form id="paramForm">
+                            <!-- 請求控制分類 -->
+                            <div id="requestCategory" class="param-category-section active">
+                                <div class="param-cards-grid">
+                                    <div class="param-card">
+                                        <div class="param-card-header">
+                                            <span class="param-importance critical">🔴</span>
+                                            <h4>系統並發限制</h4>
+                                        </div>
+                                        <div class="param-card-body">
+                                            <label for="llm_req_limit_total" class="form-label">llm_req_limit_total</label>
+                                            <input id="llm_req_limit_total" type="number" name="llm_req_limit_total" value="3" class="form-control">
+                                            <small class="param-help">控制系統整體同時最多只能被請求的次數</small>
+                                        </div>
+                                    </div>
+
+                                    <div class="param-card">
+                                        <div class="param-card-header">
+                                            <span class="param-importance critical">🔴</span>
+                                            <h4>用戶並發限制</h4>
+                                        </div>
+                                        <div class="param-card-body">
+                                            <label for="llm_req_limit_user" class="form-label">llm_req_limit_user</label>
+                                            <input id="llm_req_limit_user" type="number" name="llm_req_limit_user" value="1" class="form-control">
+                                            <small class="param-help">控制使用者同時最多只能請求的次數</small>
+                                        </div>
+                                    </div>
+
+                                    <div class="param-card">
+                                        <div class="param-card-header">
+                                            <span class="param-importance critical">🔴</span>
+                                            <h4>Token 時效管理</h4>
+                                        </div>
+                                        <div class="param-card-body">
+                                            <div class="mb-sm">
+                                                <label for="token_idle_timeout" class="form-label">token_idle_timeout</label>
+                                                <input id="token_idle_timeout" type="number" name="token_idle_timeout" value="3600" class="form-control">
+                                                <small class="param-help">使用者無活動後 token 失效時間（秒）</small>
+                                            </div>
+                                            <div class="mb-sm">
+                                                <label for="token_max_lifetime" class="form-label">token_max_lifetime</label>
+                                                <input id="token_max_lifetime" type="number" name="token_max_lifetime" value="28800" class="form-control">
+                                                <small class="param-help">Token 最長有效時間，無論是否有活動（秒）</small>
+                                            </div>
+                                            <div>
+                                                <label for="token_refresh_threshold" class="form-label">token_refresh_threshold</label>
+                                                <input id="token_refresh_threshold" type="number" name="token_refresh_threshold" value="300" class="form-control">
+                                                <small class="param-help">Token 剩餘時間小於此值時自動刷新（秒）</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 文檔處理分類 -->
+                            <div id="fileCategory" class="param-category-section">
+                                <div class="param-cards-grid">
+                                    <div class="param-card">
+                                        <div class="param-card-header">
+                                            <span class="param-importance normal">🟢</span>
+                                            <h4>圖片匯出模式</h4>
+                                        </div>
+                                        <div class="param-card-body">
+                                            <label for="docling_image_export_mode" class="form-label">docling_image_export_mode</label>
+                                            <select id="docling_image_export_mode" name="docling_image_export_mode" class="form-control">
+                                                <option value="placeholder" selected>placeholder</option>
+                                                <option value="embedded">embedded</option>
+                                                <option value="referenced">referenced</option>
+                                            </select>
+                                            <small class="param-help">截取圖案的內容如果有圖片透過什麼方式呈現</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 嵌入設定分類 -->
+                            <div id="embeddingCategory" class="param-category-section">
+                                <div class="param-cards-grid">
+                                    <div class="param-card">
+                                        <div class="param-card-header">
+                                            <span class="param-importance important">🟡</span>
+                                            <h4>嵌入模型</h4>
+                                        </div>
+                                        <div class="param-card-body">
+                                            <label for="embedding_model" class="form-label">embedding_model</label>
+                                            <input id="embedding_model" type="text" name="embedding_model" value="intfloat/multilingual-e5-large" class="form-control">
+                                            <small class="param-help">文件分詞模型</small>
+                                        </div>
+                                    </div>
+
+                                    <div class="param-card">
+                                        <div class="param-card-header">
+                                            <span class="param-importance important">🟡</span>
+                                            <h4>文件切割設定</h4>
+                                        </div>
+                                        <div class="param-card-body">
+                                            <div class="mb-sm">
+                                                <label for="chunk_size" class="form-label">chunk_size</label>
+                                                <input id="chunk_size" type="number" name="chunk_size" value="500" class="form-control">
+                                                <small class="param-help">文件切割大小（單位：token）</small>
+                                            </div>
+                                            <div>
+                                                <label for="chunk_overlap" class="form-label">chunk_overlap</label>
+                                                <input id="chunk_overlap" type="number" name="chunk_overlap" value="50" class="form-control">
+                                                <small class="param-help">文件切割重疊內容（單位：token）</small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="param-card">
+                                        <div class="param-card-header">
+                                            <span class="param-importance important">🟡</span>
+                                            <h4>檢索設定</h4>
+                                        </div>
+                                        <div class="param-card-body">
+                                            <div class="mb-sm">
+                                                <label for="idx_result_count" class="form-label">idx_result_count</label>
+                                                <input id="idx_result_count" type="number" name="idx_result_count" value="3" class="form-control">
+                                                <small class="param-help">向量資料庫查詢 chunk 總數</small>
+                                            </div>
+                                            <div>
+                                                <label for="rerank_top_k_final" class="form-label">rerank_top_k_final</label>
+                                                <input id="rerank_top_k_final" type="number" name="rerank_top_k_final" value="3" class="form-control">
+                                                <small class="param-help">BGE 重新排序後取出最相關個數</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- LLM 模型設定分類 -->
+                            <div id="llmCategory" class="param-category-section">
+                                <div class="param-cards-grid">
+                                    <div class="param-card">
+                                        <div class="param-card-header">
+                                            <span class="param-importance critical">🔴</span>
+                                            <h4>模型選擇</h4>
+                                        </div>
+                                        <div class="param-card-body">
+                                            <div class="mb-sm">
+                                                <label for="llm_model_select" class="form-label">LLM Model</label>
+                                                <select id="llm_model_select" name="llm_model" class="form-control">
+                                                    <option value="gpt-oss:20b">gpt-oss:20b</option>
+                                                    <option value="gemma3:4b">gemma3:4b</option>
+                                                    <option value="gemma3:12b">gemma3:12b</option>
+                                                    <option value="gemma3:27b">gemma3:27b</option>
+                                                    <option value="qwen3:4b">qwen3:4b thinking</option>
+                                                    <option value="qwen3:8b">qwen3:8b thinking</option>
+                                                    <option value="qwen3:14b">qwen3:14b thinking</option>
+                                                    <option value="mistral:latest">mistral</option>
+                                                    <option value="llama3.1:8b">llama3.1:8b</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label for="is_enable_think" class="form-label">啟用推理</label>
+                                                <select id="is_enable_think" name="is_enable_think" class="form-control">
+                                                    <option value="False">off</option>
+                                                    <option value="True">on</option>
+                                                </select>
+                                                <small class="param-help">部分模型支援推理功能</small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="param-card">
+                                        <div class="param-card-header">
+                                            <span class="param-importance critical">🔴</span>
+                                            <h4>生成控制</h4>
+                                        </div>
+                                        <div class="param-card-body">
+                                            <div class="mb-sm">
+                                                <label for="temperature" class="form-label">temperature</label>
+                                                <input id="temperature" type="number" name="temperature" value="0.5" step="0.1" min="0" max="2" class="form-control">
+                                                <small class="param-help">模型溫度（0-2，越高越有創意）</small>
+                                            </div>
+                                            <div class="mb-sm">
+                                                <label for="num_ctx" class="form-label">num_ctx</label>
+                                                <input id="num_ctx" type="number" name="num_ctx" value="4096" class="form-control">
+                                                <small class="param-help">上下文視窗大小</small>
+                                            </div>
+                                            <div>
+                                                <label for="num_predict" class="form-label">num_predict</label>
+                                                <input id="num_predict" type="number" name="num_predict" value="1024" class="form-control">
+                                                <small class="param-help">最大生成 token 數量</small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="param-card">
+                                        <div class="param-card-header">
+                                            <span class="param-importance important">🟡</span>
+                                            <h4>採樣參數</h4>
+                                        </div>
+                                        <div class="param-card-body">
+                                            <div class="mb-sm">
+                                                <label for="top_k" class="form-label">top_k</label>
+                                                <input id="top_k" type="number" name="top_k" value="10" class="form-control">
+                                                <small class="param-help">降低無意義內容機率（預設：40）</small>
+                                            </div>
+                                            <div class="mb-sm">
+                                                <label for="top_p" class="form-label">top_p</label>
+                                                <input id="top_p" type="number" name="top_p" value="0.9" step="0.1" min="0" max="1" class="form-control">
+                                                <small class="param-help">採樣多樣性（0-1）</small>
+                                            </div>
+                                            <div>
+                                                <label for="min_p" class="form-label">min_p</label>
+                                                <input id="min_p" type="number" name="min_p" value="0.0" step="0.01" min="0" max="1" class="form-control">
+                                                <small class="param-help">最低機率閾值</small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="param-card">
+                                        <div class="param-card-header">
+                                            <span class="param-importance normal">🟢</span>
+                                            <h4>重複控制</h4>
+                                        </div>
+                                        <div class="param-card-body">
+                                            <div class="mb-sm">
+                                                <label for="repeat_last_n" class="form-label">repeat_last_n</label>
+                                                <input id="repeat_last_n" type="number" name="repeat_last_n" value="64" class="form-control">
+                                                <small class="param-help">回看文字長度避免重複</small>
+                                            </div>
+                                            <div>
+                                                <label for="repeat_penalty" class="form-label">repeat_penalty</label>
+                                                <input id="repeat_penalty" type="number" name="repeat_penalty" value="1.1" step="0.1" min="0" max="2" class="form-control">
+                                                <small class="param-help">重複內容懲罰強度</small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="param-card">
+                                        <div class="param-card-header">
+                                            <span class="param-importance normal">🟢</span>
+                                            <h4>其他設定</h4>
+                                        </div>
+                                        <div class="param-card-body">
+                                            <div class="mb-sm">
+                                                <label for="seed" class="form-label">seed</label>
+                                                <input id="seed" type="number" name="seed" value="0" class="form-control">
+                                                <small class="param-help">隨機數種子（0為隨機）</small>
+                                            </div>
+                                            <div>
+                                                <label for="stop" class="form-label">stop</label>
+                                                <input id="stop" type="text" name="stop" value="<|endoftext|>" class="form-control">
+                                                <small class="param-help">停止字串</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 提示詞分類 -->
+                            <div id="promptCategory" class="param-category-section">
+                                <div class="param-card param-card-wide">
+                                    <div class="param-card-header">
+                                        <span class="param-importance critical">🔴</span>
+                                        <h4>名詞分析提示詞</h4>
+                                    </div>
+                                    <div class="param-card-body">
+                                        <label for="noun_analysis_prompt" class="form-label">noun_analysis_prompt</label>
+                                        <textarea id="noun_analysis_prompt" name="noun_analysis_prompt" rows="20" class="form-control param-prompt-textarea">### Task:...</textarea>
+                                        <small class="param-help">用於分析使用者問題裡名詞並產生多種同義詞。<br>
+                                            注意：{query.question} 是使用者的問題，該變數不可以調整。</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- 底部資訊 -->
+        <footer class="admin-footer">
+            <p>&copy; E-Help 知識庫智能管理系統. All rights reserved.</p>
+        </footer>
+
+    </div> <!-- 結束 pageContent -->
+
     <!-- 載入腳本 -->
     <script>
         // 臨時的全域函數，等待模組載入
-        window.returnToAdmin = function() {
+        window.returnToAdmin = function () {
             window.location.href = '/admin';
         };
-        
+
         // 個人功能抽屜相關的臨時全域函數
-        window.openUserMenu = function() {
+        window.openUserMenu = function () {
             console.log('等待 UserMenu 模組載入...');
         };
-        window.closeUserMenu = function() {
+        window.closeUserMenu = function () {
             console.log('等待 UserMenu 模組載入...');
         };
-        window.showChangePasswordModal = function() {
+        window.showChangePasswordModal = function () {
             console.log('等待 UserMenu 模組載入...');
         };
-        window.closeChangePasswordModal = function() {
+        window.closeChangePasswordModal = function () {
             console.log('等待 UserMenu 模組載入...');
         };
-        window.changePassword = function() {
+        window.changePassword = function () {
             console.log('等待 UserMenu 模組載入...');
         };
-        window.logout = function() {
+        window.logout = function () {
             console.log('等待 UserMenu 模組載入...');
         };
-        
+
         // 內嵌簡單的載入函數（避免快取問題）
         function loadWithTimestamp(src) {
             const script = document.createElement('script');
@@ -485,37 +505,57 @@
                 document.head.appendChild(script);
             });
         }
-        
+
         // 依序載入模組
-        (async function() {
+        (async function () {
             try {
                 // 基礎模組
-                await loadWithTimestamp('/js/modules/script-loader.js');
-                
+                await loadWithTimestamp('/js/modules/resource-loader.js');
+
+                // 動態載入所有 CSS
+                await ResourceLoader.loadStyles([
+                    '/css/core/all.min.css',
+                    '/css/core/base.css',
+                    '/css/core/components.css',
+                    '/css/core/layouts.css',
+                    '/css/core/utilities.css',
+                    '/css/components/dialog.css',
+                    '/css/themes/theme-variables.css',
+                    '/css/pages/admin.css',
+                    '/css/pages/dashboard.css',
+                    '/css/pages/system-params.css'
+                ]);
+
+                // 隱藏頁面載入器，顯示內容
+                document.getElementById('pageLoader').classList.add('hidden');
+                document.getElementById('pageContent').classList.add('visible');
+
                 // 載入公共模組
-                await ScriptLoader.loadModulesInOrder([
+                await ResourceLoader.loadModulesInOrder([
+                    '/js/components/dialog.js',
                     '/js/modules/common-ui.js',
                     '/js/modules/user-menu-module.js'
                 ]);
-                
+
                 // 載入受保護的管理員模組
-                await ScriptLoader.loadProtectedAdminScriptsInOrder([
-                    'system-params.js',                 // 頁面初始化腳本
+                await ResourceLoader.loadProtectedAdminScriptsInOrder([
                     'system-params-drawer-manager.js',  // 抽屜管理器
-                    'system-params-module.js',
+                    'system-params-module.js',          // 參數模組
+                    'system-params.js',                 // 頁面初始化腳本（最後載入）
                 ]);
-                
+
                 // 初始化模組
                 CommonUI.hideSpinner();
-                ParamDrawerManager.init();
-                ParamModule.init();
                 UserMenu.init();
                 
+                // 注意：ParamDrawerManager.init() 和 ParamModule.init() 
+                // 現在由 system-params.js 自動處理
+
                 // 初始化滾動條淡出淡入效果
                 if (CommonUI.initScrollFadeEffect) {
                     CommonUI.initScrollFadeEffect();
                 }
-                
+
                 console.log('系統參數管理頁面模組載入完成');
             } catch (error) {
                 console.error('模組載入失敗:', error);

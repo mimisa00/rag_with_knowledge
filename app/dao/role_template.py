@@ -609,27 +609,35 @@ class DepartmentRoleDAO(BaseDAO):
             params = []
             warning_message = None
             
-            if update_data.name is not None:
+            # 使用 exclude_unset=True 來區分未提供的欄位和明確設為 None 的欄位
+            update_dict = update_data.dict(exclude_unset=True)
+            
+            if 'name' in update_dict:
                 updates.append("name = %s")
                 params.append(update_data.name)
             
-            if update_data.parent_id is not None:
-                # 檢查是否會造成循環引用
-                cycle_check = self._check_would_create_cycle(role_id, update_data.parent_id)
-                if cycle_check['has_cycle']:
-                    # 主動修正：清除父角色設置，避免循環
-                    logger.warning(f"Prevented cycle for role {role_id}: {cycle_check['message']}")
-                    # 不設置父角色，但繼續其他更新
-                    logger.info(f"Auto-corrected: Setting parent_id to NULL for role {role_id}")
-                    updates.append("parent_id = NULL")
-                    params.append(None)
-                    # 返回警告信息給前端
-                    warning_message = f"警告：{cycle_check['message']}。系統已自動修正，將父角色設為無。"
+            if 'parent_id' in update_dict:
+                # parent_id 欄位存在於請求中（可能是 None 或具體的值）
+                if update_data.parent_id is not None:
+                    # 檢查是否會造成循環引用
+                    cycle_check = self._check_would_create_cycle(role_id, update_data.parent_id)
+                    if cycle_check['has_cycle']:
+                        # 主動修正：清除父角色設置，避免循環
+                        logger.warning(f"Prevented cycle for role {role_id}: {cycle_check['message']}")
+                        # 不設置父角色，但繼續其他更新
+                        logger.info(f"Auto-corrected: Setting parent_id to NULL for role {role_id}")
+                        updates.append("parent_id = NULL")
+                        # 返回警告信息給前端
+                        warning_message = f"警告：{cycle_check['message']}。系統已自動修正，將父角色設為無。"
+                    else:
+                        updates.append("parent_id = %s")
+                        params.append(update_data.parent_id)
                 else:
-                    updates.append("parent_id = %s")
-                    params.append(update_data.parent_id)
+                    # parent_id 明確設為 None，表示要設為頂層角色
+                    updates.append("parent_id = NULL")
+                    logger.info(f"Setting role {role_id} as top-level role (parent_id = NULL)")
             
-            if update_data.level is not None:
+            if 'level' in update_dict:
                 # 限制層級範圍
                 level = update_data.level
                 if level < 1:
@@ -641,11 +649,11 @@ class DepartmentRoleDAO(BaseDAO):
                 updates.append("level = %s")
                 params.append(level)
             
-            if update_data.permissions is not None:
+            if 'permissions' in update_dict:
                 updates.append("permissions = %s")
                 params.append(json.dumps(update_data.permissions))
             
-            if update_data.is_active is not None:
+            if 'is_active' in update_dict:
                 updates.append("is_active = %s")
                 params.append(update_data.is_active)
             
@@ -665,10 +673,26 @@ class DepartmentRoleDAO(BaseDAO):
             
             success = self.execute_update(query, params) > 0
             
-            return {
+            # 獲取更新後的角色資料進行驗證
+            result = {
                 'success': success,
                 'warning': warning_message
             }
+            
+            if success:
+                # 查詢更新後的角色資料
+                updated_role_query = """
+                    SELECT dr.id, dr.name, dr.parent_id, dr.level, dr.is_active,
+                           d.name as department_name
+                    FROM department_roles dr
+                    LEFT JOIN departments d ON dr.department_id = d.id
+                    WHERE dr.id = %s
+                """
+                updated_role = self.execute_query(updated_role_query, (role_id,))
+                if updated_role:
+                    result['role'] = updated_role[0]
+            
+            return result
             
         except Exception as e:
             logger.error(f"Error updating department role: {e}")
@@ -1382,6 +1406,38 @@ class DepartmentRoleDAO(BaseDAO):
 class UserDepartmentRoleDAO(BaseDAO):
     """用戶部門角色 DAO"""
     
+    def assign_user_role(self, assignment: 'UserDepartmentRoleBase', assigned_by: int = None) -> int:
+        """指派單一用戶角色"""
+        try:
+            # 檢查是否已存在
+            check_query = """
+                SELECT id FROM user_department_roles 
+                WHERE user_id = %s AND department_role_id = %s
+            """
+            existing = self.execute_query(check_query, (assignment.user_id, assignment.department_role_id))
+            
+            if existing:
+                logger.warning(f"User {assignment.user_id} already has role {assignment.department_role_id}")
+                return existing[0]['id']
+            
+            query = """
+                INSERT INTO user_department_roles (
+                    user_id, department_role_id, is_primary,
+                    effective_date, expiry_date, assigned_by
+                ) VALUES (%s, %s, %s, %s, %s, %s)
+            """
+            
+            params = (
+                assignment.user_id, assignment.department_role_id, assignment.is_primary,
+                assignment.effective_date, assignment.expiry_date, assigned_by
+            )
+            
+            return self.execute_insert(query, params)
+            
+        except Exception as e:
+            logger.error(f"Error assigning user role: {e}")
+            raise
+
     def assign_users_to_role(self, role_id: int, assign_data: UserDepartmentRoleAssign,
                             assigned_by: int = None) -> List[int]:
         """指派用戶到角色"""
@@ -1493,11 +1549,116 @@ class UserDepartmentRoleDAO(BaseDAO):
 class RoleRelationshipAnalysisDAO(BaseDAO):
     """角色關係分析 DAO"""
     
-    def analyze_cross_department_relationships(self) -> Dict[str, Any]:
-        """分析跨部門角色父子關係並提供調整建議"""
+    def check_and_fix_department_paths(self) -> Dict[str, Any]:
+        """檢查並修復部門路徑不一致問題"""
         try:
-            # 查詢所有有父角色的角色，檢查是否跨部門
+            # 查詢所有部門及其父部門資訊
             query = """
+                SELECT 
+                    d.id,
+                    d.name,
+                    d.parent_id,
+                    d.path as current_path,
+                    pd.path as parent_path
+                FROM departments d
+                LEFT JOIN departments pd ON d.parent_id = pd.id
+                WHERE d.is_active = TRUE
+                ORDER BY d.level, d.id
+            """
+            
+            departments = self.execute_query(query)
+            inconsistent_paths = []
+            
+            for dept in departments:
+                if dept['parent_id']:
+                    # 有父部門的情況
+                    expected_path = f"{dept['parent_path']}/{dept['name']}"
+                else:
+                    # 頂層部門
+                    expected_path = f"/{dept['name']}"
+                
+                if dept['current_path'] != expected_path:
+                    inconsistent_paths.append({
+                        'id': dept['id'],
+                        'name': dept['name'],
+                        'current_path': dept['current_path'],
+                        'expected_path': expected_path,
+                        'parent_id': dept['parent_id']
+                    })
+            
+            return {
+                'total_departments': len(departments),
+                'inconsistent_count': len(inconsistent_paths),
+                'inconsistent_paths': inconsistent_paths
+            }
+            
+        except Exception as e:
+            logger.error(f"Error checking department paths: {e}")
+            raise
+    
+    def fix_department_paths(self, path_issues: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """批量修復部門路徑"""
+        try:
+            success_count = 0
+            failed_fixes = []
+            
+            for issue in path_issues:
+                try:
+                    update_query = "UPDATE departments SET path = %s WHERE id = %s"
+                    success = self.execute_update(update_query, (issue['expected_path'], issue['id']))
+                    
+                    if success:
+                        success_count += 1
+                        logger.info(f"Fixed path for department {issue['name']}: {issue['current_path']} -> {issue['expected_path']}")
+                    else:
+                        failed_fixes.append({
+                            'department_id': issue['id'],
+                            'department_name': issue['name'],
+                            'reason': '更新失敗'
+                        })
+                        
+                except Exception as fix_error:
+                    logger.error(f"Error fixing path for department {issue['id']}: {fix_error}")
+                    failed_fixes.append({
+                        'department_id': issue['id'],
+                        'department_name': issue['name'],
+                        'reason': str(fix_error)
+                    })
+            
+            return {
+                'success_count': success_count,
+                'failed_count': len(failed_fixes),
+                'failed_fixes': failed_fixes
+            }
+            
+        except Exception as e:
+            logger.error(f"Error fixing department paths: {e}")
+            raise
+    
+    def analyze_cross_department_relationships(self, include_inactive: bool = False) -> Dict[str, Any]:
+        """分析跨部門角色父子關係並提供調整建議
+        
+        Args:
+            include_inactive: 是否包含停用的角色和部門
+        """
+        try:
+            # 先檢查部門路徑一致性
+            path_check = self.check_and_fix_department_paths()
+            
+            # 動態建立 WHERE 條件
+            where_conditions = ["dr.parent_id IS NOT NULL"]
+            if not include_inactive:
+                where_conditions.extend([
+                    "dr.is_active = TRUE",
+                    "pr.is_active = TRUE",
+                    "d1.is_active = TRUE",
+                    "d2.is_active = TRUE"
+                ])
+            
+            where_clause = " AND ".join(where_conditions)
+            
+            # 查詢所有有父角色的角色，檢查是否跨部門
+            query = f"""
                 SELECT 
                     dr.id,
                     dr.name,
@@ -1505,12 +1666,14 @@ class RoleRelationshipAnalysisDAO(BaseDAO):
                     dr.parent_id,
                     dr.level,
                     dr.role_type,
+                    dr.is_active,
                     d1.name as department_name,
                     d1.path as department_path,
                     d1.level as department_level,
                     pr.name as parent_role_name,
                     pr.department_id as parent_department_id,
                     pr.level AS parent_department_role_level,
+                    pr.is_active as parent_is_active,
                     d2.name as parent_department_name,
                     d2.path as parent_department_path,
                     d2.level as parent_department_level,
@@ -1520,15 +1683,17 @@ class RoleRelationshipAnalysisDAO(BaseDAO):
                 INNER JOIN department_roles pr ON dr.parent_id = pr.id
                 INNER JOIN departments d2 ON pr.department_id = d2.id
                 INNER JOIN role_templates rt ON dr.template_id = rt.id
-                WHERE dr.parent_id IS NOT NULL
-                  AND dr.is_active = TRUE
-                  AND pr.is_active = TRUE
-                  AND d1.is_active = TRUE
-                  AND d2.is_active = TRUE
+                WHERE {where_clause}
                 ORDER BY d1.path, dr.level
             """
             
             all_relationships = self.execute_query(query)
+            
+            # === 檢查部門無角色問題 ===
+            departments_without_roles_issues = self._check_departments_without_roles(include_inactive)
+            
+            # === 生成角色分配建議 ===
+            role_assignment_suggestions = self._generate_role_assignment_suggestions(departments_without_roles_issues)
             
             # 分析問題關係
             issues = []
@@ -1543,17 +1708,39 @@ class RoleRelationshipAnalysisDAO(BaseDAO):
                     is_parent_dept_ancestor = role_dept_path.startswith(parent_dept_path + '/')
                     is_child_dept_ancestor = parent_dept_path.startswith(role_dept_path + '/')
                     
+                    # 新增：檢查是否跨越頂層部門
+                    role_top_dept = role_dept_path.split('/')[1] if len(role_dept_path.split('/')) > 1 else None
+                    parent_top_dept = parent_dept_path.split('/')[1] if len(parent_dept_path.split('/')) > 1 else None
+                    is_cross_top_level = (role_top_dept != parent_top_dept and 
+                                          role_top_dept and parent_top_dept)
+                    
                     if not is_parent_dept_ancestor and not is_child_dept_ancestor:
                         # 完全不相關的部門
+                        severity = 'critical' if is_cross_top_level else 'high'
+                        description = (
+                            f"角色「{relationship['name']}」的父角色「{relationship['parent_role_name']}」"
+                            f"在不相關的部門中"
+                        )
+                        if is_cross_top_level:
+                            description += f" (跨越頂層部門: {parent_top_dept} → {role_top_dept})"
+                        
+                        # 標記停用狀態
+                        if not relationship.get('is_active', True):
+                            description += " [停用角色]"
+                        if not relationship.get('parent_is_active', True):
+                            description += " [父角色停用]"
+                        
                         issue = {
                             'type': 'cross_department_unrelated',
-                            'severity': 'high',
+                            'severity': severity,
                             'role_id': relationship['id'],
                             'role_name': relationship['name'],
                             'department_name': relationship['department_name'],
                             'parent_role_name': relationship['parent_role_name'],
                             'parent_department_name': relationship['parent_department_name'],
-                            'description': f"角色「{relationship['name']}」的父角色「{relationship['parent_role_name']}」在不相關的部門中"
+                            'description': description,
+                            'is_inactive': not relationship.get('is_active', True),
+                            'is_cross_top_level': is_cross_top_level
                         }
                         issues.append(issue)
                         
@@ -1590,16 +1777,36 @@ class RoleRelationshipAnalysisDAO(BaseDAO):
                         }
                         issues.append(issue)
             
+            # 將路徑問題添加到問題列表中
+            for path_issue in path_check['inconsistent_paths']:
+                issues.append({
+                    'type': 'department_path_inconsistent',
+                    'severity': 'high',
+                    'department_id': path_issue['id'],
+                    'department_name': path_issue['name'],
+                    'current_path': path_issue['current_path'],
+                    'expected_path': path_issue['expected_path'],
+                    'description': f"部門「{path_issue['name']}」的路徑不一致：實際為 {path_issue['current_path']}，應為 {path_issue['expected_path']}"
+                })
+            
+            # 將部門無角色問題添加到問題列表中
+            issues.extend(departments_without_roles_issues)
+            
             return {
                 'total_relationships': len(all_relationships),
                 'issues_count': len(issues),
                 'suggestions_count': len(suggestions),
+                'role_assignment_suggestions_count': len(role_assignment_suggestions),
                 'issues': issues,
                 'suggestions': suggestions,
+                'role_assignment_suggestions': role_assignment_suggestions,
+                'path_check': path_check,
                 'analysis_summary': {
                     'cross_department_unrelated': len([i for i in issues if i['type'] == 'cross_department_unrelated']),
                     'level_mismatch': len([i for i in issues if i['type'] == 'level_mismatch']),
-                    'manager_hierarchy_violation': len([i for i in issues if i['type'] == 'manager_hierarchy_violation'])
+                    'manager_hierarchy_violation': len([i for i in issues if i['type'] == 'manager_hierarchy_violation']),
+                    'department_path_inconsistent': len([i for i in issues if i['type'] == 'department_path_inconsistent']),
+                    'departments_without_roles': len([i for i in issues if i['type'] == 'departments_without_roles'])
                 }
             }
             
@@ -1607,18 +1814,501 @@ class RoleRelationshipAnalysisDAO(BaseDAO):
             logger.error(f"Error analyzing cross department relationships: {e}")
             raise
     
+    def _check_departments_without_roles(self, include_inactive: bool = False) -> List[Dict[str, Any]]:
+        """檢查沒有角色的部門
+        
+        Args:
+            include_inactive: 是否包含停用的部門和角色
+            
+        Returns:
+            包含無角色部門問題的列表
+        """
+        try:
+            issues = []
+            
+            # 動態建立 WHERE 條件
+            dept_conditions = []
+            role_conditions = ["dr.is_active = TRUE"] if not include_inactive else []
+            
+            if not include_inactive:
+                dept_conditions.append("d.is_active = TRUE")
+            
+            dept_where = " AND ".join(dept_conditions) if dept_conditions else "1=1"
+            role_where = " AND ".join(role_conditions) if role_conditions else "1=1"
+            
+            # 查詢沒有角色的部門
+            query = f"""
+                SELECT 
+                    d.id,
+                    d.name,
+                    d.path,
+                    d.created_at,
+                    d.is_active,
+                    COUNT(dr.id) as role_count
+                FROM departments d
+                LEFT JOIN department_roles dr ON d.id = dr.department_id AND {role_where}
+                WHERE {dept_where}
+                GROUP BY d.id, d.name, d.path, d.created_at, d.is_active
+                HAVING COUNT(dr.id) = 0
+                ORDER BY d.path
+            """
+            
+            departments_without_roles = self.execute_query(query)
+            
+            for dept in departments_without_roles:
+                # 根據部門狀態調整描述
+                description_parts = [f"部門「{dept['name']}」目前沒有任何角色"]
+                
+                if not dept.get('is_active', True):
+                    description_parts.append("（部門已停用）")
+                elif not include_inactive:
+                    description_parts.append("，建議新增角色以完善組織架構")
+                else:
+                    description_parts.append("（包含停用角色檢查）")
+                
+                issue = {
+                    'type': 'departments_without_roles',
+                    'severity': 'warning',
+                    'department_id': dept['id'],
+                    'department_name': dept['name'],
+                    'department_path': dept['path'],
+                    'role_count': dept['role_count'],
+                    'created_date': dept['created_at'].strftime('%Y-%m-%d') if dept['created_at'] else None,
+                    'is_department_active': dept.get('is_active', True),
+                    'description': ''.join(description_parts)
+                }
+                
+                issues.append(issue)
+            
+            logger.info(f"Found {len(issues)} departments without roles (include_inactive={include_inactive})")
+            return issues
+            
+        except Exception as e:
+            logger.error(f"Error checking departments without roles: {e}")
+            return []
+    
+    def _generate_role_assignment_suggestions(self, departments_without_roles: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """為沒有角色的部門生成角色分配建議
+        
+        Args:
+            departments_without_roles: 沒有角色的部門列表
+            
+        Returns:
+            角色分配建議列表
+        """
+        try:
+            assignment_suggestions = []
+            
+            for dept in departments_without_roles:
+                # 只為啟用的部門生成建議
+                if not dept.get('is_department_active', True):
+                    continue
+                    
+                # 分析部門並生成角色推薦
+                recommendations = self._analyze_department_role_recommendations(dept)
+                
+                if recommendations:
+                    suggestion = {
+                        'type': 'role_assignment',
+                        'department_id': dept['department_id'],
+                        'department_name': dept['department_name'],
+                        'department_path': dept['department_path'],
+                        'recommended_roles': recommendations['roles'],
+                        'recommendation_reason': recommendations['reason'],
+                        'confidence': recommendations['confidence'],
+                        'estimated_roles_count': len(recommendations['roles']),
+                        'analysis_method': recommendations['method']
+                    }
+                    assignment_suggestions.append(suggestion)
+                    
+            logger.info(f"Generated {len(assignment_suggestions)} role assignment suggestions")
+            return assignment_suggestions
+            
+        except Exception as e:
+            logger.error(f"Error generating role assignment suggestions: {e}")
+            return []
+    
+    def _analyze_department_role_recommendations(self, department: Dict[str, Any]) -> Dict[str, Any]:
+        """分析單個部門的角色推薦
+        
+        Args:
+            department: 部門資訊
+            
+        Returns:
+            包含推薦角色和分析結果的字典
+        """
+        try:
+            dept_id = department['department_id']
+            dept_name = department['department_name']
+            dept_path = department['department_path']
+            
+            # 解析部門路徑獲取層級信息
+            path_parts = [p for p in dept_path.split('/') if p]
+            dept_level = len(path_parts)
+            
+            recommendations = {
+                'roles': [],
+                'reason': '',
+                'confidence': 'medium',
+                'method': 'default'
+            }
+            
+            # 策略1: 同級部門參考法（優先級最高）
+            sibling_analysis = self._analyze_sibling_departments(dept_path, dept_level)
+            if sibling_analysis['has_pattern'] and sibling_analysis['roles']:
+                recommendations = {
+                    'roles': sibling_analysis['roles'],
+                    'reason': f"基於同級部門 {', '.join(sibling_analysis['reference_departments'])} 的角色配置模式",
+                    'confidence': 'high',
+                    'method': 'sibling_reference'
+                }
+            
+            # 策略2: 父部門參考法
+            elif dept_level > 1:
+                parent_analysis = self._analyze_parent_department_roles(dept_path)
+                if parent_analysis['has_roles'] and parent_analysis['suitable_templates']:
+                    recommendations = {
+                        'roles': parent_analysis['suitable_templates'],
+                        'reason': f"基於父部門「{parent_analysis['parent_department_name']}」的角色模板配置",
+                        'confidence': 'high' if parent_analysis['template_count'] > 1 else 'medium',
+                        'method': 'parent_reference'
+                    }
+            
+            # 策略3: 使用頻率分析法（回退策略）
+            if not recommendations['roles']:
+                frequency_analysis = self._analyze_template_usage_frequency(dept_level)
+                recommendations = {
+                    'roles': frequency_analysis['top_templates'],
+                    'reason': f"基於組織內{frequency_analysis['analysis_scope']}的角色模板使用頻率",
+                    'confidence': 'medium',
+                    'method': 'usage_frequency'
+                }
+            
+            # 為每個推薦角色生成具體信息
+            if recommendations['roles']:
+                role_details = []
+                for template in recommendations['roles']:
+                    # 確保模板有必要的欄位，處理各種可能的欄位名稱
+                    template_name = (template.get('name') or 
+                                   template.get('template_name') or 
+                                   '未知角色')
+                    template_id = (template.get('id') or 
+                                 template.get('template_id'))
+                    template_type = (template.get('role_type') or 
+                                   template.get('template_type') or 
+                                   'staff')
+                    
+                    # 驗證必要欄位
+                    if not template_id:
+                        logger.warning(f"Template missing ID: {template}")
+                        continue
+                    
+                    # 生成角色名稱
+                    suggested_name = f"{dept_name}-{template_name}"
+                    
+                    # 推算角色層級和父角色
+                    parent_role_info = self._suggest_parent_role_for_assignment(dept_id, template)
+                    
+                    role_details.append({
+                        'template_id': template_id,
+                        'template_name': template_name,
+                        'template_type': template_type,
+                        'suggested_role_name': suggested_name,
+                        'suggested_level': parent_role_info['suggested_level'],
+                        'suggested_parent_role_id': parent_role_info['parent_role_id'],
+                        'suggested_parent_role_name': parent_role_info['parent_role_name'],
+                        'template_usage_count': template.get('usage_count', 0)
+                    })
+                
+                recommendations['roles'] = role_details
+            
+            return recommendations
+            
+        except Exception as e:
+            logger.error(f"Error analyzing department role recommendations: {e}")
+            return {
+                'roles': [],
+                'reason': '分析過程發生錯誤',
+                'confidence': 'low',
+                'method': 'error'
+            }
+    
+    def _analyze_sibling_departments(self, dept_path: str, dept_level: int) -> Dict[str, Any]:
+        """分析同級部門的角色配置模式"""
+        try:
+            # 獲取父路徑
+            path_parts = [p for p in dept_path.split('/') if p]
+            if dept_level <= 1:
+                return {'has_pattern': False, 'roles': []}
+            
+            parent_path = '/' + '/'.join(path_parts[:-1])
+            
+            # 查詢同級部門的角色配置
+            query = """
+                SELECT 
+                    d.name as department_name,
+                    rt.id as template_id,
+                    rt.name as template_name,
+                    rt.role_type,
+                    COUNT(*) as usage_count
+                FROM departments d
+                INNER JOIN department_roles dr ON d.id = dr.department_id
+                INNER JOIN role_templates rt ON dr.template_id = rt.id
+                WHERE d.path LIKE %s 
+                  AND d.path != %s
+                  AND d.is_active = TRUE 
+                  AND dr.is_active = TRUE
+                  AND rt.is_active = TRUE
+                GROUP BY d.name, rt.id, rt.name, rt.role_type
+                HAVING COUNT(*) >= 1
+                ORDER BY usage_count DESC, rt.sort_order
+            """
+            
+            sibling_roles = self.execute_query(query, (f"{parent_path}/%", dept_path))
+            
+            if not sibling_roles:
+                return {'has_pattern': False, 'roles': []}
+            
+            # 分析模式：找出最常用的角色模板
+            template_frequency = {}
+            department_names = set()
+            
+            for role in sibling_roles:
+                template_id = role['template_id']
+                department_names.add(role['department_name'])
+                
+                if template_id not in template_frequency:
+                    template_frequency[template_id] = {
+                        'template': role,
+                        'department_count': 0,
+                        'total_usage': 0
+                    }
+                
+                template_frequency[template_id]['department_count'] += 1
+                template_frequency[template_id]['total_usage'] += role['usage_count']
+            
+            # 選擇出現在多個部門的模板（高信心度）
+            popular_templates = []
+            for template_data in template_frequency.values():
+                if template_data['department_count'] >= 2:  # 至少在2個部門中出現
+                    popular_templates.append(template_data['template'])
+            
+            # 如果沒有高信心度的模板，選擇使用頻率最高的
+            if not popular_templates and template_frequency:
+                sorted_templates = sorted(
+                    template_frequency.values(), 
+                    key=lambda x: (x['total_usage'], x['department_count']), 
+                    reverse=True
+                )
+                popular_templates = [sorted_templates[0]['template']]
+            
+            return {
+                'has_pattern': len(popular_templates) > 0,
+                'roles': popular_templates[:3],  # 最多推薦3個角色
+                'reference_departments': list(department_names)[:3],
+                'analysis_departments_count': len(department_names)
+            }
+            
+        except Exception as e:
+            logger.error(f"Error analyzing sibling departments: {e}")
+            return {'has_pattern': False, 'roles': []}
+    
+    def _analyze_parent_department_roles(self, dept_path: str) -> Dict[str, Any]:
+        """分析父部門的角色配置"""
+        try:
+            # 獲取父部門路徑
+            path_parts = [p for p in dept_path.split('/') if p]
+            if len(path_parts) <= 1:
+                return {'has_roles': False, 'suitable_templates': []}
+            
+            parent_path = '/' + '/'.join(path_parts[:-1])
+            
+            # 查詢父部門的角色模板
+            query = """
+                SELECT 
+                    d.name as parent_department_name,
+                    rt.id as template_id,
+                    rt.name as template_name,
+                    rt.role_type,
+                    rt.level as template_level,
+                    COUNT(dr.id) as usage_count
+                FROM departments d
+                INNER JOIN department_roles dr ON d.id = dr.department_id
+                INNER JOIN role_templates rt ON dr.template_id = rt.id
+                WHERE d.path = %s 
+                  AND d.is_active = TRUE 
+                  AND dr.is_active = TRUE
+                  AND rt.is_active = TRUE
+                GROUP BY d.name, rt.id, rt.name, rt.role_type, rt.level
+                ORDER BY rt.role_type DESC, rt.level ASC
+            """
+            
+            parent_roles = self.execute_query(query, (parent_path,))
+            
+            if not parent_roles:
+                return {'has_roles': False, 'suitable_templates': []}
+            
+            # 選擇適合的模板（通常是員工類型的角色）
+            suitable_templates = []
+            parent_dept_name = parent_roles[0]['parent_department_name']
+            
+            for role in parent_roles:
+                # 優先推薦員工類型角色，避免在子部門重複創建管理角色
+                if role['role_type'] == 'staff' or len(suitable_templates) < 1:
+                    suitable_templates.append({
+                        'id': role['template_id'],
+                        'name': role['template_name'],
+                        'role_type': role['role_type'],
+                        'level': role['template_level'],
+                        'usage_count': role['usage_count']
+                    })
+            
+            return {
+                'has_roles': len(suitable_templates) > 0,
+                'suitable_templates': suitable_templates[:2],  # 最多推薦2個
+                'parent_department_name': parent_dept_name,
+                'template_count': len(parent_roles)
+            }
+            
+        except Exception as e:
+            logger.error(f"Error analyzing parent department roles: {e}")
+            return {'has_roles': False, 'suitable_templates': []}
+    
+    def _analyze_template_usage_frequency(self, dept_level: int) -> Dict[str, Any]:
+        """分析角色模板的使用頻率"""
+        try:
+            # 根據部門層級選擇合適的角色類型
+            role_type_priority = ['staff', 'manager'] if dept_level > 2 else ['manager', 'staff']
+            
+            # 查詢最常用的角色模板
+            query = """
+                SELECT 
+                    rt.id,
+                    rt.name,
+                    rt.role_type,
+                    rt.level,
+                    COUNT(DISTINCT dr.department_id) as department_count,
+                    COUNT(dr.id) as total_usage
+                FROM role_templates rt
+                INNER JOIN department_roles dr ON rt.id = dr.template_id
+                WHERE rt.is_active = TRUE 
+                  AND dr.is_active = TRUE
+                  AND rt.is_system = FALSE
+                GROUP BY rt.id, rt.name, rt.role_type, rt.level
+                HAVING COUNT(DISTINCT dr.department_id) >= 2
+                ORDER BY 
+                  CASE 
+                    WHEN rt.role_type = %s THEN 1 
+                    WHEN rt.role_type = %s THEN 2 
+                    ELSE 3 
+                  END,
+                  COUNT(DISTINCT dr.department_id) DESC,
+                  COUNT(dr.id) DESC
+                LIMIT 3
+            """
+            
+            top_templates = self.execute_query(query, role_type_priority)
+            
+            if not top_templates:
+                # 回退：選擇基本的系統模板
+                fallback_query = """
+                    SELECT 
+                        rt.id,
+                        rt.name,
+                        rt.role_type,
+                        rt.level,
+                        0 as department_count,
+                        0 as total_usage
+                    FROM role_templates rt
+                    WHERE rt.is_active = TRUE 
+                      AND rt.is_system = TRUE
+                    ORDER BY rt.sort_order
+                    LIMIT 2
+                """
+                top_templates = self.execute_query(fallback_query)
+            
+            scope = f"{'深層' if dept_level > 2 else '頂層'}部門" if top_templates else "系統預設模板"
+            
+            return {
+                'top_templates': [
+                    {
+                        'id': t['id'],
+                        'name': t['name'],
+                        'role_type': t['role_type'],
+                        'level': t['level'],
+                        'usage_count': t.get('total_usage', 0)
+                    } for t in top_templates
+                ],
+                'analysis_scope': scope
+            }
+            
+        except Exception as e:
+            logger.error(f"Error analyzing template usage frequency: {e}")
+            return {
+                'top_templates': [],
+                'analysis_scope': '錯誤分析'
+            }
+    
+    def _suggest_parent_role_for_assignment(self, dept_id: int, template: Dict[str, Any]) -> Dict[str, Any]:
+        """為新角色推薦父角色和層級"""
+        try:
+            # 獲取模板 ID
+            template_id = template.get('id', template.get('template_id'))
+            if not template_id:
+                return {
+                    'parent_role_id': None,
+                    'parent_role_name': '無（模板ID缺失）',
+                    'suggested_level': 1
+                }
+            
+            # 使用現有的智能父角色推導邏輯
+            suggested_parent_id = department_role_dao.find_parent_role(dept_id, template_id)
+            
+            if suggested_parent_id:
+                # 獲取父角色信息
+                parent_query = """
+                    SELECT dr.name, dr.level 
+                    FROM department_roles dr 
+                    WHERE dr.id = %s
+                """
+                parent_result = self.execute_query(parent_query, (suggested_parent_id,))
+                
+                if parent_result:
+                    parent_info = parent_result[0]
+                    return {
+                        'parent_role_id': suggested_parent_id,
+                        'parent_role_name': parent_info['name'],
+                        'suggested_level': min(parent_info['level'] + 10, 100)
+                    }
+            
+            # 沒有找到父角色，設為頂層角色
+            return {
+                'parent_role_id': None,
+                'parent_role_name': '無（頂層角色）',
+                'suggested_level': 1
+            }
+            
+        except Exception as e:
+            logger.error(f"Error suggesting parent role: {e}")
+            return {
+                'parent_role_id': None,
+                'parent_role_name': '無（推算失敗）',
+                'suggested_level': 1
+            }
+    
     def _generate_role_adjustment_suggestion(self, relationship: Dict[str, Any]) -> Dict[str, Any]:
         """為單個角色生成調整建議"""
         try:
             role_id = relationship['id']
             dept_id = relationship['department_id']
+            role_dept_path = relationship['department_path']
             
             # 使用現有的智能父角色推導邏輯
             from app.dao.role_template import department_role_dao
             
-            # 在同部門或上級部門查找合適的父角色
+            # 首先在同部門查找合適的父角色
             find_parent_query = """
-                SELECT dr.id, dr.name, dr.level, dr.role_type, d.name as department_name
+                SELECT dr.id, dr.name, dr.level, dr.role_type, d.name as department_name, d.path as department_path
                 FROM department_roles dr
                 INNER JOIN departments d ON dr.department_id = d.id
                 WHERE dr.department_id = %s 
@@ -1645,19 +2335,55 @@ class RoleRelationshipAnalysisDAO(BaseDAO):
                     'reason': '建議調整到同部門的合適父角色',
                     'confidence': 'high'
                 }
-            else:
-                # 如果同部門沒有合適的父角色，建議設為頂層角色
-                return {
-                    'role_id': role_id,
-                    'role_name': relationship['name'],
-                    'current_parent_id': relationship['parent_id'],
-                    'current_parent_name': relationship['parent_role_name'],
-                    'suggested_parent_id': None,
-                    'suggested_parent_name': '無（頂層角色）',
-                    'suggested_parent_department': relationship['department_name'],
-                    'reason': '建議設為部門內的頂層角色',
-                    'confidence': 'medium'
-                }
+            
+            # 如果同部門沒有合適的父角色，則在上級部門中查找
+            # 解析部門路徑，向上查找上級部門的管理角色
+            path_parts = [p for p in role_dept_path.split('/') if p]  # 移除空字符串
+            
+            # 從直接上級部門開始向上查找
+            for i in range(len(path_parts) - 1, 0, -1):
+                parent_path = '/' + '/'.join(path_parts[:i])
+                
+                # 在上級部門查找管理角色
+                parent_dept_query = """
+                    SELECT dr.id, dr.name, dr.level, dr.role_type, d.name as department_name, d.path as department_path
+                    FROM department_roles dr
+                    INNER JOIN departments d ON dr.department_id = d.id
+                    WHERE d.path = %s 
+                      AND dr.id != %s 
+                      AND dr.is_active = TRUE
+                      AND dr.role_type = 'manager'
+                    ORDER BY dr.level ASC
+                    LIMIT 1
+                """
+                
+                parent_candidates = self.execute_query(parent_dept_query, (parent_path, role_id))
+                
+                if parent_candidates:
+                    return {
+                        'role_id': role_id,
+                        'role_name': relationship['name'],
+                        'current_parent_id': relationship['parent_id'],
+                        'current_parent_name': relationship['parent_role_name'],
+                        'suggested_parent_id': parent_candidates[0]['id'],
+                        'suggested_parent_name': parent_candidates[0]['name'],
+                        'suggested_parent_department': parent_candidates[0]['department_name'],
+                        'reason': f"建議調整到上級部門「{parent_candidates[0]['department_name']}」的管理角色",
+                        'confidence': 'high'
+                    }
+            
+            # 如果找不到合適的上級管理角色，建議設為頂層角色
+            return {
+                'role_id': role_id,
+                'role_name': relationship['name'],
+                'current_parent_id': relationship['parent_id'],
+                'current_parent_name': relationship['parent_role_name'],
+                'suggested_parent_id': None,
+                'suggested_parent_name': '無（頂層角色）',
+                'suggested_parent_department': relationship['department_name'],
+                'reason': '建議設為部門內的頂層角色',
+                'confidence': 'medium'
+            }
                 
         except Exception as e:
             logger.error(f"Error generating adjustment suggestion for role {relationship['id']}: {e}")
@@ -1666,17 +2392,19 @@ class RoleRelationshipAnalysisDAO(BaseDAO):
     def preview_bulk_role_adjustments(self, adjustments: List[Dict[str, Any]]) -> Dict[str, Any]:
         """預覽批量角色調整的影響"""
         try:
+            logger.info(f"Previewing {len(adjustments)} adjustments: {adjustments}")
             preview_results = []
             
             for adjustment in adjustments:
                 role_id = adjustment['role_id']
                 new_parent_id = adjustment.get('suggested_parent_id')
                 
-                # 獲取當前角色資訊
+                # 獲取當前角色資訊（包含父角色名稱）
                 role_query = """
-                    SELECT dr.*, d.name as department_name
+                    SELECT dr.*, d.name as department_name, pr.name as current_parent_name
                     FROM department_roles dr
                     INNER JOIN departments d ON dr.department_id = d.id
+                    LEFT JOIN department_roles pr ON dr.parent_id = pr.id
                     WHERE dr.id = %s
                 """
                 role_info = self.execute_query(role_query, (role_id,))
@@ -1685,11 +2413,16 @@ class RoleRelationshipAnalysisDAO(BaseDAO):
                     
                 role_info = role_info[0]
                 
-                # 計算新層級
+                # 計算新層級和獲取新父角色名稱
+                new_parent_name = None
                 if new_parent_id:
-                    parent_query = "SELECT level FROM department_roles WHERE id = %s"
+                    parent_query = "SELECT level, name FROM department_roles WHERE id = %s"
                     parent_result = self.execute_query(parent_query, (new_parent_id,))
-                    new_level = parent_result[0]['level'] + 10 if parent_result else role_info['level']
+                    if parent_result:
+                        new_level = parent_result[0]['level'] + 10
+                        new_parent_name = parent_result[0]['name']
+                    else:
+                        new_level = role_info['level']
                 else:
                     new_level = 1  # 頂層角色
                 
@@ -1703,7 +2436,9 @@ class RoleRelationshipAnalysisDAO(BaseDAO):
                     'current_level': role_info['level'],
                     'new_level': new_level,
                     'current_parent_id': role_info['parent_id'],
+                    'current_parent_name': role_info.get('current_parent_name'),
                     'new_parent_id': new_parent_id,
+                    'new_parent_name': new_parent_name,
                     'affected_children_count': len(child_roles),
                     'affected_children': child_roles
                 })
@@ -1711,7 +2446,8 @@ class RoleRelationshipAnalysisDAO(BaseDAO):
             return {
                 'total_adjustments': len(adjustments),
                 'preview_results': preview_results,
-                'total_affected_roles': sum(len(r['affected_children']) + 1 for r in preview_results)
+                'total_affected_roles': sum(len(r['affected_children']) + 1 for r in preview_results),
+                'total_affected_children': sum(len(r['affected_children']) for r in preview_results)
             }
             
         except Exception as e:

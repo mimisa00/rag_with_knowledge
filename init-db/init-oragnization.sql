@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS user_extensions (
     password_strategy VARCHAR(20) DEFAULT NULL COMMENT '密碼策略',
     activation_token VARCHAR(255) DEFAULT NULL COMMENT '啟用 token',
     activation_expires TIMESTAMP DEFAULT NULL COMMENT '啟用期限',
+    activation_scheduled TIMESTAMP DEFAULT NULL COMMENT '預約啟用時間',
     last_sync_at TIMESTAMP DEFAULT NULL COMMENT '最後同步時間',
     metadata JSON DEFAULT NULL COMMENT '額外資料',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -55,6 +56,8 @@ CREATE TABLE IF NOT EXISTS user_extensions (
     INDEX idx_external (external_id),
     INDEX idx_employee_no (employee_no),
     INDEX idx_manager (manager_id),
+    INDEX idx_activation_expires (activation_expires),
+    INDEX idx_activation_scheduled (activation_scheduled),
     FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

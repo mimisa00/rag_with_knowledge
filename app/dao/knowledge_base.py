@@ -10,7 +10,8 @@ class KnowledgeBaseDAO(BaseDAO):
     def __init__(self, db_manager_instance=None):
         super().__init__(db_manager_instance or db_manager)
 
-    def create_knowledge_base(self, kb_id: str, name: str, system_prompt: str = "", note: str = "") -> bool:
+    def create_knowledge_base(self, kb_id: str, name: str, system_prompt: str = "", 
+                             conversation_history_limit: int = 0, note: str = "") -> bool:
         """創建知識庫"""
         try:
             # 先檢查 ID 是否已存在
@@ -26,14 +27,14 @@ class KnowledgeBaseDAO(BaseDAO):
                     logger.info(f"使用資料庫預設的 system_prompt")
             
             query = """
-                INSERT INTO knowledge_bases (id, name, system_prompt, note, status)
-                VALUES (%s, %s, %s, %s, 'enable')
+                INSERT INTO knowledge_bases (id, name, system_prompt, conversation_history_limit, note, status)
+                VALUES (%s, %s, %s, %s, %s, 'enable')
             """
             # 因為 id 是自定義的字符串，不是自增長，所以不能用 execute_insert 的返回值判斷
             # 改用 execute_update，它會返回 True/False
-            success = self.execute_update(query, (kb_id, name, system_prompt, note))
+            success = self.execute_update(query, (kb_id, name, system_prompt, conversation_history_limit, note))
             if success:
-                logger.info(f"知識庫 {kb_id} 建立成功")
+                logger.info(f"知識庫 {kb_id} 建立成功，對話歷史限制: {conversation_history_limit}")
                 return True
             else:
                 logger.error(f"知識庫 {kb_id} 建立失敗：資料庫操作失敗")
@@ -57,14 +58,14 @@ class KnowledgeBaseDAO(BaseDAO):
         try:
             if include_deleted:
                 query = """
-                    SELECT id, name, status, system_prompt, note, created_at, updated_at
+                    SELECT id, name, status, system_prompt, conversation_history_limit, note, created_at, updated_at
                     FROM knowledge_bases
                     ORDER BY created_at DESC
                 """
                 return self.execute_query(query)
             else:
                 query = """
-                    SELECT id, name, status, system_prompt, note, created_at, updated_at
+                    SELECT id, name, status, system_prompt, conversation_history_limit, note, created_at, updated_at
                     FROM knowledge_bases
                     WHERE status != 'deleted'
                     ORDER BY created_at DESC
@@ -78,7 +79,7 @@ class KnowledgeBaseDAO(BaseDAO):
         """獲取單個知識庫詳情"""
         try:
             query = """
-                SELECT id, name, status, system_prompt, note, created_at, updated_at
+                SELECT id, name, status, system_prompt, conversation_history_limit, note, created_at, updated_at
                 FROM knowledge_bases
                 WHERE id = %s AND status != 'deleted'
             """
@@ -89,7 +90,7 @@ class KnowledgeBaseDAO(BaseDAO):
             return None
 
     def update_knowledge_base(self, kb_id: str, name: str = None, status: str = None, 
-                            system_prompt: str = None, note: str = None) -> bool:
+                            system_prompt: str = None, conversation_history_limit: int = None, note: str = None) -> bool:
         """更新知識庫"""
         try:
             updates = []
@@ -104,6 +105,9 @@ class KnowledgeBaseDAO(BaseDAO):
             if system_prompt is not None:
                 updates.append("system_prompt = %s")
                 params.append(system_prompt)
+            if conversation_history_limit is not None:
+                updates.append("conversation_history_limit = %s")
+                params.append(conversation_history_limit)
             if note is not None:
                 updates.append("note = %s")
                 params.append(note)

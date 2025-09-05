@@ -176,13 +176,13 @@ const AdminDashboard = (() => {
         hideLoader();
         
         if (error.message.includes('權限')) {
-            alert('您沒有權限存取管理介面');
+            Dialog.error('您沒有權限存取管理介面');
             window.location.href = '/dashboard';
         } else if (error.message.includes('登入')) {
-            alert('請先登入');
+            Dialog.warning('請先登入');
             window.location.href = '/login';
         } else {
-            alert(`系統錯誤: ${error.message}`);
+            Dialog.error(`系統錯誤: ${error.message}`);
         }
     }
     

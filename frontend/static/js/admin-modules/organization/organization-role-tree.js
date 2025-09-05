@@ -10,7 +10,7 @@ const OrganizationRoleTreeModule = (function() {
      * @param {Array} departments - 部門資料
      * @param {HTMLElement} container - 容器元素
      * @param {boolean} expandFirstLevel - 是否展開第一層
-     * @param {boolean} showInactiveRoles - 是否顯示停用角色
+     * @param {boolean} showInactiveRoles - 是否顯示停用角色和停用部門
      * @param {Object} departmentRolesCache - 部門角色緩存
      * @param {number} selectedDeptId - 選中的部門ID
      * @param {number} selectedRoleId - 選中的角色ID
@@ -31,18 +31,27 @@ const OrganizationRoleTreeModule = (function() {
      * 遞迴渲染部門節點（包含角色）
      * @param {Array} departments - 部門資料
      * @param {boolean} isFirstLevel - 是否為第一層
-     * @param {boolean} showInactiveRoles - 是否顯示停用角色
+     * @param {boolean} showInactiveRoles - 是否顯示停用角色和停用部門
      * @param {Object} departmentRolesCache - 部門角色緩存
      * @param {number} selectedDeptId - 選中的部門ID
      * @param {number} selectedRoleId - 選中的角色ID
      */
     function renderDeptTreeNodes(departments, isFirstLevel = false, showInactiveRoles = false, departmentRolesCache = {}, selectedDeptId = null, selectedRoleId = null) {
-        return departments.map(dept => {
+        // 過濾部門（根據是否顯示停用）
+        const visibleDepartments = filterDepartmentsWithContent(departments, showInactiveRoles, departmentRolesCache);
+        
+        return visibleDepartments.map(dept => {
             const roles = departmentRolesCache[dept.id] || [];
-            const hasChildren = (dept.children && dept.children.length > 0) || roles.length > 0;
             
             // 過濾角色（根據是否顯示停用）
             const visibleRoles = showInactiveRoles ? roles : roles.filter(r => r.is_active);
+            
+            // 遞迴過濾子部門
+            const filteredChildren = dept.children ? 
+                filterDepartmentsWithContent(dept.children, showInactiveRoles, departmentRolesCache) : [];
+            
+            // 修正：使用過濾後的子部門和可見角色來判斷是否有子元素
+            const hasChildren = filteredChildren.length > 0 || visibleRoles.length > 0;
             
             // 第一層預設展開
             const isExpanded = isFirstLevel;
@@ -67,12 +76,73 @@ const OrganizationRoleTreeModule = (function() {
                     ${hasChildren ? 
                         `<div class="${childrenClass}">
                             ${renderRoleNodes(visibleRoles, departmentRolesCache, selectedRoleId)}
-                            ${dept.children && dept.children.length > 0 ? renderDeptTreeNodes(dept.children, false, showInactiveRoles, departmentRolesCache, selectedDeptId, selectedRoleId) : ''}
+                            ${filteredChildren.length > 0 ? renderDeptTreeNodes(filteredChildren, false, showInactiveRoles, departmentRolesCache, selectedDeptId, selectedRoleId) : ''}
                         </div>` : ''
                     }
                 </div>
             `;
         }).join('');
+    }
+    
+    /**
+     * 過濾部門，只顯示有內容的部門
+     * @param {Array} departments - 部門資料
+     * @param {boolean} showInactiveRoles - 是否顯示停用項目
+     * @param {Object} departmentRolesCache - 部門角色緩存
+     * @returns {Array} 過濾後的部門清單
+     */
+    function filterDepartmentsWithContent(departments, showInactiveRoles, departmentRolesCache) {
+        return departments.filter(dept => {
+            // 如果顯示停用項目，直接包含所有部門
+            if (showInactiveRoles) {
+                return true;
+            }
+            
+            // 如果部門是啟用的，先暫時包含
+            if (dept.is_active) {
+                // 檢查部門是否有可見內容（啟用角色或啟用子部門）
+                return hasVisibleContent(dept, showInactiveRoles, departmentRolesCache);
+            }
+            
+            // 對於停用部門，檢查是否有啟用的子內容
+            return hasVisibleContent(dept, showInactiveRoles, departmentRolesCache);
+        });
+    }
+    
+    /**
+     * 檢查部門是否有可見內容（角色或子部門）
+     * @param {Object} dept - 部門資料
+     * @param {boolean} showInactiveRoles - 是否顯示停用項目
+     * @param {Object} departmentRolesCache - 部門角色緩存
+     * @returns {boolean} 是否有可見內容
+     */
+    function hasVisibleContent(dept, showInactiveRoles, departmentRolesCache) {
+        // 檢查是否有可見角色
+        const roles = departmentRolesCache[dept.id] || [];
+        const visibleRoles = showInactiveRoles ? roles : roles.filter(r => r.is_active);
+        if (visibleRoles.length > 0) {
+            return true;
+        }
+        
+        // 遞迴檢查是否有可見子部門
+        if (dept.children && dept.children.length > 0) {
+            return dept.children.some(child => {
+                if (showInactiveRoles) {
+                    return true;
+                }
+                // 如果子部門是啟用的，檢查其內容
+                if (child.is_active && hasVisibleContent(child, showInactiveRoles, departmentRolesCache)) {
+                    return true;
+                }
+                // 如果子部門是停用的，但有啟用的內容，也要顯示
+                if (!child.is_active && hasVisibleContent(child, showInactiveRoles, departmentRolesCache)) {
+                    return true;
+                }
+                return false;
+            });
+        }
+        
+        return false;
     }
     
     /**
@@ -84,7 +154,17 @@ const OrganizationRoleTreeModule = (function() {
     function renderRoleNodes(roles, departmentRolesCache = {}, selectedRoleId = null) {
         if (!roles || roles.length === 0) return '';
         
-        const html = roles.map(role => {
+        // 排序角色：主管優先，然後按等級排序
+        const sortedRoles = [...roles].sort((a, b) => {
+            // 主管角色優先
+            if (a.role_type === 'manager' && b.role_type !== 'manager') return -1;
+            if (a.role_type !== 'manager' && b.role_type === 'manager') return 1;
+            
+            // 同類型按等級排序（數字越小越高）
+            return (a.level || 999) - (b.level || 999);
+        });
+        
+        const html = sortedRoles.map(role => {
             // 檢查角色依賴關係
             const dependencies = window.OrganizationRoleAnalysisModule ? 
                 window.OrganizationRoleAnalysisModule.checkRoleDependencies(role.id, role.user_count, departmentRolesCache) : 
@@ -94,7 +174,7 @@ const OrganizationRoleTreeModule = (function() {
                 window.OrganizationRoleAnalysisModule.getDisableReason(dependencies) : '';
             
             return `
-            <div class="role-tree-node ${role.is_active ? '' : 'inactive'} ${selectedRoleId === role.id ? 'selected' : ''}" 
+            <div class="role-tree-node ${role.is_active ? '' : 'inactive'} ${role.role_type === 'manager' ? 'role-manager' : 'role-staff'} ${selectedRoleId === role.id ? 'selected' : ''}" 
                  draggable="true"
                  data-role-id="${role.id}" data-department-id="${role.department_id}"
                  onclick="OrganizationRolesModule.selectRoleAndShowDepartmentRoles(${role.id}, ${role.department_id})">
@@ -113,7 +193,7 @@ const OrganizationRoleTreeModule = (function() {
                         <i class="fas fa-trash"></i>
                     </button>
                 </span>
-                <span class="role-count node-count" data-role-id="${role.id}" onclick="event.stopPropagation(); OrganizationRolesModule.showRoleUsersHoverCard(${role.id})" title="點擊查看使用此角色的用戶">(${role.user_count || 0}人)</span>
+                <span class="node-count" data-role-id="${role.id}" onclick="event.stopPropagation(); OrganizationRolesModule.showRoleUsersHoverCard(${role.id})" title="點擊查看使用此角色的用戶">(${role.user_count || 0}人)</span>
                 ${!role.is_active ? '<span class="badge badge-secondary">停用</span>' : ''}
             </div>
             `;
@@ -134,15 +214,23 @@ const OrganizationRoleTreeModule = (function() {
      * @param {number} deptId - 部門ID
      */
     function toggleDeptNode(deptId) {
+        // 限定在角色管理的容器內查找
+        const treeContainer = document.getElementById('roleDeptTree');
+        if (!treeContainer) {
+            console.warn('找不到角色樹容器');
+            return;
+        }
+        
         // 確保 deptId 是字串型態來查找（HTML 屬性都是字串）
-        const node = document.querySelector(`.tree-node[data-id="${deptId}"]`);
+        const node = treeContainer.querySelector(`.tree-node[data-id="${deptId}"]`);
         if (!node) {
             console.warn(`找不到部門節點: ${deptId}`);
             return;
         }
         
-        const children = node.querySelector('.tree-children');
-        const toggleBtn = node.querySelector('.node-toggle');
+        // 使用 :scope 選擇器確保只選擇直接子元素
+        const children = node.querySelector(':scope > .tree-children');
+        const toggleBtn = node.querySelector(':scope > .node-content .node-toggle');
         const icon = toggleBtn ? toggleBtn.querySelector('i') : null;
         
         if (children) {
@@ -388,21 +476,6 @@ const OrganizationRoleTreeModule = (function() {
         }
     }
     
-    /**
-     * 滾動到第一個匹配項
-     */
-    function scrollToFirstMatch() {
-        const treeContainer = document.getElementById('roleDeptTree');
-        if (!treeContainer) return;
-        
-        const firstHighlight = treeContainer.querySelector('.tree-node.highlight, .role-tree-node.highlight');
-        if (firstHighlight) {
-            firstHighlight.scrollIntoView({ 
-                behavior: 'smooth', 
-                block: 'center' 
-            });
-        }
-    }
     
     // 公開的 API
     return {
@@ -414,7 +487,6 @@ const OrganizationRoleTreeModule = (function() {
         expandAll,
         collapseAll,
         bindTreeEventListeners,
-        scrollToFirstMatch
     };
 })();
 

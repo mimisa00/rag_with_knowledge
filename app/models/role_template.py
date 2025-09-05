@@ -173,3 +173,32 @@ class DepartmentRolesBatchCreate(BaseModel):
                 ]
             }
         }
+
+
+class RoleAssignmentSuggestionCreate(BaseModel):
+    """角色分配建議批量創建請求模型"""
+    suggestions: List[Dict[str, Any]] = Field(..., description="選中的角色分配建議列表")
+    
+    class Config:
+        schema_extra = {
+            "example": {
+                "suggestions": [
+                    {
+                        "department_id": 25,
+                        "department_name": "NODE_14",
+                        "recommended_roles": [
+                            {
+                                "template_id": 5,
+                                "suggested_role_name": "NODE_14-資深工程師",
+                                "suggested_parent_role_id": 136
+                            },
+                            {
+                                "template_id": 6,
+                                "suggested_role_name": "NODE_14-工程師", 
+                                "suggested_parent_role_id": 136
+                            }
+                        ]
+                    }
+                ]
+            }
+        }

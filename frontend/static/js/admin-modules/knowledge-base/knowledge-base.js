@@ -234,6 +234,7 @@
             const kbNameField = document.getElementById('kbName');
             const kbStatusField = document.getElementById('kbStatus');
             const kbNoteField = document.getElementById('kbNote');
+            const kbConversationHistoryLimitField = document.getElementById('kbConversationHistoryLimit');
             const kbPromptField = document.getElementById('kbSystemPrompt');
 
             switch (mode) {
@@ -242,6 +243,7 @@
                     kbNameField.readOnly = false;
                     kbStatusField.disabled = false;
                     kbNoteField.readOnly = false;
+                    kbConversationHistoryLimitField.readOnly = false;
                     kbPromptField.readOnly = false;
                     break;
                 case KB_MODES.EDIT:
@@ -249,6 +251,7 @@
                     kbNameField.readOnly = false;
                     kbStatusField.disabled = false;
                     kbNoteField.readOnly = false;
+                    kbConversationHistoryLimitField.readOnly = false;
                     kbPromptField.readOnly = false;
                     break;
                 case KB_MODES.PREVIEW:
@@ -257,6 +260,7 @@
                     kbNameField.readOnly = true;
                     kbStatusField.disabled = true;
                     kbNoteField.readOnly = true;
+                    kbConversationHistoryLimitField.readOnly = true;
                     kbPromptField.readOnly = true;
                     break;
             }
@@ -475,6 +479,7 @@
             }
             document.getElementById('kbStatus').value = kb.status || 'enable';
             document.getElementById('kbNote').value = kb.note || '';
+            document.getElementById('kbConversationHistoryLimit').value = kb.conversation_history_limit || 0;
             document.getElementById('kbSystemPrompt').value = kb.system_prompt || '';
             this.updateCharCount();
             
@@ -1144,10 +1149,46 @@
             }
         },
 
+        // 驗證系統提示詞是否包含必要佔位符
+        validateSystemPrompt: function(promptText) {
+            if (!promptText) {
+                return {
+                    valid: false,
+                    message: '系統提示詞不能為空'
+                };
+            }
+
+            const hasContext = promptText.includes('{context}');
+            const hasQuestion = promptText.includes('{question}');
+
+            if (!hasContext && !hasQuestion) {
+                return {
+                    valid: false,
+                    message: '系統提示詞必須包含 {context} 和 {question} 佔位符'
+                };
+            } else if (!hasContext) {
+                return {
+                    valid: false,
+                    message: '系統提示詞必須包含 {context} 佔位符'
+                };
+            } else if (!hasQuestion) {
+                return {
+                    valid: false,
+                    message: '系統提示詞必須包含 {question} 佔位符'
+                };
+            }
+
+            return {
+                valid: true,
+                message: ''
+            };
+        },
+
         // 驗證表單資料
         validateKBForm: function(mode) {
             const kbId = document.getElementById('kbId').value.trim();
             const kbName = document.getElementById('kbName').value.trim();
+            const systemPrompt = document.getElementById('kbSystemPrompt').value;
 
             if (mode === KB_MODES.CREATE) {
                 if (!kbId) {
@@ -1162,6 +1203,13 @@
 
             if (!kbName) {
                 Dialog.warning('請填入知識庫名稱');
+                return false;
+            }
+
+            // 驗證系統提示詞
+            const promptValidation = this.validateSystemPrompt(systemPrompt);
+            if (!promptValidation.valid) {
+                Dialog.warning(promptValidation.message);
                 return false;
             }
 
@@ -1182,6 +1230,7 @@
                         id: document.getElementById('kbId').value.trim(),
                         name: document.getElementById('kbName').value.trim(),
                         note: document.getElementById('kbNote').value.trim(),
+                        conversation_history_limit: parseInt(document.getElementById('kbConversationHistoryLimit').value) || 0,
                         system_prompt: document.getElementById('kbSystemPrompt').value
                     };
                     response = await fetch('/api/knowledge-bases', {
@@ -1196,6 +1245,7 @@
                         name: document.getElementById('kbName').value.trim(),
                         status: document.getElementById('kbStatus').value,
                         note: document.getElementById('kbNote').value.trim(),
+                        conversation_history_limit: parseInt(document.getElementById('kbConversationHistoryLimit').value) || 0,
                         system_prompt: document.getElementById('kbSystemPrompt').value
                     };
                     response = await fetch(`/api/knowledge-bases/${currentKBId}`, {
@@ -1467,6 +1517,29 @@
             counter.textContent = textarea.value.length;
         },
 
+        // 即時驗證系統提示詞
+        validateSystemPromptRealtime: function() {
+            const textarea = document.getElementById('kbSystemPrompt');
+            const messageElement = document.getElementById('promptValidationMessage');
+            
+            if (!textarea || !messageElement) return;
+
+            const validation = this.validateSystemPrompt(textarea.value);
+            
+            if (!validation.valid) {
+                // 顯示警告
+                messageElement.textContent = validation.message;
+                messageElement.classList.remove('d-none');
+                messageElement.classList.add('text-danger');
+                textarea.classList.add('is-invalid');
+            } else {
+                // 隱藏警告
+                messageElement.classList.add('d-none');
+                messageElement.classList.remove('text-danger');
+                textarea.classList.remove('is-invalid');
+            }
+        },
+
 
         // 顯示索引
         showCurrentKBIndex: function() {
@@ -1628,7 +1701,10 @@
 
             const promptTextarea = document.getElementById('kbSystemPrompt');
             if (promptTextarea) {
-                promptTextarea.addEventListener('input', () => this.updateCharCount());
+                promptTextarea.addEventListener('input', () => {
+                    this.updateCharCount();
+                    this.validateSystemPromptRealtime();
+                });
             }
 
             const qaSelect = document.getElementById('qaKnowledgeBaseSelect');

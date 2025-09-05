@@ -19,7 +19,14 @@ def get_current_user(
     authorization_cookie: Optional[str] = Cookie(None, alias="access_token"),
 ) -> Dict[str, Any]:
     """FastAPI 依賴：獲取當前用戶"""
-    return auth_manager.get_current_user(credentials, authorization_cookie)
+    user = auth_manager.get_current_user(credentials, authorization_cookie)
+    
+    # 更新用戶最後活動時間（用於活動統計）
+    if user and user.get("id"):
+        from app.dao.user import user_dao
+        user_dao.update_activity_time(user["id"])
+    
+    return user
 
 
 def get_current_user_optional(

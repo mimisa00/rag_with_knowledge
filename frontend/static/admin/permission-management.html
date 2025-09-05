@@ -1,442 +1,433 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>權限管理 - E-Helper</title>
-    
-    <!-- CSS -->
-    <link rel="stylesheet" href="../css/core/all.min.css">
-    <!-- 新的 CSS 架構 -->
-    <link rel="stylesheet" href="../css/themes/theme-variables.css">
-    <link rel="stylesheet" href="../css/core/base.css">
-    <link rel="stylesheet" href="../css/core/components.css">
-    <link rel="stylesheet" href="../css/core/utilities.css">
-    <link rel="stylesheet" href="../css/core/layouts.css">
-    <!-- 引入 admin.css 作為基礎樣式（導航欄等） -->
-    <link rel="stylesheet" href="../css/pages/admin.css">
-    <!-- 引入獨立的載入器樣式 -->
-    <link rel="stylesheet" href="../css/components/spinner-loader.css">
-    <!-- 引入 Dashboard 抽屜樣式 -->
-    <link rel="stylesheet" href="../css/pages/dashboard.css">
-    <!-- 引入 Dialog 元件樣式 -->
-    <link rel="stylesheet" href="../css/components/dialog.css">
-    <!-- 引入 SearchableSelect 元件樣式 -->
-    <link rel="stylesheet" href="../css/components/searchable-select.css">
-    <!-- 頁面專用樣式 -->
-    <link rel="stylesheet" href="../css/pages/permission-management.css">
+    <!-- 靜態載入頁面載入器樣式（避免 FOUC） -->
+    <link rel="stylesheet" href="/css/components/page-loader.css">
+    <link rel="stylesheet" href="/css/components/spinner-loader.css">
+    <!-- 其他 CSS 將動態載入 -->
 </head>
+
 <body class="admin-layout">
-    <!-- 載入指示器 -->
+    <!-- 頁面載入器 -->
+    <div id="pageLoader" class="page-loader-overlay">
+        <div class="page-loader-content">
+            <div class="page-loader-spinner"></div>
+            <div class="page-loader-text">系統載入中...</div>
+        </div>
+    </div>
+
+    <!-- 局部載入指示器 -->
     <div id="loader-overlay" class="loader-overlay">
         <div class="loader"></div>
-        <div class="loader-text">系統載入中...</div>
+        <div class="loader-text">載入中...</div>
     </div>
-    
-    <!-- 頂部導航 -->
-    <nav class="admin-navbar">
-        <div class="navbar-brand">
-            <i class="fas fa-shield-alt"></i>
-            <span>權限管理</span>
-        </div>
-        <div class="navbar-info">
-            <span id="userInfo" class="user-info" onclick="openUserMenu()">
-                <i class="fas fa-user-circle"></i>
-                <span id="username">載入中...</span>
-                <span id="userRole" class="user-role"></span>
-            </span>
-        </div>
-    </nav>
-    
-    <!-- 麵包屑 -->
-    <div class="breadcrumb">
-        <div class="breadcrumb-items">
-            <div class="breadcrumb-item">
-                <a href="/dashboard" class="breadcrumb-link">
-                    <i class="fas fa-home"></i>
-                    <span>首頁</span>
-                </a>
+
+    <!-- 頁面內容容器 -->
+    <div id="pageContent" class="page-content">
+
+        <!-- 頂部導航 -->
+        <nav class="admin-navbar">
+            <div class="navbar-brand">
+                <i class="fas fa-shield-alt"></i>
+                <span>權限管理</span>
             </div>
-            <span class="breadcrumb-separator">
-                <i class="fas fa-chevron-right"></i>
-            </span>
-            <div class="breadcrumb-item">
-                <a href="/admin" class="breadcrumb-link">
-                    <span>系統管理中心</span>
-                </a>
+            <div class="navbar-info">
+                <span id="userInfo" class="user-info" onclick="openUserMenu()">
+                    <i class="fas fa-user-circle"></i>
+                    <span id="username">載入中...</span>
+                    <span id="userRole" class="user-role"></span>
+                </span>
             </div>
-            <span class="breadcrumb-separator">
-                <i class="fas fa-chevron-right"></i>
-            </span>
-            <div class="breadcrumb-item" id="breadcrumb-perm-management">
-                <a href="javascript:void(0)" class="breadcrumb-link d-none" id="breadcrumb-perm-link">
-                    <span>權限管理</span>
-                </a>
-                <span class="breadcrumb-current" id="breadcrumb-perm-current">權限管理</span>
-            </div>
-            
-            <!-- 動態子區塊麵包屑 -->
-            <span class="breadcrumb-separator d-none" id="breadcrumb-section-separator">
-                <i class="fas fa-chevron-right"></i>
-            </span>
-            <div class="breadcrumb-item d-none" id="breadcrumb-section">
-                <span class="breadcrumb-current" id="breadcrumb-section-text"></span>
+        </nav>
+
+        <!-- 麵包屑 -->
+        <div class="breadcrumb">
+            <div class="breadcrumb-items">
+                <div class="breadcrumb-item">
+                    <a href="/dashboard" class="breadcrumb-link">
+                        <i class="fas fa-home"></i>
+                        <span>首頁</span>
+                    </a>
+                </div>
+                <span class="breadcrumb-separator">
+                    <i class="fas fa-chevron-right"></i>
+                </span>
+                <div class="breadcrumb-item">
+                    <a href="/admin" class="breadcrumb-link">
+                        <span>系統管理中心</span>
+                    </a>
+                </div>
+                <span class="breadcrumb-separator">
+                    <i class="fas fa-chevron-right"></i>
+                </span>
+                <div class="breadcrumb-item" id="breadcrumb-perm-management">
+                    <a href="javascript:void(0)" class="breadcrumb-link d-none" id="breadcrumb-perm-link">
+                        <span>權限管理</span>
+                    </a>
+                    <span class="breadcrumb-current" id="breadcrumb-perm-current">權限管理</span>
+                </div>
+
+                <!-- 動態子區塊麵包屑 -->
+                <span class="breadcrumb-separator d-none" id="breadcrumb-section-separator">
+                    <i class="fas fa-chevron-right"></i>
+                </span>
+                <div class="breadcrumb-item d-none" id="breadcrumb-section">
+                    <span class="breadcrumb-current" id="breadcrumb-section-text"></span>
+                </div>
             </div>
         </div>
-    </div>
-    
-    <!-- 個人功能抽屜 -->
-    <div id="userMenuDrawer" onclick="closeUserMenu()" class="user-menu-drawer">
-        <div class="user-menu-header">
-            <span id="userMenuUsername"></span>
-        </div>
-        <div class="user-menu-content">
-            <button onclick="showChangePasswordModal()" class="menu-item">
-                <i class="fa-solid fa-key"></i>
-                <span>變更密碼</span>
-            </button>
-            <hr>
-            <button onclick="logout()" class="menu-item">
-                <i class="fa-solid fa-sign-out-alt"></i>
-                <span>登出</span>
-            </button>
-        </div>
-    </div>
-    
-    <!-- 變更密碼模態框 -->
-    <div id="changePasswordModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>變更密碼</h3>
-                <button class="modal-close" onclick="closeChangePasswordModal()">
-                    <i class="fa-solid fa-times"></i>
+
+        <!-- 個人功能抽屜 -->
+        <div id="userMenuDrawer" onclick="closeUserMenu()" class="user-menu-drawer">
+            <div class="user-menu-header">
+                <span id="userMenuUsername"></span>
+            </div>
+            <div class="user-menu-content">
+                <button onclick="showChangePasswordModal()" class="menu-item">
+                    <i class="fa-solid fa-key"></i>
+                    <span>變更密碼</span>
+                </button>
+                <hr>
+                <button onclick="logout()" class="menu-item">
+                    <i class="fa-solid fa-sign-out-alt"></i>
+                    <span>登出</span>
                 </button>
             </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label for="oldPassword" class="form-label">舊密碼</label>
-                    <input type="password" id="oldPassword" class="form-control" required>
+        </div>
+
+        <!-- 變更密碼模態框 -->
+        <div id="changePasswordModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>變更密碼</h3>
+                    <button class="modal-close" onclick="closeChangePasswordModal()">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
                 </div>
-                <div class="form-group">
-                    <label for="newPassword" class="form-label">新密碼</label>
-                    <input type="password" id="newPassword" class="form-control" required minlength="6">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="oldPassword" class="form-label">舊密碼</label>
+                        <input type="password" id="oldPassword" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="newPassword" class="form-label">新密碼</label>
+                        <input type="password" id="newPassword" class="form-control" required minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmNewPassword" class="form-label">確認新密碼</label>
+                        <input type="password" id="confirmNewPassword" class="form-control" required minlength="6">
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="confirmNewPassword" class="form-label">確認新密碼</label>
-                    <input type="password" id="confirmNewPassword" class="form-control" required minlength="6">
+                <div class="modal-footer">
+                    <button onclick="closeChangePasswordModal()" class="btn btn-secondary">取消</button>
+                    <button onclick="changePassword()" class="btn btn-primary">確認變更</button>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button onclick="closeChangePasswordModal()" class="btn btn-secondary">取消</button>
-                <button onclick="changePassword()" class="btn btn-primary">確認變更</button>
             </div>
         </div>
-    </div>
-    
-    <!-- 主要內容區 -->
-    <main class="admin-main">
-        <!-- 抽屜式布局 -->
-        <div class="perm-layout">
-            <!-- 左側抽屜容器 -->
-            <div id="permDrawerContainer" class="drawer-open">
-                <!-- 抽屜控制按鈕 -->
-                <div id="permDrawerButtons">
-                    <button onclick="PermDrawerManager.toggleDrawer()" class="drawer-toggle-btn" title="展開/收合">
-                        <i class="fas fa-bars"></i>
-                    </button>
-                </div>
-                
-                <!-- 抽屜內容 -->
-                <div id="permDrawerContent">
-                    <h4>權限管理</h4>
-                    <nav class="perm-menu">
-                        <a href="#" class="perm-menu-item active" data-section="groups">
-                            <i class="fas fa-users-cog"></i>
-                            <span>群組權限</span>
-                        </a>
-                        <a href="#" class="perm-menu-item disabled" data-section="data-scope">
-                            <i class="fas fa-database"></i>
-                            <span>資料範圍</span>
-                            <span class="coming-soon">即將推出</span>
-                        </a>
-                        <a href="#" class="perm-menu-item disabled" data-section="delegation">
-                            <i class="fas fa-user-tie"></i>
-                            <span>委派管理</span>
-                            <span class="coming-soon">即將推出</span>
-                        </a>
-                        <a href="#" class="perm-menu-item disabled" data-section="audit">
-                            <i class="fas fa-clipboard-list"></i>
-                            <span>安全稽核</span>
-                            <span class="coming-soon">即將推出</span>
-                        </a>
-                    </nav>
-                </div>
-            </div>
-            
-            <!-- 右側主工作區 -->
-            <div class="perm-main-content">
-                <!-- 狀態列 -->
-                <div class="perm-status-bar">
-                    <div class="current-perm-info">
-                        <i id="sectionIcon" class="fas fa-users-cog"></i>
-                        <span id="sectionTitle">群組權限</span>
+
+        <!-- 主要內容區 -->
+        <main class="admin-main">
+            <!-- 抽屜式布局 -->
+            <div class="perm-layout">
+                <!-- 左側抽屜容器 -->
+                <div id="permDrawerContainer" class="drawer-open">
+                    <!-- 抽屜控制按鈕 -->
+                    <div id="permDrawerButtons">
+                        <button onclick="PermDrawerManager.toggleDrawer()" class="drawer-toggle-btn" title="展開/收合">
+                            <i class="fas fa-bars"></i>
+                        </button>
                     </div>
-                    <div class="section-stats">
-                        <span class="stat-item" id="groupCount">
-                            <i class="fas fa-users-cog"></i> 
-                            <span>0</span> 個群組
-                        </span>
-                        <span class="stat-item" id="permissionCount">
-                            <i class="fas fa-key"></i> 
-                            <span>0</span> 項權限
-                        </span>
-                        <span class="stat-item" id="userCount">
-                            <i class="fas fa-user"></i> 
-                            <span>0</span> 位使用者
-                        </span>
-                    </div>
-                </div>
-                
-            <!-- 群組權限區塊 -->
-            <section id="groups-section" class="content-section active">
-                <div class="section-header">
-                    <button class="btn btn-success" id="addGroupBtn">
-                        <i class="fa-solid fa-plus"></i> 新增群組
-                    </button>
-                </div>
-                
-                <div class="section-content">
-                    <div class="group-info-block">
-                        <div class="group-toolbar">
-                            <div class="group-search-box">
-                                <input type="text" class="form-control" id="groupSearchInput" placeholder="搜尋群組名稱或代碼...">
-                                <button class="btn btn-search" onclick="PermissionModule.searchGroup()">
-                                    <i class="fa-solid fa-search"></i>
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <!-- 群組統計 -->
-                        <div class="group-stats">
-                            <span class="stat-item">
+
+                    <!-- 抽屜內容 -->
+                    <div id="permDrawerContent">
+                        <h4>權限管理</h4>
+                        <nav class="perm-menu">
+                            <a href="#" class="perm-menu-item active" data-section="groups">
                                 <i class="fas fa-users-cog"></i>
-                                總共 <strong id="totalGroupCount">0</strong> 個群組
+                                <span>群組權限</span>
+                            </a>
+                            <a href="#" class="perm-menu-item disabled" data-section="data-scope">
+                                <i class="fas fa-database"></i>
+                                <span>資料範圍</span>
+                                <span class="coming-soon">即將推出</span>
+                            </a>
+                            <a href="#" class="perm-menu-item disabled" data-section="delegation">
+                                <i class="fas fa-user-tie"></i>
+                                <span>委派管理</span>
+                                <span class="coming-soon">即將推出</span>
+                            </a>
+                            <a href="#" class="perm-menu-item disabled" data-section="audit">
+                                <i class="fas fa-clipboard-list"></i>
+                                <span>安全稽核</span>
+                                <span class="coming-soon">即將推出</span>
+                            </a>
+                        </nav>
+                    </div>
+                </div>
+
+                <!-- 右側主工作區 -->
+                <div class="perm-main-content">
+                    <!-- 狀態列 -->
+                    <div class="perm-status-bar">
+                        <div class="current-perm-info">
+                            <i id="sectionIcon" class="fas fa-users-cog"></i>
+                            <span id="sectionTitle">群組權限</span>
+                        </div>
+                        <div class="section-stats">
+                            <span class="stat-item" id="groupCount">
+                                <i class="fas fa-users-cog"></i>
+                                <span>0</span> 個群組
                             </span>
-                            <span class="stat-item" id="activeGroupCount">
-                                <i class="fas fa-check-circle" style="color: #28a745;"></i>
-                                啟用 <strong>0</strong> 個
+                            <span class="stat-item" id="permissionCount">
+                                <i class="fas fa-key"></i>
+                                <span>0</span> 項權限
                             </span>
-                            <span class="stat-item" id="inactiveGroupCount">
-                                <i class="fas fa-times-circle" style="color: #dc3545;"></i>
-                                停用 <strong>0</strong> 個
-                                <button class="toggle-inactive-btn" onclick="PermissionModule.toggleInactiveGroups()" 
-                                        title="顯示停用" id="toggleInactiveGroupsBtn">
-                                    <i class="fas fa-eye-slash"></i>
-                                </button>
+                            <span class="stat-item" id="userCount">
+                                <i class="fas fa-user"></i>
+                                <span>0</span> 位使用者
                             </span>
                         </div>
-    
-                        <!-- 群組列表 -->
-                        <div class="group-list">
-                            <div class="group-table-wrapper">
-                                <table class="data-table">
-                                    <thead>
-                                        <tr>
-                                            <th>群組代碼</th>
-                                            <th>群組名稱</th>
-                                            <th>類型</th>
-                                            <th>使用人數</th>
-                                            <th>狀態</th>
-                                            <th>操作</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="groupTableBody" class="scrollable-fade">
-                                        <tr>
-                                            <td colspan="6" class="text-center">
-                                                <div class="loading-spinner">
-                                                    <div class="spinner"></div>
-                                                    <p>載入群組資料中...</p>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                    </div>
+
+                    <!-- 群組權限區塊 -->
+                    <section id="groups-section" class="content-section active">
+                        <div class="section-header">
+                            <button class="btn btn-success" id="addGroupBtn">
+                                <i class="fa-solid fa-plus"></i> 新增群組
+                            </button>
+                        </div>
+
+                        <div class="section-content">
+                            <div class="group-info-block">
+                                <div class="group-toolbar">
+                                    <div class="group-search-box">
+                                        <input type="text" class="form-control" id="groupSearchInput" placeholder="搜尋群組名稱或代碼...">
+                                        <button class="btn btn-search" onclick="PermissionModule.searchGroup()">
+                                            <i class="fa-solid fa-search"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- 群組統計 -->
+                                <div class="group-stats">
+                                    <span class="stat-item">
+                                        <i class="fas fa-users-cog"></i>
+                                        總共 <strong id="totalGroupCount">0</strong> 個群組
+                                    </span>
+                                    <span class="stat-item" id="activeGroupCount">
+                                        <i class="fas fa-check-circle" style="color: #28a745;"></i>
+                                        啟用 <strong>0</strong> 個
+                                    </span>
+                                    <span class="stat-item" id="inactiveGroupCount">
+                                        <i class="fas fa-times-circle" style="color: #dc3545;"></i>
+                                        停用 <strong>0</strong> 個
+                                        <button class="toggle-inactive-btn" onclick="PermissionModule.toggleInactiveGroups()" title="顯示停用" id="toggleInactiveGroupsBtn">
+                                            <i class="fas fa-eye-slash"></i>
+                                        </button>
+                                    </span>
+                                </div>
+
+                                <!-- 群組列表 -->
+                                <div class="group-list">
+                                    <div class="group-table-wrapper">
+                                        <table class="data-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>群組代碼</th>
+                                                    <th>群組名稱</th>
+                                                    <th>類型</th>
+                                                    <th>使用人數</th>
+                                                    <th>狀態</th>
+                                                    <th>操作</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="groupTableBody" class="scrollable-fade">
+                                                <tr>
+                                                    <td colspan="6" class="text-center">
+                                                        <div class="loading-spinner">
+                                                            <div class="spinner"></div>
+                                                            <p>載入群組資料中...</p>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 群組詳情面板 -->
+                            <div class="group-details" id="groupDetails">
+                                <div class="details-card">
+                                    <h3>權限資訊</h3>
+                                    <div class="details-content">
+                                        <p class="text-muted">請選擇一個群組查看詳情</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    
-                    <!-- 群組詳情面板 -->
-                    <div class="group-details" id="groupDetails">
-                        <div class="details-card">
-                            <h3>權限資訊</h3>
-                            <div class="details-content">
-                                <p class="text-muted">請選擇一個群組查看詳情</p>
+                    </section>
+
+                    <!-- 資料範圍區塊 -->
+                    <section id="data-scope-section" class="content-section">
+                        <div class="coming-soon-block">
+                            <div class="coming-soon-icon">
+                                <i class="fas fa-database"></i>
+                            </div>
+                            <h3>資料範圍管理</h3>
+                            <p>此功能即將推出，敬請期待</p>
+                            <div class="feature-list">
+                                <div class="feature-item">
+                                    <i class="fas fa-check"></i>
+                                    <span>部門資料存取範圍設定</span>
+                                </div>
+                                <div class="feature-item">
+                                    <i class="fas fa-check"></i>
+                                    <span>階層式權限繼承</span>
+                                </div>
+                                <div class="feature-item">
+                                    <i class="fas fa-check"></i>
+                                    <span>資料可見性控制</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    </section>
+
+                    <!-- 委派管理區塊 -->
+                    <section id="delegation-section" class="content-section">
+                        <div class="coming-soon-block">
+                            <div class="coming-soon-icon">
+                                <i class="fas fa-user-tie"></i>
+                            </div>
+                            <h3>委派管理</h3>
+                            <p>此功能即將推出，敬請期待</p>
+                            <div class="feature-list">
+                                <div class="feature-item">
+                                    <i class="fas fa-check"></i>
+                                    <span>部門主管權限委派</span>
+                                </div>
+                                <div class="feature-item">
+                                    <i class="fas fa-check"></i>
+                                    <span>管理範圍設定</span>
+                                </div>
+                                <div class="feature-item">
+                                    <i class="fas fa-check"></i>
+                                    <span>委派權限監控</span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- 安全稽核區塊 -->
+                    <section id="audit-section" class="content-section">
+                        <div class="coming-soon-block">
+                            <div class="coming-soon-icon">
+                                <i class="fas fa-clipboard-list"></i>
+                            </div>
+                            <h3>安全稽核</h3>
+                            <p>此功能即將推出，敬請期待</p>
+                            <div class="feature-list">
+                                <div class="feature-item">
+                                    <i class="fas fa-check"></i>
+                                    <span>權限變更記錄</span>
+                                </div>
+                                <div class="feature-item">
+                                    <i class="fas fa-check"></i>
+                                    <span>異常存取警示</span>
+                                </div>
+                                <div class="feature-item">
+                                    <i class="fas fa-check"></i>
+                                    <span>稽核報表下載</span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
                 </div>
-            </section>
-            
-            <!-- 資料範圍區塊 -->
-            <section id="data-scope-section" class="content-section">
-                <div class="coming-soon-block">
-                    <div class="coming-soon-icon">
-                        <i class="fas fa-database"></i>
-                    </div>
-                    <h3>資料範圍管理</h3>
-                    <p>此功能即將推出，敬請期待</p>
-                    <div class="feature-list">
-                        <div class="feature-item">
-                            <i class="fas fa-check"></i>
-                            <span>部門資料存取範圍設定</span>
-                        </div>
-                        <div class="feature-item">
-                            <i class="fas fa-check"></i>
-                            <span>階層式權限繼承</span>
-                        </div>
-                        <div class="feature-item">
-                            <i class="fas fa-check"></i>
-                            <span>資料可見性控制</span>
-                        </div>
-                    </div>
+            </div>
+        </main>
+
+        <!-- 底部資訊 -->
+        <footer class="admin-footer">
+            <p>&copy; E-Help 知識庫智能管理系統. All rights reserved.</p>
+        </footer>
+
+        <!-- 群組模態框 -->
+        <div id="groupModal" class="modal">
+            <div class="modal-content modal-lg">
+                <div class="modal-header">
+                    <h3 id="groupModalTitle">新增群組</h3>
+                    <button class="modal-close" onclick="closeGroupModal()">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
                 </div>
-            </section>
-            
-            <!-- 委派管理區塊 -->
-            <section id="delegation-section" class="content-section">
-                <div class="coming-soon-block">
-                    <div class="coming-soon-icon">
-                        <i class="fas fa-user-tie"></i>
-                    </div>
-                    <h3>委派管理</h3>
-                    <p>此功能即將推出，敬請期待</p>
-                    <div class="feature-list">
-                        <div class="feature-item">
-                            <i class="fas fa-check"></i>
-                            <span>部門主管權限委派</span>
+                <div class="modal-body">
+                    <form id="groupForm">
+                        <input type="hidden" name="id" id="groupId">
+                        <div class="form-row">
+                            <div class="form-group col-6">
+                                <label class="form-label">群組代碼 <span class="required">*</span></label>
+                                <input type="text" class="form-control" name="code" id="groupCode" required>
+                            </div>
+                            <div class="form-group col-6">
+                                <label class="form-label">群組名稱 <span class="required">*</span></label>
+                                <input type="text" class="form-control" name="name" id="groupName" required>
+                            </div>
                         </div>
-                        <div class="feature-item">
-                            <i class="fas fa-check"></i>
-                            <span>管理範圍設定</span>
+                        <div class="form-row">
+                            <div class="form-group col-6">
+                                <label class="form-label">群組類型</label>
+                                <select class="form-control" name="type" id="groupType">
+                                    <option value="custom">自訂</option>
+                                    <option value="system">系統</option>
+                                </select>
+                            </div>
+                            <div class="form-group col-6">
+                                <label class="form-label">狀態</label>
+                                <select class="form-control" name="is_active" id="groupActive">
+                                    <option value="1">啟用</option>
+                                    <option value="0">停用</option>
+                                </select>
+                            </div>
                         </div>
-                        <div class="feature-item">
-                            <i class="fas fa-check"></i>
-                            <span>委派權限監控</span>
+                        <div class="form-group">
+                            <label class="form-label">群組描述</label>
+                            <textarea class="form-control" name="description" id="groupDescription" rows="3"></textarea>
                         </div>
-                    </div>
+
+                        <!-- 權限設定 -->
+                        <div class="form-group">
+                            <label class="form-label">權限設定</label>
+                            <div class="permission-grid">
+                                <!-- 動態載入權限項目 -->
+                                <div class="loading-spinner">
+                                    <div class="spinner"></div>
+                                    <p>載入權限設定中...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
                 </div>
-            </section>
-            
-            <!-- 安全稽核區塊 -->
-            <section id="audit-section" class="content-section">
-                <div class="coming-soon-block">
-                    <div class="coming-soon-icon">
-                        <i class="fas fa-clipboard-list"></i>
-                    </div>
-                    <h3>安全稽核</h3>
-                    <p>此功能即將推出，敬請期待</p>
-                    <div class="feature-list">
-                        <div class="feature-item">
-                            <i class="fas fa-check"></i>
-                            <span>權限變更記錄</span>
-                        </div>
-                        <div class="feature-item">
-                            <i class="fas fa-check"></i>
-                            <span>異常存取警示</span>
-                        </div>
-                        <div class="feature-item">
-                            <i class="fas fa-check"></i>
-                            <span>稽核報表下載</span>
-                        </div>
-                    </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeGroupModal()">取消</button>
+                    <button class="btn btn-primary" onclick="saveGroup()">儲存</button>
                 </div>
-            </section>
             </div>
         </div>
-    </main>
-    
-    <!-- 底部資訊 -->
-    <footer class="admin-footer">
-        <p>&copy; E-Help 知識庫智能管理系統. All rights reserved.</p>
-    </footer>
-    
-    <!-- 群組模態框 -->
-    <div id="groupModal" class="modal">
-        <div class="modal-content modal-lg">
-            <div class="modal-header">
-                <h3 id="groupModalTitle">新增群組</h3>
-                <button class="modal-close" onclick="closeGroupModal()">
-                    <i class="fa-solid fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form id="groupForm">
-                    <input type="hidden" name="id" id="groupId">
-                    <div class="form-row">
-                        <div class="form-group col-6">
-                            <label class="form-label">群組代碼 <span class="required">*</span></label>
-                            <input type="text" class="form-control" name="code" id="groupCode" required>
-                        </div>
-                        <div class="form-group col-6">
-                            <label class="form-label">群組名稱 <span class="required">*</span></label>
-                            <input type="text" class="form-control" name="name" id="groupName" required>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group col-6">
-                            <label class="form-label">群組類型</label>
-                            <select class="form-control" name="type" id="groupType">
-                                <option value="custom">自訂</option>
-                                <option value="system">系統</option>
-                            </select>
-                        </div>
-                        <div class="form-group col-6">
-                            <label class="form-label">狀態</label>
-                            <select class="form-control" name="is_active" id="groupActive">
-                                <option value="1">啟用</option>
-                                <option value="0">停用</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">群組描述</label>
-                        <textarea class="form-control" name="description" id="groupDescription" rows="3"></textarea>
-                    </div>
-                    
-                    <!-- 權限設定 -->
-                    <div class="form-group">
-                        <label class="form-label">權限設定</label>
-                        <div class="permission-grid">
-                            <!-- 動態載入權限項目 -->
-                            <div class="loading-spinner">
-                                <div class="spinner"></div>
-                                <p>載入權限設定中...</p>
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeGroupModal()">取消</button>
-                <button class="btn btn-primary" onclick="saveGroup()">儲存</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Scripts -->
-    <!-- 載入 Dialog 元件 -->
-    <script src="/js/components/dialog.js"></script>
-    <!-- 載入 SearchableSelect 元件 -->
-    <script src="/js/components/searchable-select.js"></script>
-    
+
+    </div> <!-- 結束 pageContent -->
+
     <!-- 載入腳本 -->
     <script>
         // 臨時的全域函數，等待模組載入
-        window.returnToAdmin = function() {
+        window.returnToAdmin = function () {
             window.location.href = '/admin';
         };
-        
-        
+
+
         // 內嵌簡單的載入函數（避免快取問題）
         function loadWithTimestamp(src) {
             const script = document.createElement('script');
@@ -447,45 +438,66 @@
                 document.head.appendChild(script);
             });
         }
-        
+
         // 依序載入模組
-        (async function() {
+        (async function () {
             try {
                 // 基礎模組
-                await loadWithTimestamp('/js/modules/script-loader.js');
-                
-                // 載入公共模組
-                await ScriptLoader.loadModulesInOrder([
-                    '/js/modules/common-ui.js',
-                    '/js/modules/user-menu-module.js'
+                await loadWithTimestamp('/js/modules/resource-loader.js');
+
+                // 動態載入所有 CSS
+                await ResourceLoader.loadStyles([
+                    '/css/core/all.min.css',
+                    '/css/core/base.css',
+                    '/css/core/components.css',
+                    '/css/core/layouts.css',
+                    '/css/core/utilities.css',
+                    '/css/components/dialog.css',
+                    '/css/components/searchable-select.css',
+                    '/css/themes/theme-variables.css',
+                    '/css/pages/admin.css',
+                    '/css/pages/dashboard.css',
+                    '/css/pages/permission-management.css'
                 ]);
-                
+
+                // 隱藏頁面載入器，顯示內容
+                document.getElementById('pageLoader').classList.add('hidden');
+                document.getElementById('pageContent').classList.add('visible');
+
+                // 載入公共模組
+                await ResourceLoader.loadModulesInOrder([
+                    '/js/components/dialog.js',
+                    '/js/components/searchable-select.js',
+                    '/js/modules/common-ui.js',
+                    '/js/modules/user-menu-module.js',
+                ]);
+
                 // 載入受保護的管理員模組
-                await ScriptLoader.loadProtectedAdminScriptsInOrder([
+                await ResourceLoader.loadProtectedAdminScriptsInOrder([
                     'permission-management.js',          // 權限管理模組
                     'permission-drawer-manager.js'       // 抽屜管理器
                 ]);
-                
+
                 // 初始化 UserMenu（載入用戶資訊）
                 if (window.UserMenu) {
                     await UserMenu.init();
                 }
-                
+
                 // 初始化抽屜管理器
                 if (window.PermDrawerManager) {
                     PermDrawerManager.init();
                 }
-                
+
                 // 初始化權限管理模組
                 if (window.PermissionModule) {
                     await PermissionModule.init();
                 }
-                
+
                 // 隱藏載入動畫（如果有的話）
                 if (window.CommonUI) {
                     CommonUI.hideSpinner();
                 }
-                
+
                 console.log('權限管理模組載入完成');
             } catch (error) {
                 console.error('模組載入失敗:', error);
@@ -504,4 +516,5 @@
         })();
     </script>
 </body>
+
 </html>

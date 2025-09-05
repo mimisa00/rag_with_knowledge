@@ -1,103 +1,926 @@
 /* 帳號管理頁面專用樣式 */
+/* 使用與組織管理一致的 CSS 架構和變數 */
 
-/* 帳號管理容器 */
-.account-container {
+/* ========================================
+   使用者操作按鈕樣式
+   ======================================== */
+
+/* 基礎按鈕樣式 */
+.user-action-btn {
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: none;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    margin-right: 5px;
+}
+
+.user-action-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+/* 停用按鈕（紅色） */
+.user-action-btn-deactivate {
+    background-color: #e74c3c;
+    color: white;
+}
+
+.user-action-btn-deactivate:hover {
+    background-color: #c0392b;
+}
+
+/* 啟用按鈕（綠色） */
+.user-action-btn-activate {
+    background-color: #27ae60;
+    color: white;
+}
+
+.user-action-btn-activate:hover {
+    background-color: #229954;
+}
+
+/* 變更密碼按鈕（藍色） */
+.user-action-btn-password {
+    background-color: #3498db;
+    color: white;
+}
+
+.user-action-btn-password:hover {
+    background-color: #2980b9;
+}
+
+/* 禁用按鈕（灰色） */
+.user-action-btn-disabled {
+    background-color: #ccc !important;
+    color: #666 !important;
+    cursor: not-allowed !important;
+}
+
+.user-action-btn-disabled:hover {
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* ========================================
+   抽屜式布局 - 參考 organization.css
+   ======================================== */
+
+/* 主布局容器 */
+.user-layout {
+    display: flex;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* 抽屜容器 */
+#userDrawerContainer {
+    background: var(--bg-light);
+    border-right: 1px solid var(--border-color);
+    transition: width var(--transition-normal);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    z-index: 10;
+}
+
+#userDrawerContainer.drawer-closed {
+    width: 50px;
+}
+
+#userDrawerContainer.drawer-open {
+    width: 350px;
+}
+
+/* 抽屜按鈕區 - 與 organization.css 一致 */
+#userDrawerButtons {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    padding: var(--spacing-sm);
+    gap: var(--spacing-xs);
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-main);
+    border-radius: 0;
+    box-shadow: var(--shadow-sm);
+}
+
+/* 抽屜切換按鈕 - 與 organization.css 一致 */
+.drawer-toggle-btn {
+    width: 35px;
+    height: 35px;
+    border: none;
+    background-color: var(--bg-main);
+    color: var(--text-secondary);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+
+
+/* 抽屜內容 */
+#userDrawerContent {
+    flex: 1;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity var(--transition-normal);
     padding: var(--spacing-md);
 }
 
-/* 表格樣式 */
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 1em;
-    background: white;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+#userDrawerContainer.drawer-open #userDrawerContent {
+    opacity: 1;
 }
 
-thead {
-    background: #f8f9fa;
+#userDrawerContainer.drawer-closed #userDrawerContent {
+    pointer-events: none;
 }
 
-th {
-    padding: 12px 8px;
-    border: 1px solid #dee2e6;
+#userDrawerContent h4 {
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 2px solid var(--primary);
+    color: var(--text-primary);
+}
+
+/* 使用者選單 */
+.user-menu {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.menu-section {
+    margin-bottom: var(--spacing-md);
+}
+
+.menu-section-title {
+    font-size: 0.75rem;
     font-weight: 600;
-    color: #495057;
-    text-align: left;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: var(--spacing-sm);
+    padding: 0 var(--spacing-xs);
 }
 
-td {
-    padding: 10px 8px;
-    border: 1px solid #dee2e6;
-    color: #212529;
+.user-menu-item {
+    display: flex;
+    align-items: center;
+    padding: 0.875rem 1rem;
+    color: var(--text-secondary);
+    text-decoration: none;
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+    position: relative;
+    height: 42px;
 }
 
-tbody tr:hover {
-    background-color: #f8f9fa;
+.user-menu-item:hover {
+    background: var(--bg-hover);
+    color: var(--primary);
+    transform: translateX(5px);
+    text-decoration: none;
 }
 
-/* 選擇框樣式 */
-select {
-    padding: 4px 8px;
-    border: 1px solid #ced4da;
-    border-radius: 4px;
+.user-menu-item.active {
+    background: linear-gradient(90deg, rgba(var(--primary-rgb), 0.2) 10%, transparent 100%);
+    color: var(--primary);
+    text-decoration: none;
+}
+
+.user-menu-item.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 70%;
+    background: var(--primary);
+    border-radius: 0 2px 2px 0;
+}
+
+.user-menu-item i {
+    margin-right: 0.75rem;
+    width: 20px;
+    text-align: center;
+}
+
+/* 選單徽章 */
+.menu-badge {
+    margin-left: auto;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.menu-badge {
+    background-color: #e74c3c;
+    color: white;
+}
+
+.menu-badge.badge-info {
+    background-color: #2196f3;
+    color: white;
+}
+
+.menu-badge.badge-warning {
+    background-color: #ff9800;
+    color: white;
+}
+
+/* 主內容區 */
+.user-main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg-main);
+}
+
+/* 狀態列 */
+.user-status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md) var(--spacing-lg);
     background: white;
-    cursor: pointer;
+    border-radius: 0;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: var(--spacing-sm);
+    min-height: 62px;
+    border-bottom: 1px solid var(--border-color);
 }
 
-select:focus {
-    outline: none;
-    border-color: #80bdff;
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+.current-section-info {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
 }
 
-/* 按鈕樣式 */
-button {
-    padding: 6px 12px;
+.current-section-info i {
+    color: var(--primary);
+    font-size: 1.5rem;
+}
+
+.current-section-info span {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.section-stats {
+    display: flex;
+    gap: var(--spacing-lg);
+}
+
+.user-layout .stat-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    color: var(--text-secondary);
+}
+
+/* 內容區塊 */
+.user-layout .content-section {
+    display: none;
+    padding: 0.5rem;
+    height: calc(100vh - 230px);
+    overflow: hidden;
+}
+
+.user-layout .content-section.active {
+    display: flex;
+    flex-direction: column;
+}
+
+.user-layout .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.user-layout .section-content {
+    flex: 1;
+    overflow: hidden;
+}
+
+/* ========================================
+   時間軸組織樹
+   ======================================== */
+
+.users-container {
+    display: flex;
+    gap: var(--spacing-md);
+    height: 100%;
+}
+
+/* 左側：時間軸樹面板 */
+.timeline-tree-panel {
+    flex: 1;
+    background: white;
+    border-radius: var(--radius-lg);
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-sm);
+}
+
+/* 工具列 */
+.tree-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.tree-search-box {
+    display: flex;
+    flex: 1;
+    max-width: 400px;
+    position: relative;
+}
+
+.tree-search-box input {
+    flex: 1;
+    padding-right: 40px;
+    border-radius: 20px;
+}
+
+.tree-search-box .btn-search {
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
     border: none;
-    border-radius: 4px;
+    color: var(--primary);
+    cursor: pointer;
+    padding: 5px 10px;
+}
+
+.tree-search-box .btn-search:hover {
+    color: var(--primary-dark);
+}
+
+.panel-actions {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+.btn-outline {
+    padding: 6px 10px;
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.btn-outline:hover {
+    background: var(--bg-hover);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+/* 篩選按鈕啟用狀態 */
+.btn-outline.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+}
+
+.btn-outline.active:hover {
+    background: var(--primary-dark);
+    border-color: var(--primary-dark);
+    color: white;
+}
+
+/* 篩選按鈕綠色狀態（只顯示啟用帳號） */
+.btn-outline.active-green {
+    background: #27ae60;
+    border-color: #27ae60;
+    color: white;
+}
+
+.btn-outline.active-green:hover {
+    background: #229954;
+    border-color: #229954;
+    color: white;
+}
+
+/* 統計資訊 */
+.tree-stats {
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--bg-light);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-md);
+    display: flex;
+    gap: var(--spacing-lg);
+    align-items: center;
+}
+
+/* 時間軸樹容器 */
+.timeline-tree-container {
+    flex: 1;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm);
+}
+
+/* 時間軸樹節點 */
+.timeline-node {
+    margin-bottom: 2px;
+}
+
+.timeline-node-header {
+    display: flex;
+    align-items: center;
+    padding: 8px 10px;
+    cursor: pointer;
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+}
+
+.timeline-node-header:hover {
+    background: var(--bg-hover);
+}
+
+.timeline-node-header.selected {
+    background: rgba(var(--primary-rgb), 0.1);
+    border-left: 3px solid var(--primary);
+}
+
+/* 展開/收合圖標 */
+.timeline-expand-icon {
+    width: 20px;
+    height: 20px;
+    margin-right: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: transform var(--transition-fast);
+}
+
+.timeline-expand-icon.expanded {
+    transform: rotate(90deg);
+}
+
+/* 節點圖標 */
+.timeline-node-icon {
+    margin-right: 8px;
+    color: var(--primary);
+}
+
+/* 節點標籤 */
+.timeline-node-label {
+    flex: 1;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+/* 節點統計 */
+.timeline-node-count {
+    background: var(--bg-light);
+    color: var(--text-secondary);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* 子節點容器 */
+.timeline-children {
+    margin-left: 28px;
+    display: none;
+}
+
+.timeline-children.expanded {
+    display: block;
+}
+
+/* 年份節點 */
+.timeline-year {
+    font-weight: 600;
+}
+
+.timeline-year .timeline-node-icon {
+    color: var(--secondary);
+}
+
+/* 月份節點 */
+.timeline-month .timeline-node-icon {
+    color: var(--success);
+}
+
+/* 日期節點 */
+.timeline-day .timeline-node-icon {
+    color: var(--warning);
+}
+
+/* 使用者節點 */
+.timeline-user {
+    padding: 6px 10px;
+    margin-left: 28px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+}
+
+.timeline-user:hover {
+    background: var(--bg-hover);
+    transform: translateX(4px);
+}
+
+.timeline-user.selected {
+    background: rgba(var(--primary-rgb), 0.1);
+    border-left: 3px solid var(--primary);
+}
+
+.timeline-user-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 10px;
+    font-size: 14px;
+    border: 2px solid transparent;
+    transition: all var(--transition-fast);
+}
+
+/* 使用者圖示狀態樣式 */
+.timeline-user-icon .user-icon-active {
+    color: #27ae60;
+    background-color: rgba(39, 174, 96, 0.1);
+    border-radius: 50%;
+    padding: 8px;
+}
+
+.timeline-user-icon .user-icon-inactive {
+    color: #e74c3c;
+    background-color: rgba(231, 76, 60, 0.1);
+    border-radius: 50%;
+    padding: 8px;
+}
+
+.timeline-user-icon .user-icon-admin {
+    color: #3498db;
+    background-color: rgba(52, 152, 219, 0.1);
+    border-radius: 50%;
+    padding: 8px;
+}
+
+.timeline-user-info {
+    flex: 1;
+}
+
+.timeline-user-name {
+    font-weight: 500;
+    color: var(--text-primary);
+    display: block;
+}
+
+.timeline-user-time {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.timeline-user-role {
+    margin-left: auto;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.timeline-user-role.role-admin {
+    background-color: #ff9800;
+    color: white;
+}
+
+.timeline-user-role.role-user {
+    background-color: #2196f3;
+    color: white;
+}
+
+.timeline-user-status {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-left: 10px;
+}
+
+.timeline-user-status.active {
+    background: var(--success);
+}
+
+.timeline-user-status.inactive {
+    background: var(--danger);
+}
+
+/* ========================================
+   右側詳情面板
+   ======================================== */
+
+.user-details-panel {
+    width: 400px;
+    background: white;
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.details-card h3 {
+    margin: 0 0 var(--spacing-md) 0;
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 2px solid var(--border-color);
+    color: var(--text-primary);
+    font-size: 1.125rem;
+}
+
+.details-content {
+    color: var(--text-secondary);
+}
+
+.details-content .text-muted {
+    color: var(--text-muted);
+    text-align: center;
+    padding: 40px 20px;
+}
+
+/* 詳情項目 */
+.detail-section {
+    margin-bottom: var(--spacing-lg);
+}
+
+.detail-section h4 {
+    margin: 0 0 var(--spacing-md) 0;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    padding: var(--spacing-sm) 0;
+    border-bottom: 1px solid var(--bg-light);
+}
+
+.detail-label {
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+.detail-value {
+    color: var(--text-primary);
+}
+
+/* 操作按鈕組 */
+.detail-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-lg);
+    padding-top: var(--spacing-lg);
+    border-top: 1px solid var(--border-color);
+}
+
+.detail-actions button {
+    flex: 1;
+    padding: 8px 16px;
+    border-radius: var(--radius-md);
+    border: 1px solid transparent;
     cursor: pointer;
     font-size: 14px;
-    transition: all 0.3s ease;
-    margin: 0 2px;
+    transition: all var(--transition-fast);
 }
 
-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+.detail-actions button:hover {
+    transform: translateY(-2px);
 }
 
-button:hover:not(:disabled) {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
+/* ========================================
+   使用分析區塊
+   ======================================== */
 
-/* 分頁控制區域 */
-.pagination-controls {
+.date-range-selector {
     display: flex;
     align-items: center;
-    gap: 2em;
-    margin: 1.5em 0;
-    padding: 15px;
+    gap: var(--spacing-sm);
+}
+
+.date-range-selector label {
+    color: var(--text-secondary);
+}
+
+.date-range-selector select {
+    padding: 6px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
     background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.page-size-control {
+/* 分析圖表容器 */
+#loginStatsContainer,
+#recentRegistrationsContainer,
+#anomalyMonitorContainer,
+#registrationTrendsContainer,
+#adminUsersContainer {
+    background: white;
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    min-height: 400px;
+}
+
+/* ========================================
+   載入動畫
+   ======================================== */
+
+.loading-spinner {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 0.5em;
+    justify-content: center;
+    padding: 40px;
+    color: var(--text-muted);
 }
 
-.page-navigation {
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid var(--bg-light);
+    border-top: 4px solid var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ========================================
+   滾動條美化
+   ======================================== */
+
+.scrollable-fade {
+    position: relative;
+    overflow-y: auto;
+}
+
+.scrollable-fade::-webkit-scrollbar {
+    width: 6px;
+}
+
+.scrollable-fade::-webkit-scrollbar-track {
+    background: var(--bg-light);
+}
+
+.scrollable-fade::-webkit-scrollbar-thumb {
+    background: var(--text-muted);
+    border-radius: 3px;
+}
+
+.scrollable-fade::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+}
+
+/* ========================================
+   空狀態
+   ======================================== */
+
+.empty-state {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 0.5em;
+    justify-content: center;
+    padding: 60px 20px;
+    text-align: center;
 }
 
-/* 模態框樣式 */
-.modal {
+.empty-state i {
+    margin-bottom: 16px;
+    opacity: 0.3;
+}
+
+.empty-state p {
+    margin-bottom: 20px;
+    font-size: 1rem;
+    color: var(--text-muted);
+}
+
+/* ========================================
+   管理員列表樣式
+   ======================================== */
+
+.admin-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.admin-card {
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    transition: all var(--transition-fast);
+}
+
+.admin-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.admin-info h4 {
+    margin: 0 0 var(--spacing-sm) 0;
+    color: var(--text-primary);
+}
+
+.admin-info p {
+    margin: var(--spacing-xs) 0;
+    color: var(--text-secondary);
+}
+
+.status-badge {
+    padding: 4px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-badge.active {
+    background-color: #4caf50;
+    color: white;
+}
+
+.status-badge.inactive {
+    background-color: #f44336;
+    color: white;
+}
+
+/* ========================================
+   響應式設計
+   ======================================== */
+
+@media (max-width: 1200px) {
+    .user-details-panel {
+        width: 350px;
+    }
+}
+
+@media (max-width: 992px) {
+    .users-container {
+        flex-direction: column;
+    }
+    
+    .user-details-panel {
+        width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    #userDrawerContainer {
+        position: absolute;
+        left: -350px;
+        height: 100%;
+        z-index: 1000;
+    }
+    
+    #userDrawerContainer.drawer-open {
+        left: 0;
+    }
+    
+    .user-layout {
+        padding-left: 0;
+    }
+}
+
+/* ========================================
+   管理員變更密碼模態框（保留原有功能）
+   ======================================== */
+
+#adminChangePasswordModal {
     display: none;
     position: fixed;
     z-index: 1000;
@@ -106,140 +929,115 @@ button:hover:not(:disabled) {
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(5px);
 }
 
-.modal-content {
+#adminChangePasswordModal .modal-content {
     background-color: white;
     margin: 10% auto;
-    padding: 20px;
-    border-radius: 10px;
-    width: 90%;
-    max-width: 500px;
-    box-shadow: 0 5px 30px rgba(0, 0, 0, 0.3);
-    animation: modalSlideIn 0.3s ease;
+    padding: 0;
+    border: 1px solid var(--border-color);
+    width: 500px;
+    max-width: 90%;
+    max-height: 90vh;
+    overflow: auto;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
 }
 
-@keyframes modalSlideIn {
-    from {
-        transform: translateY(-50px);
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0);
-        opacity: 1;
+/* 編輯用戶 Modal 樣式 */
+#userEditModal .modal-content {
+    background-color: white;
+    margin: 10% auto;
+    padding: 0;
+    border: 1px solid var(--border-color);
+    width: 500px;
+    max-width: 90%;
+    max-height: 90vh;
+    overflow: auto;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+}
+
+/* 響應式調整 */
+@media (max-width: 768px) {
+    #userEditModal .modal-content,
+    #adminChangePasswordModal .modal-content {
+        margin: 5% auto;
+        width: 95%;
     }
 }
 
-.modal-header {
+/* 變更密碼 Modal 內部間距調整 */
+#adminChangePasswordModal .modal-header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
-    padding-bottom: 10px;
-    border-bottom: 2px solid #f0f0f0;
+    justify-content: space-between;
+    padding: 20px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-light);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
-.modal-header h3 {
-    margin: 0;
-    color: #333;
+#adminChangePasswordModal .modal-body {
+    padding: 20px;
 }
 
-.modal-header i {
-    font-size: 1.5em;
-    color: #667eea;
-}
-
-.modal-body {
-    margin: 20px 0;
-}
-
-.form-group {
-    margin-bottom: 15px;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: 500;
-    color: #495057;
-}
-
-.form-group input {
-    width: 100%;
-    padding: 8px 12px;
-    border: 1px solid #ced4da;
-    border-radius: 4px;
-    font-size: 14px;
-}
-
-.form-group input:focus {
-    outline: none;
-    border-color: #80bdff;
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-}
-
-.modal-footer {
+#adminChangePasswordModal .modal-footer {
     display: flex;
     justify-content: flex-end;
     gap: 10px;
+    padding: 20px;
+    border-top: 1px solid var(--border-color);
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+#adminChangePasswordModal h3 {
+    margin: 0;
+    color: var(--text-primary);
+}
+
+#adminChangePasswordModal .close {
+    color: var(--text-muted);
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+#adminChangePasswordModal .close:hover,
+#adminChangePasswordModal .close:focus {
+    color: var(--text-primary);
+}
+
+#adminChangePasswordModal button {
+    padding: 8px 16px;
+    margin: 5px;
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+}
+
+#adminChangePasswordModal button:hover {
+    opacity: 0.9;
+}
+
+#adminChangePasswordModal label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+#adminChangePasswordModal input {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 15px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    box-sizing: border-box;
+}
+
+#adminChangePasswordModal .modal-footer {
+    text-align: right;
     margin-top: 20px;
-    padding-top: 15px;
-    border-top: 1px solid #f0f0f0;
-}
-
-.btn-primary {
-    background-color: #007bff;
-    color: white;
-    padding: 8px 16px;
-}
-
-.btn-primary:hover {
-    background-color: #0056b3;
-}
-
-.btn-secondary {
-    background-color: #6c757d;
-    color: white;
-    padding: 8px 16px;
-}
-
-.btn-secondary:hover {
-    background-color: #545b62;
-}
-
-/* 狀態標籤 */
-.status-active {
-    color: #27ae60;
-    font-weight: bold;
-}
-
-.status-inactive {
-    color: #e74c3c;
-    font-weight: bold;
-}
-
-/* 響應式設計 */
-@media (max-width: 768px) {
-    .admin-container {
-        padding: 1rem;
-    }
-    
-    table {
-        font-size: 0.9em;
-    }
-    
-    th, td {
-        padding: 8px 4px;
-    }
-    
-    .pagination-controls {
-        flex-direction: column;
-        gap: 1em;
-    }
-    
-    button {
-        padding: 4px 8px;
-        font-size: 12px;
-    }
 }

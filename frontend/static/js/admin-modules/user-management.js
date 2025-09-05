@@ -20,6 +20,9 @@
             
             const userInfo = await response.json();
             
+            // 保存當前使用者資訊到全域變數
+            window.currentUser = userInfo;
+            
             // 更新用戶名稱
             const usernameElement = document.getElementById('username');
             if (usernameElement) {
@@ -70,13 +73,13 @@
             // 載入用戶資訊
             await loadUserInfo();
             
-            // 初始化 AccountModule
+            // 初始化 AccountModule（現在應該已經載入完成）
             if (window.AccountModule) {
                 window.AccountModule.init();
-                // 載入用戶列表
-                await window.AccountModule.loadUsers();
+                // 注意：不再調用 loadUsers()，因為新架構使用 UserTimelineTree 等其他模組處理用戶載入
+                console.log('AccountModule 初始化完成');
             } else {
-                console.error('AccountModule 未載入');
+                console.warn('AccountModule 未載入 - 新架構可能不需要此模組');
             }
             
         } catch (error) {

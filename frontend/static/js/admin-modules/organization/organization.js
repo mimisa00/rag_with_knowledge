@@ -11,11 +11,18 @@ const OrganizationModule = (function() {
     let rolesModule = null;
     let roleTemplateModule = null;
     
+    // 共享資料快取
+    let departmentRolesCache = {
+        data: null,
+        timestamp: null,
+        expireTime: 5 * 60 * 1000 // 5分鐘快取時間
+    };
+    
     /**
      * 初始化模組
      */
     async function init() {
-        // OrganizationModule 初始化開始
+        console.log('OrganizationModule 初始化開始');
         
         // 初始化滾動條淡出淡入效果
         if (window.CommonUI && CommonUI.initScrollFadeEffect) {
@@ -26,17 +33,34 @@ const OrganizationModule = (function() {
         departmentModule = window.OrganizationDepartmentModule;
         employeeModule = window.OrganizationEmployeeModule;
         rolesModule = window.OrganizationRolesModule;
-        // roleTemplateModule 現在透過 rolesModule 存取
+        
+        console.log('子模組狀態:', {
+            department: !!departmentModule,
+            employee: !!employeeModule,
+            roles: !!rolesModule
+        });
         
         // 初始化子模組
         if (departmentModule) {
+            console.log('初始化部門模組...');
             await departmentModule.init();
         }
+        
         if (employeeModule) {
-            await employeeModule.init();
+            try {
+                console.log('正在初始化員工管理模組...');
+                await employeeModule.init();
+                console.log('員工管理模組初始化完成');
+            } catch (error) {
+                console.error('員工管理模組初始化失敗:', error);
+            }
+        } else {
+            console.error('OrganizationEmployeeModule 不存在!');
         }
+        
         // 角色模板模組現在由 rolesModule 管理
         if (rolesModule) {
+            console.log('初始化角色模組...');
             await rolesModule.init();
         }
         
@@ -46,7 +70,7 @@ const OrganizationModule = (function() {
         // 更新統計
         await updateStatistics();
         
-        // OrganizationModule 初始化完成
+        console.log('OrganizationModule 初始化完成');
     }
     
     /**
@@ -107,8 +131,24 @@ const OrganizationModule = (function() {
                 break;
             case 'employees':
             case 'users':
+                console.log('切換到員工管理區塊');
                 if (employeeModule) {
-                    await employeeModule.loadUsers();
+                    // 檢查模組是否已初始化
+                    if (employeeModule.isInitialized && !employeeModule.isInitialized()) {
+                        console.log('員工模組未初始化，正在初始化...');
+                        await employeeModule.init();
+                    }
+                    
+                    // 使用重新初始化方法
+                    if (employeeModule.reinitialize) {
+                        console.log('調用 employeeModule.reinitialize()');
+                        await employeeModule.reinitialize();
+                    } else {
+                        console.log('調用 employeeModule.loadUsers()');
+                        await employeeModule.loadUsers();
+                    }
+                } else {
+                    console.error('employeeModule 不存在!');
                 }
                 break;
         }
@@ -121,6 +161,10 @@ const OrganizationModule = (function() {
     async function loadAllData() {
         try {
             showLoadingState();
+            
+            // 清除快取，強制重新載入資料
+            clearCache();
+            console.log('已清除部門角色快取，將重新載入資料');
             
             const promises = [];
             
@@ -244,18 +288,40 @@ const OrganizationModule = (function() {
     /**
      * 儲存部門（代理）
      */
-    function saveDepartment() {
+    async function saveDepartment() {
         if (departmentModule && departmentModule.saveDepartment) {
-            return departmentModule.saveDepartment();
+            try {
+                const result = await departmentModule.saveDepartment();
+                // 如果成功儲存，清除快取
+                if (result !== false) {
+                    clearCache();
+                    console.log('部門儲存成功，已清除快取');
+                }
+                return result;
+            } catch (error) {
+                console.error('儲存部門失敗:', error);
+                throw error;
+            }
         }
     }
     
     /**
      * 儲存員工（代理）
      */
-    function saveEmployee() {
+    async function saveEmployee() {
         if (employeeModule && employeeModule.saveEmployee) {
-            return employeeModule.saveEmployee();
+            try {
+                const result = await employeeModule.saveEmployee();
+                // 如果成功儲存，清除快取（因為可能涉及角色異動）
+                if (result !== false) {
+                    clearCache();
+                    console.log('員工儲存成功，已清除快取');
+                }
+                return result;
+            } catch (error) {
+                console.error('儲存員工失敗:', error);
+                throw error;
+            }
         }
     }
     
@@ -390,6 +456,112 @@ const OrganizationModule = (function() {
         }
     }
     
+    /**
+     * 快取相關方法
+     */
+    
+    /**
+     * 檢查快取是否有效
+     */
+    function isCacheValid() {
+        return departmentRolesCache.data && 
+               departmentRolesCache.timestamp && 
+               (Date.now() - departmentRolesCache.timestamp) < departmentRolesCache.expireTime;
+    }
+    
+    /**
+     * 清除快取
+     */
+    function clearCache() {
+        departmentRolesCache.data = null;
+        departmentRolesCache.timestamp = null;
+    }
+    
+    /**
+     * 取得部門角色資料（帶快取）
+     */
+    async function getDepartmentRolesWithCache(forceRefresh = false) {
+        // 如果強制更新或快取失效，重新載入資料
+        if (forceRefresh || !isCacheValid()) {
+            console.log('快取失效或強制刷新，重新載入部門角色資料...');
+            try {
+                // 先載入部門樹
+                const deptResponse = await fetch('/api/organization/departments?tree=true', {
+                    credentials: 'include'
+                });
+                
+                if (!deptResponse.ok) {
+                    throw new Error(`部門樹載入失敗: ${deptResponse.status}`);
+                }
+                
+                const departments = await deptResponse.json();
+                
+                // 收集所有有效的部門ID
+                const collectDeptIds = (depts) => {
+                    let ids = [];
+                    depts.forEach(dept => {
+                        if (dept.is_active) {
+                            ids.push(dept.id);
+                            if (dept.children && dept.children.length > 0) {
+                                ids = ids.concat(collectDeptIds(dept.children));
+                            }
+                        }
+                    });
+                    return ids;
+                };
+                
+                const deptIds = collectDeptIds(departments);
+                console.log('需要載入角色的部門ID:', deptIds);
+                
+                // 使用批次API載入所有部門的角色
+                let rolesData = {};
+                if (deptIds.length > 0) {
+                    const rolesResponse = await fetch(`/api/organization/departments/roles/batch?department_ids=${deptIds.join(',')}`, {
+                        credentials: 'include'
+                    });
+                    
+                    if (rolesResponse.ok) {
+                        const result = await rolesResponse.json();
+                        rolesData = result.data || {};
+                    } else {
+                        console.warn('批次載入角色失敗，將使用空資料');
+                    }
+                }
+                
+                // 將角色資料附加到對應的部門
+                const attachRolesToDepartments = (depts) => {
+                    depts.forEach(dept => {
+                        if (dept.is_active) {
+                            dept.roles = rolesData[dept.id] || [];
+                        }
+                        
+                        if (dept.children && dept.children.length > 0) {
+                            attachRolesToDepartments(dept.children);
+                        }
+                    });
+                };
+                
+                attachRolesToDepartments(departments);
+                
+                // 更新快取
+                departmentRolesCache.data = departments;
+                departmentRolesCache.timestamp = Date.now();
+                
+                console.log('部門角色資料快取已更新:', departments);
+            } catch (error) {
+                console.error('載入部門角色資料失敗:', error);
+                // 如果載入失敗且沒有快取資料，返回空陣列
+                if (!departmentRolesCache.data) {
+                    return [];
+                }
+            }
+        } else {
+            console.log('使用快取的部門角色資料');
+        }
+        
+        return departmentRolesCache.data || [];
+    }
+    
     // 公開 API
     return {
         init: init,
@@ -407,6 +579,9 @@ const OrganizationModule = (function() {
         refreshTree: refreshTree,
         refresh: loadAllData,
         showModal: showModal,
+        // 快取相關方法
+        getDepartmentRolesWithCache: getDepartmentRolesWithCache,
+        clearCache: clearCache,
         closeModal: closeModal,
         updateStatistics: updateStatistics
     };
@@ -419,23 +594,33 @@ window.OrganizationModule = OrganizationModule;
 // 全域函數（供 HTML onclick 使用）- 保持向後兼容
 // ========================================
 
-window.saveDepartment = function() {
+window.saveDepartment = async function() {
     if (window.OrganizationDepartmentModule && window.OrganizationDepartmentModule.saveDepartment) {
-        return window.OrganizationDepartmentModule.saveDepartment();
+        const result = await window.OrganizationDepartmentModule.saveDepartment();
+        // 清除快取
+        if (result !== false && window.OrganizationModule && window.OrganizationModule.clearCache) {
+            window.OrganizationModule.clearCache();
+        }
+        return result;
     }
     // Fallback
     if (window.OrganizationModule && window.OrganizationModule.saveDepartment) {
-        return window.OrganizationModule.saveDepartment();
+        return await window.OrganizationModule.saveDepartment();
     }
 };
 
-window.saveEmployee = function() {
+window.saveEmployee = async function() {
     if (window.OrganizationEmployeeModule && window.OrganizationEmployeeModule.saveEmployee) {
-        return window.OrganizationEmployeeModule.saveEmployee();
+        const result = await window.OrganizationEmployeeModule.saveEmployee();
+        // 清除快取
+        if (result !== false && window.OrganizationModule && window.OrganizationModule.clearCache) {
+            window.OrganizationModule.clearCache();
+        }
+        return result;
     }
     // Fallback
     if (window.OrganizationModule && window.OrganizationModule.saveEmployee) {
-        return window.OrganizationModule.saveEmployee();
+        return await window.OrganizationModule.saveEmployee();
     }
 };
 

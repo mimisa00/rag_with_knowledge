@@ -1,0 +1,93 @@
+/* 全頁面載入器樣式 - 必須靜態載入，避免 FOUC */
+
+/* 全頁面載入遮罩 */
+.page-loader-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #f8f9fa; /* 使用 --bg-light 的值 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 99999;
+    transition: opacity 0.3s ease-out, visibility 0.3s ease-out;
+}
+
+/* 深色主題支援 */
+@media (prefers-color-scheme: dark) {
+    .page-loader-overlay {
+        background-color: #1a1a1a; /* 使用 --bg-main 深色模式的值 */
+    }
+}
+
+/* 中央載入器容器 */
+.page-loader-content {
+    text-align: center;
+}
+
+/* 旋轉載入器 - 增大尺寸 */
+.page-loader-spinner {
+    display: inline-block;
+    width: 64px;
+    height: 64px;
+    border: 5px solid rgba(102, 126, 234, 0.15); /* 使用 --primary 的 RGBA */
+    border-top-color: #667eea; /* 使用 --primary 的值 */
+    border-radius: 50%;
+    animation: page-loader-spin 1s linear infinite;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+}
+
+/* 載入文字 */
+.page-loader-text {
+    margin-top: 24px;
+    font-size: 18px;
+    color: #555; /* 使用 --text-secondary 的值 */
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans TC", sans-serif;
+    font-weight: 500;
+}
+
+/* 深色主題文字顏色 */
+@media (prefers-color-scheme: dark) {
+    .page-loader-text {
+        color: #cbd5e1; /* 使用 --text-secondary 深色模式的值 */
+    }
+    
+    .page-loader-spinner {
+        border-color: rgba(129, 140, 248, 0.15); /* 使用深色模式 --primary 的 RGBA */
+        border-top-color: #818cf8; /* 使用深色模式 --primary 的值 */
+        background: linear-gradient(135deg, rgba(129, 140, 248, 0.05) 0%, rgba(159, 108, 199, 0.05) 100%);
+    }
+}
+
+/* 旋轉動畫 */
+@keyframes page-loader-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* 隱藏狀態 */
+.page-loader-overlay.hidden {
+    opacity: 0;
+    visibility: hidden;
+}
+
+/* 頁面內容初始隱藏 - 使用 visibility 避免影響 flexbox 計算 */
+.page-content {
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.3s ease-in, visibility 0.3s ease-in;
+}
+
+/* 頁面內容顯示 */
+.page-content.visible {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* 防止載入時的佈局偏移 */
+body.loading {
+    overflow: hidden;
+}
+

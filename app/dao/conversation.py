@@ -1,4 +1,5 @@
 from typing import Dict, List, Optional, Any
+import json
 from app.dao.base import BaseDAO, db_manager
 from app.utils.logging import get_logger
 
@@ -9,14 +10,15 @@ class ConversationDAO(BaseDAO):
     def __init__(self, db_manager_instance=None):
         super().__init__(db_manager_instance or db_manager)
 
-    def store_conversation(self, conv_id: str, question: str, answer: str, user_id: int) -> bool:
+    def store_conversation(self, conv_id: str, question: str, answer: str, user_id: int, sources: Optional[List[str]] = None) -> bool:
         """儲存對話記錄"""
         try:
+            sources_json = json.dumps(sources) if sources else None
             query = """
-            INSERT INTO conversations (conv_id, user_id, question, answer) 
-            VALUES (%s, %s, %s, %s)
+            INSERT INTO conversations (conv_id, user_id, question, answer, sources) 
+            VALUES (%s, %s, %s, %s, %s)
             """
-            return self.execute_insert(query, (conv_id, user_id, question, answer)) > 0
+            return self.execute_insert(query, (conv_id, user_id, question, answer, sources_json)) > 0
         except Exception as e:
             logger.error(f"儲存對話記錄失敗: {e}")
             return False
@@ -25,12 +27,22 @@ class ConversationDAO(BaseDAO):
         """根據對話ID取得對話記錄"""
         try:
             query = """
-            SELECT id, conv_id, user_id, question, answer, created_at 
+            SELECT id, conv_id, user_id, question, answer, sources, created_at 
             FROM conversations 
             WHERE conv_id = %s 
             ORDER BY created_at ASC
             """
-            return self.execute_query(query, (conv_id,))
+            results = self.execute_query(query, (conv_id,))
+            # 解析 sources JSON 
+            for result in results:
+                if result.get('sources'):
+                    try:
+                        result['sources'] = json.loads(result['sources'])
+                    except json.JSONDecodeError:
+                        result['sources'] = []
+                else:
+                    result['sources'] = []
+            return results
         except Exception as e:
             logger.error(f"取得對話記錄失敗: {e}")
             return []

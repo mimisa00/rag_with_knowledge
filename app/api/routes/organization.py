@@ -3,18 +3,19 @@
 """
 from typing import List, Dict, Any, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from app.api.dependencies import get_current_user, get_admin_user
+from app.api.dependencies import get_admin_user
 from app.models.organization import (
     Department, DepartmentCreate, DepartmentUpdate, DepartmentResponse,
     PermissionGroup, PermissionGroupCreate, PermissionGroupUpdate, PermissionGroupResponse,
-    UserExtension, UserExtensionUpdate, UserUpdate, UserPermissionGroupAssign,
+    UserExtension, UserExtensionUpdate, UserCreate, UserUpdate, UserStatusUpdate, UserPermissionGroupAssign,
     SystemMode, SystemModeUpdate, UserWithPermissionGroups,
     AuditLog
 )
 from app.models.role_template import (
     RoleTemplate, RoleTemplateCreate, RoleTemplateUpdate, RoleTemplateResponse,
     DepartmentRole, DepartmentRoleCreate, DepartmentRoleUpdate, DepartmentRoleResponse,
-    UserDepartmentRole, UserDepartmentRoleAssign, DepartmentRolesBatchCreate
+    UserDepartmentRole, UserDepartmentRoleAssign, DepartmentRolesBatchCreate,
+    RoleAssignmentSuggestionCreate
 )
 from app.dao.organization import (
     department_dao, permission_group_dao, user_org_dao, 
@@ -91,7 +92,7 @@ def list_departments(
     parent_id: Optional[int] = Query(None),
     is_active: Optional[bool] = Query(None),
     tree: bool = Query(False),
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    current_user: Dict[str, Any] = Depends(get_admin_user)
 ):
     """列出部門"""
     try:
@@ -117,7 +118,7 @@ def list_departments(
 @router.get("/departments/{dept_id}", response_model=DepartmentResponse)
 def get_department(
     dept_id: int,
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    current_user: Dict[str, Any] = Depends(get_admin_user)
 ):
     """取得部門詳情"""
     try:
@@ -271,10 +272,41 @@ def list_organization_users(
         raise HTTPException(status_code=500, detail="取得使用者列表時發生錯誤")
 
 
+# ===== 待處理帳號管理 API =====
+
+@router.get("/users/pending", response_model=List[Dict[str, Any]])
+def list_pending_users(
+    current_user: Dict[str, Any] = Depends(get_admin_user)
+):
+    """取得待完成設定的帳號清單"""
+    try:
+        pending_users = user_org_dao.get_pending_users()
+        return pending_users
+        
+    except Exception as e:
+        logger.error(f"Error listing pending users: {e}")
+        raise HTTPException(status_code=500, detail="取得待處理帳號時發生錯誤")
+
+
+@router.get("/users/check/{loginid}", response_model=Dict[str, Any])
+def check_user_account_status(
+    loginid: str,
+    current_user: Dict[str, Any] = Depends(get_admin_user)
+):
+    """檢查特定帳號狀態"""
+    try:
+        status_info = user_org_dao.check_user_completeness(loginid)
+        return status_info
+        
+    except Exception as e:
+        logger.error(f"Error checking user account status: {e}")
+        raise HTTPException(status_code=500, detail="檢查帳號狀態時發生錯誤")
+
+
 @router.get("/users/{user_id}", response_model=UserWithPermissionGroups)
 def get_organization_user(
     user_id: int,
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    current_user: Dict[str, Any] = Depends(get_admin_user)
 ):
     """取得使用者組織資訊"""
     try:
@@ -300,9 +332,13 @@ def update_user(
 ):
     """統一更新使用者資訊（基本資訊、擴充資訊、角色）"""
     try:
+        logger.info(f"開始更新使用者資訊: user_id={user_id}, admin={current_user.get('loginid')}")
+        logger.debug(f"更新數據: {user_update.model_dump()}")
+        
         # 檢查使用者是否存在
         user = user_dao.get_user_by_id(user_id, include_inactive=True)
         if not user:
+            logger.warning(f"嘗試更新不存在的使用者: user_id={user_id}")
             raise HTTPException(status_code=404, detail="使用者不存在")
         
         # 1. 更新基本資訊
@@ -315,16 +351,20 @@ def update_user(
             basic_updates['is_active'] = user_update.is_active
             
         if basic_updates:
+            logger.debug(f"更新基本資訊: user_id={user_id}, updates={basic_updates}")
             success = user_dao.update_user(user_id, basic_updates)
             if not success:
+                logger.error(f"更新使用者基本資訊失敗: user_id={user_id}, updates={basic_updates}")
                 raise HTTPException(status_code=400, detail="更新使用者基本資訊失敗")
         
         # 2. 更新密碼（如果提供）
         if user_update.password:
+            logger.debug(f"更新密碼: user_id={user_id}")
             from app.core.security.auth import auth_manager
             password_hash = auth_manager.get_password_hash(user_update.password)
             success = user_dao.update_user_password(user_id, password_hash)
             if not success:
+                logger.error(f"更新密碼失敗: user_id={user_id}")
                 raise HTTPException(status_code=400, detail="更新密碼失敗")
         
         # 3. 更新擴充資訊
@@ -337,11 +377,13 @@ def update_user(
             ext_updates['title'] = user_update.title
             
         if ext_updates:
+            logger.debug(f"更新擴充資訊: user_id={user_id}, ext_updates={ext_updates}")
             extension = user_org_dao.get_user_extension(user_id)
             if extension:
                 success = user_org_dao.update_user_extension(user_id, ext_updates)
             else:
                 # 建立新的擴充資訊
+                logger.debug(f"建立新擴充資訊: user_id={user_id}")
                 ext_model = UserExtension(
                     user_id=user_id,
                     **ext_updates,
@@ -350,9 +392,53 @@ def update_user(
                 success = user_org_dao.create_user_extension(ext_model)
             
             if not success:
+                logger.error(f"更新擴充資訊失敗: user_id={user_id}, ext_updates={ext_updates}")
                 raise HTTPException(status_code=400, detail="更新擴充資訊失敗")
         
-        # 4. 更新權限群組
+        # 4. 更新部門角色
+        if (user_update.primary_role_id is not None or user_update.department_roles is not None):
+            logger.debug(f"更新部門角色: user_id={user_id}, primary_role_id={user_update.primary_role_id}, department_roles={user_update.department_roles}")
+            from app.dao.role_template import user_department_role_dao
+            from app.models.role_template import UserDepartmentRoleBase
+            
+            # 先取得現有的部門角色
+            existing_roles = user_department_role_dao.get_user_roles(user_id)
+            logger.debug(f"現有角色: user_id={user_id}, existing_roles={[r.get('department_role_id') for r in existing_roles]}")
+            
+            # 刪除所有現有的部門角色
+            for existing_role in existing_roles:
+                success = user_department_role_dao.remove_user_from_role(user_id, existing_role['department_role_id'])
+                if not success:
+                    logger.warning(f"刪除現有角色失敗: user_id={user_id}, role_id={existing_role['department_role_id']}")
+            
+            # 建立主要角色關聯
+            if user_update.primary_role_id:
+                logger.debug(f"指派主要角色: user_id={user_id}, primary_role_id={user_update.primary_role_id}")
+                primary_role = UserDepartmentRoleBase(
+                    user_id=user_id,
+                    department_role_id=user_update.primary_role_id,
+                    is_primary=True
+                )
+                role_id = user_department_role_dao.assign_user_role(primary_role, current_user['id'])
+                if not role_id:
+                    logger.error(f"指派主要角色失敗: user_id={user_id}, primary_role_id={user_update.primary_role_id}")
+                    raise HTTPException(status_code=400, detail="指派主要角色失敗")
+            
+            # 建立其他部門角色關聯
+            if user_update.department_roles:
+                for role_id in user_update.department_roles:
+                    # 避免重複指派主要角色
+                    if role_id != user_update.primary_role_id:
+                        other_role = UserDepartmentRoleBase(
+                            user_id=user_id,
+                            department_role_id=role_id,
+                            is_primary=False
+                        )
+                        assigned_role_id = user_department_role_dao.assign_user_role(other_role, current_user['id'])
+                        if not assigned_role_id:
+                            raise HTTPException(status_code=400, detail=f"指派角色 {role_id} 失敗")
+        
+        # 5. 更新權限群組
         if user_update.permission_group_ids is not None:
             # 先獲取現有權限群組
             existing_permission_groups = user_org_dao.get_user_permission_groups(user_id)
@@ -384,6 +470,10 @@ def update_user(
             changes.update(ext_updates)
         if user_update.permission_group_ids is not None:
             changes['permission_group_ids'] = user_update.permission_group_ids
+        if user_update.primary_role_id is not None:
+            changes['primary_role_id'] = user_update.primary_role_id
+        if user_update.department_roles is not None:
+            changes['department_roles'] = user_update.department_roles
         if user_update.password:
             changes['password'] = '***'  # 不記錄實際密碼
             
@@ -397,9 +487,11 @@ def update_user(
             user_agent=request.headers.get("User-Agent")
         ))
         
+        logger.info(f"使用者資訊更新成功: user_id={user_id}, changes={list(changes.keys())}")
         return {"success": True, "message": "使用者資訊更新成功"}
         
-    except HTTPException:
+    except HTTPException as he:
+        logger.error(f"HTTP錯誤更新使用者資訊 (user_id={user_id}): {he.detail}")
         raise
     except Exception as e:
         logger.error(f"Error updating user: {e}")
@@ -462,7 +554,7 @@ def update_user_extension(
 
 @router.post("/users", response_model=Dict[str, Any])
 def create_organization_user(
-    user_data: Dict[str, Any],
+    user_data: UserCreate,
     request: Request,
     current_user: Dict[str, Any] = Depends(get_admin_user)
 ):
@@ -470,78 +562,269 @@ def create_organization_user(
     try:
         from app.core.security.auth import auth_manager
         
-        # 建立使用者
-        loginid = user_data.get('loginid', user_data.get('username'))  # 登入帳號
-        username = user_data.get('username', loginid)  # 真實姓名，預設與 loginid 相同
-        email = user_data.get('email', f'{loginid}@example.com')  # 提供預設 email
-        password_hash = auth_manager.get_password_hash(user_data.get('password', 'temp123456'))
+        # 1. 驗證 loginid 唯一性
+        existing_user = user_dao.get_user_by_loginid(user_data.loginid)
+        if existing_user:
+            raise HTTPException(status_code=400, detail=f"登入帳號 '{user_data.loginid}' 已存在")
         
-        # 創建使用者（預設為 user 角色）
+        # 2. 驗證 email 唯一性 
+        existing_email = user_dao.get_user_by_email(user_data.email)
+        if existing_email:
+            raise HTTPException(status_code=400, detail=f"電子信箱 '{user_data.email}' 已被使用")
+        
+        # 3. 驗證員工編號唯一性（如果有提供）
+        if user_data.employee_no:
+            existing_emp = user_org_dao.get_user_by_employee_no(user_data.employee_no.strip())
+            if existing_emp:
+                raise HTTPException(status_code=400, detail=f"員工編號 '{user_data.employee_no}' 已存在")
+        
+        # 4. 驗證部門是否存在且啟用
+        department = department_dao.get_department(user_data.department_id)
+        if not department:
+            raise HTTPException(status_code=400, detail=f"部門ID {user_data.department_id} 不存在")
+        if not department.get('is_active', True):
+            raise HTTPException(status_code=400, detail=f"部門 '{department['name']}' 已停用，無法分配員工")
+        
+        # 5. 驗證主要角色是否存在且屬於指定部門
+        from app.dao.role_template import department_role_dao
+        primary_role = department_role_dao.get_department_role(user_data.primary_role_id)
+        if not primary_role:
+            raise HTTPException(status_code=400, detail=f"角色ID {user_data.primary_role_id} 不存在")
+        if primary_role.get('department_id') != user_data.department_id:
+            raise HTTPException(status_code=400, detail="主要角色必須屬於所選部門")
+        if not primary_role.get('is_active', True):
+            raise HTTPException(status_code=400, detail=f"角色 '{primary_role['name']}' 已停用")
+        
+        # 6. 建立使用者（使用驗證過的資料）
+        password_hash = auth_manager.get_password_hash(user_data.password)
+        
         user_id = user_dao.create_user(
-            loginid=loginid,
-            username=username,
-            email=email,
+            loginid=user_data.loginid,
+            username=user_data.username,
+            email=str(user_data.email),  # EmailStr 轉字串
             password_hash=password_hash,
-            role='user'  # 預設角色，後續通過角色分配更新
+            role='user',  # 預設系統角色
+            is_active=user_data.is_active
         )
+        
         if not user_id or user_id == -1:
-            raise HTTPException(status_code=400, detail="建立使用者失敗")
+            raise HTTPException(status_code=500, detail="建立使用者失敗，請稍後再試")
         
-        # 建立或更新組織資訊（始終建立 user_extensions 記錄）
-        from app.models.organization import UserExtension
+        # 7. 建立使用者擴充資訊
+        ext_model = UserExtension(
+            user_id=user_id,
+            department_id=user_data.department_id,
+            employee_no=user_data.employee_no,
+            title=user_data.title,
+            auth_source='local',
+            password_strategy=user_data.password_strategy,
+            created_by=current_user['id']
+        )
         
-        # 準備擴展資訊
-        ext_data = {
-            'department_id': user_data.get('department_id'),
-            'employee_no': user_data.get('employee_no'),
-            'title': user_data.get('title'),
-            'auth_source': 'local',  # 預設認證來源
-        }
+        ext_success = user_org_dao.create_user_extension(ext_model)
+        if not ext_success:
+            # 回滾使用者建立
+            user_dao.delete_user(user_id)
+            raise HTTPException(status_code=500, detail="建立使用者擴充資訊失敗")
         
-        # 檢查是否已有擴展資訊
-        existing_ext = user_org_dao.get_user_extension(user_id)
+        # 8. 分配主要角色
+        from app.models.role_template import UserDepartmentRoleBase
+        primary_role_assignment = UserDepartmentRoleBase(
+            user_id=user_id,
+            department_role_id=user_data.primary_role_id,
+            is_primary=True
+        )
         
-        if existing_ext:
-            # 更新現有記錄
-            ext_data['updated_by'] = current_user['id']
-            user_org_dao.update_user_extension(user_id, ext_data)
-        else:
-            # 建立新記錄
-            ext_model = UserExtension(
-                user_id=user_id,
-                **ext_data,
-                created_by=current_user['id']
-            )
-            user_org_dao.create_user_extension(ext_model)
+        from app.dao.role_template import user_department_role_dao
+        role_success = user_department_role_dao.assign_user_role(primary_role_assignment, current_user['id'])
+        if not role_success:
+            # 回滾之前的建立
+            user_org_dao.delete_user_extension(user_id)
+            user_dao.delete_user(user_id)
+            raise HTTPException(status_code=500, detail="分配主要角色失敗")
         
-        # 分配權限群組
-        if user_data.get('permission_group_ids'):
+        # 9. 分配其他部門角色（如果有）
+        if user_data.department_roles:
+            for role_id in user_data.department_roles:
+                if role_id != user_data.primary_role_id:  # 避免重複分配主要角色
+                    # 驗證角色存在性
+                    role = department_role_dao.get_department_role(role_id)
+                    if role and role.get('is_active', True):
+                        other_role_assignment = UserDepartmentRoleBase(
+                            user_id=user_id,
+                            department_role_id=role_id,
+                            is_primary=False
+                        )
+                        user_department_role_dao.assign_user_role(other_role_assignment, current_user['id'])
+                    else:
+                        logger.warning(f"跳過無效或停用的角色ID: {role_id}")
+        
+        # 10. 分配權限群組（如果有）
+        if user_data.permission_groups:
             from app.models.organization import UserPermissionGroup
-            for permission_group_id in user_data['permission_group_ids']:
-                user_permission_group = UserPermissionGroup(
-                    user_id=user_id,
-                    permission_group_id=permission_group_id,
-                    department_id=user_data.get('department_id'),
-                    assigned_by=current_user['id']
-                )
-                user_org_dao.assign_user_permission_group(user_permission_group)
+            for permission_group_id in user_data.permission_groups:
+                # 驗證權限群組存在性
+                perm_group = permission_group_dao.get_permission_group(permission_group_id)
+                if perm_group and perm_group.get('is_active', True):
+                    user_permission_group = UserPermissionGroup(
+                        user_id=user_id,
+                        permission_group_id=permission_group_id,
+                        department_id=user_data.department_id,
+                        assigned_by=current_user['id']
+                    )
+                    user_org_dao.assign_user_permission_group(user_permission_group)
+                else:
+                    logger.warning(f"跳過無效或停用的權限群組ID: {permission_group_id}")
         
-        # 記錄審計日誌
+        # 11. 記錄審計日誌
         audit_log_dao.create_audit_log(AuditLog(
             user_id=current_user['id'],
-            entity_type='USER',
-            entity_id=user_id,
-            action='CREATE',
-            changes={'username': user_data['username'], 'action': '建立使用者'},
+            action="create_user",
+            target_type="user",
+            target_id=str(user_id),
+            changes={
+                "loginid": user_data.loginid,
+                "username": user_data.username,
+                "email": str(user_data.email),
+                "department_id": user_data.department_id,
+                "primary_role_id": user_data.primary_role_id,
+                "employee_no": user_data.employee_no,
+                "title": user_data.title
+            },
             ip_address=request.client.host,
-            user_agent=request.headers.get('User-Agent', '')
+            user_agent=request.headers.get("User-Agent")
         ))
         
-        return {"status": "success", "user_id": user_id}
+        return {
+            "success": True, 
+            "user_id": user_id,
+            "message": f"使用者 '{user_data.username}' 建立成功"
+        }
         
+    except HTTPException:
+        # 已經是 HTTP 錯誤，直接拋出
+        raise
+    except ValueError as ve:
+        # Pydantic 驗證錯誤
+        logger.error(f"使用者資料驗證失敗: {str(ve)}")
+        raise HTTPException(status_code=422, detail=f"資料驗證失敗：{str(ve)}")
     except Exception as e:
-        logger.error(f"建立使用者失敗: {str(e)}")
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error(f"建立使用者時發生未預期錯誤: {str(e)}")
+        raise HTTPException(status_code=500, detail="建立使用者時發生錯誤，請稍後再試")
+
+
+@router.patch("/users/{user_id}", response_model=Dict[str, Any])
+def patch_user_status(
+    user_id: int,
+    status_update: UserStatusUpdate,
+    request: Request,
+    current_user: Dict[str, Any] = Depends(get_admin_user)
+):
+    """更新使用者狀態（停用/啟用，支援延遲停用和預約啟用）"""
+    try:
+        # 檢查使用者是否存在
+        user = user_dao.get_user_by_id(user_id, include_inactive=True)
+        if not user:
+            raise HTTPException(status_code=404, detail="使用者不存在")
+        
+        # 檢查是否為自己
+        if user_id == current_user['id']:
+            raise HTTPException(status_code=400, detail="不能停用自己的帳號")
+        
+        update_data = {}
+        extension_update_data = {}
+        
+        # 處理基本狀態更新
+        if status_update.is_active is not None:
+            update_data['is_active'] = status_update.is_active
+        
+        # 處理延遲停用邏輯
+        if status_update.activation_expires is not None:
+            from datetime import datetime, timezone
+            current_time = datetime.now(timezone.utc)
+            
+            # 確保 activation_expires 有時區資訊
+            if status_update.activation_expires.tzinfo is None:
+                # 假設輸入為 UTC 時間
+                activation_expires_utc = status_update.activation_expires.replace(tzinfo=timezone.utc)
+            else:
+                activation_expires_utc = status_update.activation_expires.astimezone(timezone.utc)
+            
+            if activation_expires_utc <= current_time:
+                # 立即停用：設定 activation_expires 為當前時間，is_active 為 False
+                extension_update_data['activation_expires'] = current_time
+                update_data['is_active'] = False
+            else:
+                # 延遲停用：設定未來的過期時間，保持 is_active 為 True（除非明確設定）
+                extension_update_data['activation_expires'] = activation_expires_utc
+                if 'is_active' not in update_data:
+                    update_data['is_active'] = True  # 延遲停用時暫時保持啟用
+        
+        # 處理預約啟用邏輯
+        if status_update.activation_scheduled is not None:
+            from datetime import datetime, timezone
+            if 'current_time' not in locals():
+                current_time = datetime.now(timezone.utc)
+            
+            # 確保 activation_scheduled 有時區資訊
+            if status_update.activation_scheduled.tzinfo is None:
+                # 假設輸入為 UTC 時間
+                activation_scheduled_utc = status_update.activation_scheduled.replace(tzinfo=timezone.utc)
+            else:
+                activation_scheduled_utc = status_update.activation_scheduled.astimezone(timezone.utc)
+            
+            if activation_scheduled_utc <= current_time:
+                # 立即啟用：清除 activation_scheduled，is_active 為 True
+                extension_update_data['activation_scheduled'] = None
+                update_data['is_active'] = True
+            else:
+                # 預約啟用：設定未來的啟用時間，保持 is_active 為 False（除非明確設定）
+                extension_update_data['activation_scheduled'] = activation_scheduled_utc
+                if 'is_active' not in update_data:
+                    update_data['is_active'] = False  # 預約啟用時暫時保持停用
+        
+        # 更新基本使用者資料
+        if update_data:
+            success = user_dao.update_user(user_id, update_data)
+            if not success:
+                raise HTTPException(status_code=400, detail="更新使用者狀態失敗")
+        
+        # 更新擴充資訊（如果有 activation_expires 或 activation_scheduled）
+        if extension_update_data:
+            # 檢查是否有擴充資訊
+            extension = user_org_dao.get_user_extension(user_id)
+            if extension:
+                success = user_org_dao.update_user_extension(user_id, extension_update_data)
+            else:
+                # 建立新的擴充資訊
+                ext_model = UserExtension(
+                    user_id=user_id,
+                    **extension_update_data
+                )
+                success = user_org_dao.create_user_extension(ext_model)
+            
+            if not success:
+                raise HTTPException(status_code=400, detail="更新帳號排程設定失敗")
+        
+        # 記錄審計日誌
+        changes = {**update_data, **extension_update_data}
+        audit_log_dao.create_audit_log(AuditLog(
+            user_id=current_user['id'],
+            action="update_user_status",
+            target_type="user",
+            target_id=str(user_id),
+            changes=changes,
+            ip_address=request.client.host,
+            user_agent=request.headers.get("User-Agent")
+        ))
+        
+        return {"success": True}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating user status: {e}")
+        raise HTTPException(status_code=500, detail="更新使用者狀態時發生錯誤")
 
 
 @router.delete("/users/{user_id}", response_model=Dict[str, Any])
@@ -699,7 +982,7 @@ def list_system_modes(
 @router.get("/system-modes/{mode_key}", response_model=SystemMode)
 def get_system_mode(
     mode_key: str,
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    current_user: Dict[str, Any] = Depends(get_admin_user)
 ):
     """取得系統模式設定"""
     try:
@@ -857,7 +1140,9 @@ def _build_user_with_permission_groups(user_id: Any) -> Optional[UserWithPermiss
             department=department,
             permission_groups=permission_groups,
             user_extension=extension,
-            department_roles=department_roles  # 直接設定到模型屬性
+            department_roles=department_roles,  # 直接設定到模型屬性
+            last_login_at=user.get('last_login_at'),  # 最後登入時間
+            last_activity_at=user.get('last_activity_at')  # 最後活動時間
         )
         
         return user_data
@@ -914,7 +1199,7 @@ def create_role_template(
 def list_role_templates(
     is_active: Optional[bool] = Query(None),
     is_system: Optional[bool] = Query(None),
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    current_user: Dict[str, Any] = Depends(get_admin_user)
 ):
     """列出角色模板"""
     try:
@@ -929,7 +1214,7 @@ def list_role_templates(
 @router.get("/role-templates/{template_id}", response_model=RoleTemplateResponse)
 def get_role_template(
     template_id: int,
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    current_user: Dict[str, Any] = Depends(get_admin_user)
 ):
     """取得角色模板詳情"""
     try:
@@ -1158,7 +1443,7 @@ def list_all_department_roles(
 @router.get("/departments/{department_id}/roles", response_model=List[DepartmentRoleResponse])
 def list_department_roles(
     department_id: int,
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    current_user: Dict[str, Any] = Depends(get_admin_user)
 ):
     """取得部門的所有角色"""
     try:
@@ -1173,7 +1458,7 @@ def list_department_roles(
 @router.get("/departments/roles/batch", response_model=Dict[str, Dict[int, List[DepartmentRoleResponse]]])
 def get_all_department_roles_batch(
     department_ids: Optional[str] = Query(None, description="部門ID列表，逗號分隔，例如: 1,2,3"),
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    current_user: Dict[str, Any] = Depends(get_admin_user)
 ):
     """批次取得多個部門的所有角色（優化版本）"""
     try:
@@ -1361,7 +1646,7 @@ def remove_user_from_role(
 @router.get("/department-roles/{role_id}/users", response_model=List[Dict[str, Any]])
 def get_role_users(
     role_id: int,
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    current_user: Dict[str, Any] = Depends(get_admin_user)
 ):
     """取得角色的所有用戶"""
     try:
@@ -1376,7 +1661,7 @@ def get_role_users(
 @router.get("/users/{user_id}/department-roles", response_model=List[Dict[str, Any]])
 def get_user_department_roles(
     user_id: int,
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    current_user: Dict[str, Any] = Depends(get_admin_user)
 ):
     """取得用戶的所有部門角色"""
     try:
@@ -1535,7 +1820,7 @@ def get_safe_parent_candidates(
 @router.get("/roles/tree", response_model=Dict[str, Any])
 def get_roles_tree(
     department_id: Optional[int] = Query(None, description="部門ID，不指定則返回所有部門"),
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    current_user: Dict[str, Any] = Depends(get_admin_user)
 ):
     """取得角色樹狀結構"""
     try:
@@ -1798,13 +2083,16 @@ def _build_role_tree(roles: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
 @router.get("/role-relationships/analyze", response_model=Dict[str, Any])
 def analyze_role_relationships(
+    include_inactive: bool = Query(False, description="是否包含停用的角色"),
     current_user: Dict[str, Any] = Depends(get_admin_user)
 ):
     """分析角色關係並提供調整建議"""
     try:
-        logger.info(f"User {current_user['username']} analyzing role relationships")
+        logger.info(f"User {current_user['username']} analyzing role relationships (include_inactive={include_inactive})")
         
-        analysis_result = role_relationship_analysis_dao.analyze_cross_department_relationships()
+        analysis_result = role_relationship_analysis_dao.analyze_cross_department_relationships(
+            include_inactive=include_inactive
+        )
         
         logger.info(f"Role relationship analysis completed: {analysis_result['issues_count']} issues found")
         return {
@@ -1838,6 +2126,58 @@ def preview_role_adjustments(
         raise HTTPException(status_code=500, detail="預覽角色調整失敗")
 
 
+@router.get("/role-relationships/check-department-paths", response_model=Dict[str, Any])
+def check_department_paths(
+    current_user: Dict[str, Any] = Depends(get_admin_user)
+):
+    """檢查部門路徑一致性"""
+    try:
+        logger.info(f"User {current_user['username']} checking department paths")
+        
+        path_check = role_relationship_analysis_dao.check_and_fix_department_paths()
+        
+        return {
+            "success": True,
+            "data": path_check
+        }
+        
+    except Exception as e:
+        logger.error(f"Error checking department paths: {e}")
+        raise HTTPException(status_code=500, detail="檢查部門路徑失敗")
+
+@router.post("/role-relationships/fix-department-paths", response_model=Dict[str, Any])
+def fix_department_paths(
+    path_issues: List[Dict[str, Any]],
+    current_user: Dict[str, Any] = Depends(get_admin_user)
+):
+    """修復部門路徑不一致問題"""
+    try:
+        logger.info(f"User {current_user['username']} fixing {len(path_issues)} department path issues")
+        
+        # 記錄操作到審計日誌
+        from app.models.organization import AuditLog
+        audit_log = AuditLog(
+            user_id=current_user['id'],
+            action="DEPARTMENT_PATH_FIX",
+            target_type="DEPARTMENTS",
+            target_id=None,
+            changes={"description": f"修復 {len(path_issues)} 個部門的路徑不一致問題"},
+            ip_address=None
+        )
+        audit_log_dao.create_audit_log(audit_log)
+        
+        # 執行修復
+        result = role_relationship_analysis_dao.fix_department_paths(path_issues)
+        
+        return {
+            "success": True,
+            "data": result
+        }
+        
+    except Exception as e:
+        logger.error(f"Error fixing department paths: {e}")
+        raise HTTPException(status_code=500, detail="修復部門路徑失敗")
+
 @router.post("/role-relationships/apply-adjustments", response_model=Dict[str, Any])
 def apply_role_adjustments(
     adjustments: List[Dict[str, Any]],
@@ -1848,14 +2188,16 @@ def apply_role_adjustments(
         logger.info(f"User {current_user['username']} applying {len(adjustments)} role adjustments")
         
         # 記錄調整操作到審計日誌
-        audit_log_dao.log_action(
+        from app.models.organization import AuditLog
+        audit_log = AuditLog(
             user_id=current_user['id'],
-            action_type="ROLE_RELATIONSHIP_ADJUSTMENT",
+            action="ROLE_RELATIONSHIP_ADJUSTMENT",
             target_type="DEPARTMENT_ROLES",
             target_id=None,
-            description=f"批量調整 {len(adjustments)} 個角色的父子關係",
+            changes={"description": f"批量調整 {len(adjustments)} 個角色的父子關係"},
             ip_address=None
         )
+        audit_log_dao.create_audit_log(audit_log)
         
         success_count = 0
         failed_adjustments = []
@@ -1904,3 +2246,103 @@ def apply_role_adjustments(
     except Exception as e:
         logger.error(f"Error applying role adjustments: {e}")
         raise HTTPException(status_code=500, detail="執行角色調整失敗")
+
+
+@router.post("/role-relationships/apply-role-assignments", response_model=Dict[str, Any])
+def apply_role_assignment_suggestions(
+    role_assignments: RoleAssignmentSuggestionCreate,
+    request: Request,
+    current_user: Dict[str, Any] = Depends(get_admin_user)
+):
+    """應用角色分配建議，批量創建推薦的角色"""
+    try:
+        logger.info(f"User {current_user['username']} applying {len(role_assignments.suggestions)} role assignment suggestions")
+        
+        # 記錄審計日誌
+        audit_log = AuditLog(
+            user_id=current_user['id'],
+            action="apply_role_assignment_suggestions",
+            target_type="role_assignment_suggestions",
+            target_id="batch",
+            changes={"suggestions_count": len(role_assignments.suggestions)},
+            ip_address=request.client.host,
+            user_agent=request.headers.get("User-Agent")
+        )
+        audit_log_dao.create_audit_log(audit_log)
+        
+        created_roles = []
+        failed_suggestions = []
+        
+        # 逐個處理部門的角色分配建議
+        for suggestion in role_assignments.suggestions:
+            department_id = suggestion.get('department_id')
+            department_name = suggestion.get('department_name', '未知部門')
+            recommended_roles = suggestion.get('recommended_roles', [])
+            
+            suggestion_result = {
+                "department_id": department_id,
+                "department_name": department_name,
+                "roles_created": [],
+                "roles_failed": []
+            }
+            
+            # 逐個創建推薦的角色
+            for role_rec in recommended_roles:
+                try:
+                    # 構建角色創建請求
+                    role_create = DepartmentRoleCreate(
+                        template_id=role_rec.get('template_id'),
+                        name=role_rec.get('suggested_role_name'),
+                        parent_id=role_rec.get('suggested_parent_role_id')
+                    )
+                    
+                    # 創建角色
+                    role_id = department_role_dao.create_department_role(
+                        department_id, role_create, current_user['id']
+                    )
+                    
+                    if role_id:
+                        suggestion_result["roles_created"].append({
+                            "role_id": role_id,
+                            "role_name": role_rec.get('suggested_role_name'),
+                            "template_name": role_rec.get('template_name')
+                        })
+                        created_roles.append(role_id)
+                    else:
+                        suggestion_result["roles_failed"].append({
+                            "template_id": role_rec.get('template_id'),
+                            "role_name": role_rec.get('suggested_role_name'),
+                            "error": "創建失敗"
+                        })
+                        
+                except Exception as role_error:
+                    suggestion_result["roles_failed"].append({
+                        "template_id": role_rec.get('template_id'),
+                        "role_name": role_rec.get('suggested_role_name'),
+                        "error": str(role_error)
+                    })
+            
+            # 判斷此建議的整體結果
+            if suggestion_result["roles_failed"]:
+                failed_suggestions.append(suggestion_result)
+        
+        total_roles_attempted = sum(len(s.get('recommended_roles', [])) for s in role_assignments.suggestions)
+        success_count = len(created_roles)
+        
+        return {
+            "success": True,
+            "data": {
+                "total_suggestions": len(role_assignments.suggestions),
+                "total_roles_attempted": total_roles_attempted,
+                "success_count": success_count,
+                "failed_count": total_roles_attempted - success_count,
+                "created_roles": created_roles,
+                "failed_suggestions": failed_suggestions
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Error applying role assignment suggestions: {e}")
+        raise HTTPException(status_code=500, detail="應用角色分配建議失敗")
+
+

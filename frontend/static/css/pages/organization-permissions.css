@@ -1,0 +1,181 @@
+/**
+ * 個人權限選擇模態框樣式
+ */
+
+/* 權限群組容器 */
+.permissions-list-container {
+    border: 0px solid var(--border-color);
+    border-radius: 8px;
+    background: white;
+}
+
+/* 權限群組分組 */
+.permission-group {
+    border-bottom: 0px solid var(--border-light);
+}
+
+.permission-group:last-child {
+    border-bottom: none;
+}
+
+.permission-group-header {
+    padding: 8px 0px;
+    background: var(--background-light);
+    border-bottom: 1px solid var(--border-light);
+}
+
+.permission-group-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 0px;
+}
+
+.permission-group-title i {
+    width: 16px;
+    text-align: center;
+}
+
+/* 權限項目 */
+.permission-group-items {
+    padding: 0;
+}
+
+.permission-item {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    transition: background-color 0.2s ease;
+}
+
+.permission-item:last-child {
+    border-bottom: none;
+}
+
+.permission-item:hover {
+    background: var(--background-hover);
+}
+
+.permission-item.search-highlight {
+    background: rgba(255, 235, 59, 0.2);
+}
+
+.permission-content {
+    padding: 8px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.permission-content:hover {
+    background: var(--background-hover);
+}
+
+.permission-label {
+    flex: 1;
+    cursor: pointer;
+    margin: 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.permission-info {
+    flex: 1;
+}
+
+.permission-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 2px;
+}
+
+.permission-name .name {
+    font-weight: 500;
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.permission-name .code {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+}
+
+.permission-description {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.3;
+}
+
+/* Checkbox 樣式 */
+.permission-item input[type="checkbox"] {
+    margin: 0;
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+}
+
+/* 搜尋無結果狀態 */
+.search-no-results {
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.search-no-results i {
+    color: var(--text-muted);
+    margin-bottom: 16px;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    .permission-content {
+        padding: 10px 8px;
+    }
+    
+    .permission-group-header {
+        padding: 8px;
+    }
+    
+    .permission-name {
+        flex-direction: column;
+        gap: 2px;
+        align-items: flex-start;
+    }
+}
+
+/* 權限統計樣式 */
+.tree-stats .stat-item i.fa-shield-alt {
+    color: var(--primary-color);
+}
+
+.tree-stats .stat-item i.fa-check-circle {
+    color: var(--success-color);
+}
+
+/* 個人權限按鈕樣式 - 移除絕對定位，讓徽章正常流動顯示 */
+
+/* 載入動畫 */
+.permissions-list-container .loading-spinner {
+    padding: 40px;
+    text-align: center;
+}
+
+.permissions-list-container .loading-spinner .spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--border-color);
+    border-top: 3px solid var(--primary-color);
+    border-radius: 50%;
+    margin: 0 auto 16px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

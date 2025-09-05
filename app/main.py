@@ -87,6 +87,9 @@ async def startup_event():
     # 初始化模型
     await initialize_models()
 
+    # 初始化並啟動排程系統
+    await initialize_scheduler()
+
     logger.info("RAG 系統啟動完成")
 
 
@@ -94,6 +97,9 @@ async def startup_event():
 async def shutdown_event():
     """應用程式關閉事件"""
     logger.info("正在關閉 RAG 系統...")
+
+    # 停止排程系統
+    await shutdown_scheduler()
 
     # 清理資源
     cleanup_resources()
@@ -150,6 +156,41 @@ async def initialize_models():
         # 不拋出異常，允許應用程式繼續運行
 
 
+async def initialize_scheduler():
+    """初始化並啟動排程系統"""
+    # 檢查排程系統是否啟用
+    scheduler_enabled = os.getenv("SCHEDULER_ENABLED", "true").lower() in ("true", "1", "yes")
+    
+    if not scheduler_enabled:
+        logger.info("排程系統已停用 (SCHEDULER_ENABLED=false)")
+        return
+        
+    try:
+        from app.core.scheduler import start_scheduler
+        start_scheduler()
+        logger.info("排程系統啟動完成")
+    except Exception as e:
+        logger.error(f"排程系統啟動失敗: {e}")
+        # 不拋出異常，允許應用程式繼續運行
+
+
+async def shutdown_scheduler():
+    """停止排程系統"""
+    # 檢查排程系統是否啟用
+    scheduler_enabled = os.getenv("SCHEDULER_ENABLED", "true").lower() in ("true", "1", "yes")
+    
+    if not scheduler_enabled:
+        logger.info("排程系統未啟用，無需停止")
+        return
+        
+    try:
+        from app.core.scheduler import stop_scheduler
+        stop_scheduler()
+        logger.info("排程系統已停止")
+    except Exception as e:
+        logger.error(f"停止排程系統失敗: {e}")
+
+
 def cleanup_resources():
     """清理系統資源"""
     try:
@@ -183,6 +224,51 @@ def cleanup_resources():
         logger.info("系統資源清理完成")
     except Exception as e:
         logger.error(f"清理系統資源失敗: {e}")
+
+
+# Token 自動刷新中間件
+@app.middleware("http")
+async def token_refresh_middleware(request: Request, call_next):
+    """Token 自動刷新中間件"""
+    response = await call_next(request)
+    
+    # 只處理 API 請求，排除登入 API
+    if (request.url.path.startswith("/api/") and 
+        not request.url.path.startswith("/api/user/login") and
+        not request.url.path.startswith("/api/user/register")):
+        
+        token = request.cookies.get("access_token")
+        if token:
+            # 檢查是否需要刷新
+            if auth_manager.should_refresh_token(token):
+                new_token = auth_manager.refresh_access_token(token)
+                if new_token:
+                    try:
+                        user_id = None
+                        # 從 token 取得 user_id 並更新活動時間
+                        payload = auth_manager.verify_token(new_token)
+                        if payload:
+                            user_id = payload.get("sub")
+                            if user_id:
+                                from app.dao.user import user_dao
+                                user_dao.update_activity_time(int(user_id))
+                        
+                        # 設置新 cookie
+                        cookie_secure = os.getenv("COOKIE_SECURE", "false").lower() == "true"
+                        settings = auth_manager.get_token_settings()
+                        response.set_cookie(
+                            key="access_token",
+                            value=new_token,
+                            httponly=True,
+                            max_age=settings['max_lifetime'],
+                            secure=cookie_secure,
+                            samesite="lax"
+                        )
+                        logger.debug(f"Token 已自動刷新，使用者 ID: {user_id}")
+                    except Exception as e:
+                        logger.error(f"Token 刷新過程中發生錯誤: {e}")
+    
+    return response
 
 
 # 根路由 - 重導向到登入頁面

@@ -1,9 +1,9 @@
 /**
- * Script Loader 模組
+ * Resource Loader 模組
  * 處理動態載入JS/CSS檔案並自動加上時間戳以避免快取問題
  */
 
-const ScriptLoader = (() => {
+const ResourceLoader = (() => {
     
     /**
      * 動態載入JavaScript檔案
@@ -316,5 +316,5 @@ const ScriptLoader = (() => {
 
 // 如果支援ES6模組，則導出
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = ScriptLoader;
+    module.exports = ResourceLoader;
 }

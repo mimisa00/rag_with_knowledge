@@ -1,1111 +1,1465 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>組織管理 - E-Helper</title>
-    
-    <!-- CSS -->
-    <link rel="stylesheet" href="../css/core/all.min.css">
-    <!-- 新的 CSS 架構 -->
-    <link rel="stylesheet" href="../css/themes/theme-variables.css">
-    <link rel="stylesheet" href="../css/core/base.css">
-    <link rel="stylesheet" href="../css/core/components.css">
-    <link rel="stylesheet" href="../css/core/utilities.css">
-    <link rel="stylesheet" href="../css/core/layouts.css">
-    <!-- 引入 admin.css 作為基礎樣式（導航欄等） -->
-    <link rel="stylesheet" href="../css/pages/admin.css">
-    <!-- 引入獨立的載入器樣式 -->
-    <link rel="stylesheet" href="../css/components/spinner-loader.css">
-    <!-- 引入 Dashboard 抽屜樣式 -->
-    <link rel="stylesheet" href="../css/pages/dashboard.css">
-    <!-- 引入 Dialog 元件樣式 -->
-    <link rel="stylesheet" href="../css/components/dialog.css">
-    <!-- 引入 SearchableSelect 元件樣式 -->
-    <link rel="stylesheet" href="../css/components/searchable-select.css">
-    <!-- 引入角色層級元件樣式 -->
-    <link rel="stylesheet" href="../css/components/role-hierarchy.css">
-    <!-- 頁面專用樣式 -->
-    <link rel="stylesheet" href="../css/pages/organization.css">
-    <!-- 分離出的專用樣式 -->
-    <link rel="stylesheet" href="../css/pages/organization-dep.css">
-    <link rel="stylesheet" href="../css/pages/organization-role.css">
-    <link rel="stylesheet" href="../css/pages/organization-emp.css">
+    <!-- 靜態載入頁面載入器樣式（避免 FOUC） -->
+    <link rel="stylesheet" href="/css/components/page-loader.css">
+    <link rel="stylesheet" href="/css/components/spinner-loader.css">
+    <!-- 其他 CSS 將動態載入 -->
 </head>
+
 <body class="admin-layout">
-    <!-- 載入指示器 -->
+    <!-- 頁面載入器 -->
+    <div id="pageLoader" class="page-loader-overlay">
+        <div class="page-loader-content">
+            <div class="page-loader-spinner"></div>
+            <div class="page-loader-text">系統載入中...</div>
+        </div>
+    </div>
+
+    <!-- 局部載入指示器 -->
     <div id="loader-overlay" class="loader-overlay">
         <div class="loader"></div>
-        <div class="loader-text">系統載入中...</div>
+        <div class="loader-text">載入中...</div>
     </div>
-    
-    <!-- 頂部導航 -->
-    <nav class="admin-navbar">
-        <div class="navbar-brand">
-            <i class="fas fa-sitemap"></i>
-            <span>組織管理</span>
-        </div>
-        <div class="navbar-info">
-            <span id="userInfo" class="user-info" onclick="openUserMenu()">
-                <i class="fas fa-user-circle"></i>
-                <span id="username">載入中...</span>
-                <span id="userRole" class="user-role"></span>
-            </span>
-        </div>
-    </nav>
-    
-    <!-- 麵包屑 -->
-    <div class="breadcrumb">
-        <div class="breadcrumb-items">
-            <div class="breadcrumb-item">
-                <a href="/dashboard" class="breadcrumb-link">
-                    <i class="fas fa-home"></i>
-                    <span>首頁</span>
-                </a>
+
+    <!-- 頁面內容容器 -->
+    <div id="pageContent" class="page-content">
+
+        <!-- 頂部導航 -->
+        <nav class="admin-navbar">
+            <div class="navbar-brand">
+                <i class="fas fa-sitemap"></i>
+                <span>組織管理</span>
             </div>
-            <span class="breadcrumb-separator">
-                <i class="fas fa-chevron-right"></i>
-            </span>
-            <div class="breadcrumb-item">
-                <a href="/admin" class="breadcrumb-link">
-                    <span>系統管理中心</span>
-                </a>
+            <div class="navbar-info">
+                <span id="userInfo" class="user-info" onclick="openUserMenu()">
+                    <i class="fas fa-user-circle"></i>
+                    <span id="username">載入中...</span>
+                    <span id="userRole" class="user-role"></span>
+                </span>
             </div>
-            <span class="breadcrumb-separator">
-                <i class="fas fa-chevron-right"></i>
-            </span>
-            <div class="breadcrumb-item" id="breadcrumb-org-management">
-                <a href="javascript:void(0)" class="breadcrumb-link d-none" id="breadcrumb-org-link">
-                    <span>組織管理</span>
-                </a>
-                <span class="breadcrumb-current" id="breadcrumb-org-current">組織管理</span>
-            </div>
-            
-            <!-- 動態子區塊麵包屑 -->
-            <span class="breadcrumb-separator d-none" id="breadcrumb-section-separator">
-                <i class="fas fa-chevron-right"></i>
-            </span>
-            <div class="breadcrumb-item d-none" id="breadcrumb-section">
-                <span class="breadcrumb-current" id="breadcrumb-section-text"></span>
+        </nav>
+
+        <!-- 麵包屑 -->
+        <div class="breadcrumb">
+            <div class="breadcrumb-items">
+                <div class="breadcrumb-item">
+                    <a href="/dashboard" class="breadcrumb-link">
+                        <i class="fas fa-home"></i>
+                        <span>首頁</span>
+                    </a>
+                </div>
+                <span class="breadcrumb-separator">
+                    <i class="fas fa-chevron-right"></i>
+                </span>
+                <div class="breadcrumb-item">
+                    <a href="/admin" class="breadcrumb-link">
+                        <span>系統管理中心</span>
+                    </a>
+                </div>
+                <span class="breadcrumb-separator">
+                    <i class="fas fa-chevron-right"></i>
+                </span>
+                <div class="breadcrumb-item" id="breadcrumb-org-management">
+                    <a href="javascript:void(0)" class="breadcrumb-link d-none" id="breadcrumb-org-link">
+                        <span>組織管理</span>
+                    </a>
+                    <span class="breadcrumb-current" id="breadcrumb-org-current">組織管理</span>
+                </div>
+
+                <!-- 動態子區塊麵包屑 -->
+                <span class="breadcrumb-separator d-none" id="breadcrumb-section-separator">
+                    <i class="fas fa-chevron-right"></i>
+                </span>
+                <div class="breadcrumb-item d-none" id="breadcrumb-section">
+                    <span class="breadcrumb-current" id="breadcrumb-section-text"></span>
+                </div>
             </div>
         </div>
-    </div>
-    
-    <!-- 個人功能抽屜 -->
-    <div id="userMenuDrawer" onclick="closeUserMenu()" class="user-menu-drawer">
-        <div class="user-menu-header">
-            <span id="userMenuUsername"></span>
-        </div>
-        <div class="user-menu-content">
-            <button onclick="showChangePasswordModal()" class="menu-item">
-                <i class="fa-solid fa-key"></i>
-                <span>變更密碼</span>
-            </button>
-            <hr>
-            <button onclick="logout()" class="menu-item">
-                <i class="fa-solid fa-sign-out-alt"></i>
-                <span>登出</span>
-            </button>
-        </div>
-    </div>
-    
-    <!-- 變更密碼模態框 -->
-    <div id="changePasswordModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>變更密碼</h3>
-                <button class="modal-close" onclick="closeChangePasswordModal()">
-                    <i class="fa-solid fa-times"></i>
+
+        <!-- 個人功能抽屜 -->
+        <div id="userMenuDrawer" onclick="closeUserMenu()" class="user-menu-drawer">
+            <div class="user-menu-header">
+                <span id="userMenuUsername"></span>
+            </div>
+            <div class="user-menu-content">
+                <button onclick="showChangePasswordModal()" class="menu-item">
+                    <i class="fa-solid fa-key"></i>
+                    <span>變更密碼</span>
+                </button>
+                <hr>
+                <button onclick="logout()" class="menu-item">
+                    <i class="fa-solid fa-sign-out-alt"></i>
+                    <span>登出</span>
                 </button>
             </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label for="oldPassword" class="form-label">舊密碼</label>
-                    <input type="password" id="oldPassword" class="form-control" required>
+        </div>
+
+        <!-- 變更密碼模態框 -->
+        <div id="changePasswordModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>變更密碼</h3>
+                    <button class="modal-close" onclick="closeChangePasswordModal()">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
                 </div>
-                <div class="form-group">
-                    <label for="newPassword" class="form-label">新密碼</label>
-                    <input type="password" id="newPassword" class="form-control" required minlength="6">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="oldPassword" class="form-label">舊密碼</label>
+                        <input type="password" id="oldPassword" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="newPassword" class="form-label">新密碼</label>
+                        <input type="password" id="newPassword" class="form-control" required minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmNewPassword" class="form-label">確認新密碼</label>
+                        <input type="password" id="confirmNewPassword" class="form-control" required minlength="6">
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="confirmNewPassword" class="form-label">確認新密碼</label>
-                    <input type="password" id="confirmNewPassword" class="form-control" required minlength="6">
+                <div class="modal-footer">
+                    <button onclick="closeChangePasswordModal()" class="btn btn-secondary">取消</button>
+                    <button onclick="changePassword()" class="btn btn-primary">確認變更</button>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button onclick="closeChangePasswordModal()" class="btn btn-secondary">取消</button>
-                <button onclick="changePassword()" class="btn btn-primary">確認變更</button>
             </div>
         </div>
-    </div>
-    
-    <!-- 主要內容區 -->
-    <main class="admin-main">
-        <!-- 抽屜式布局 -->
-        <div class="org-layout">
-            <!-- 左側抽屜容器 -->
-            <div id="orgDrawerContainer" class="drawer-open">
-                <!-- 抽屜控制按鈕 -->
-                <div id="orgDrawerButtons">
-                    <button onclick="OrgDrawerManager.toggleDrawer()" class="drawer-toggle-btn" title="展開/收合">
-                        <i class="fas fa-bars"></i>
-                    </button>
-                </div>
-                
-                <!-- 抽屜內容 -->
-                <div id="orgDrawerContent">
-                    <h4>組織管理</h4>
-                    <nav class="org-menu">
-                        <!-- 角色模板管理（置頂） -->
-                        <a href="#" class="org-menu-item" data-section="role-templates">
-                            <i class="fas fa-user-cog"></i>
-                            <span>角色模板</span>
-                        </a>
-                        <hr class="menu-divider">
-                        
-                        <!-- 原有項目 -->
-                        <a href="#" class="org-menu-item active" data-section="departments">
-                            <i class="fas fa-sitemap"></i>
-                            <span>部門管理</span>
-                        </a>
-                        <a href="#" class="org-menu-item" data-section="roles">
-                            <i class="fas fa-users-cog"></i>
-                            <span>角色管理</span>
-                        </a>
-                        <a href="#" class="org-menu-item" data-section="employees">
-                            <i class="fas fa-id-card"></i>
-                            <span>員工管理</span>
-                        </a>
-                    </nav>
-                </div>
-            </div>
-            
-            <!-- 右側主工作區 -->
-            <div class="org-main-content">
-                <!-- 狀態列 -->
-                <div class="org-status-bar">
-                    <div class="current-org-info">
-                        <i id="sectionIcon" class="fas fa-sitemap"></i>
-                        <span id="sectionTitle">部門管理</span>
-                    </div>
-                    <div class="section-stats">
-                        <span class="stat-item" id="departmentCount">
-                            <i class="fas fa-sitemap"></i> 
-                            <span>0</span> 個部門
-                        </span>
-                        <span class="stat-item" id="roleCount">
-                            <i class="fas fa-users-cog"></i> 
-                            <span>0</span> 個啟用角色
-                        </span>
-                        <span class="stat-item" id="employeeCount">
-                            <i class="fas fa-id-card"></i> 
-                            <span>0</span> 位員工
-                        </span>
-                    </div>
-                </div>
-                
-            <!-- 角色模板管理區塊 -->
-            <section id="role-templates-section" class="content-section">
-                <div class="section-header">
-                    <button class="btn btn-success" id="addTemplateBtn">
-                        <i class="fa-solid fa-plus"></i> 新增模板
-                    </button>
-                </div>
-                
-                <div class="section-content">
-                    <div class="template-grid" id="templateGrid">
-                        <!-- 動態載入模板卡片 -->
-                        <div class="loading-spinner">
-                            <div class="spinner"></div>
-                            <p>載入角色模板中...</p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-            
-           
-            <!-- 部門管理區塊 -->
-            <section id="departments-section" class="content-section active">
-                <div class="section-header">
-                    <button class="btn btn-success" id="addDepartmentBtn">
-                        <i class="fa-solid fa-plus"></i> 新增部門
-                    </button>
-                </div>
-                
-                <div class="section-content">
-                    <!-- 部門樹狀結構 -->
-                    <div class="department-tree">
-                        <!-- 搜尋和工具列 -->
-                        <div class="tree-toolbar">
-                            <div class="tree-search-box">
-                                <input type="text" class="form-control" id="deptSearchInput" placeholder="搜尋部門名稱或代碼...">
-                                <button class="btn btn-search" onclick="OrganizationModule.searchDepartment()">
-                                    <i class="fa-solid fa-search"></i>
-                                </button>
-                            </div>
-                            <!-- 移除原本的停用部門開關 -->
-                            <div class="tree-actions">
-                                <button class="btn btn-sm btn-outline" onclick="OrganizationModule.expandAll()" title="展開全部">
-                                    <i class="fas fa-expand-alt"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline" onclick="OrganizationModule.collapseAll()" title="收合全部">
-                                    <i class="fas fa-compress-alt"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline" onclick="OrganizationModule.refreshTree()" title="重新整理">
-                                    <i class="fas fa-sync-alt"></i>
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <!-- 部門統計 -->
-                        <div class="tree-stats">
-                            <span class="stat-item">
-                                <i class="fas fa-layer-group"></i>
-                                總共 <strong id="totalDeptCount">0</strong> 個部門
-                            </span>
-                            <span class="stat-item" id="activeDeptCount">
-                                <i class="fas fa-check-circle" style="color: #28a745;"></i>
-                                啟用 <strong>0</strong> 個
-                            </span>
-                            <span class="stat-item" id="inactiveDeptCount">
-                                <i class="fas fa-times-circle" style="color: #dc3545;"></i>
-                                停用 <strong>0</strong> 個
-                                <button class="toggle-inactive-btn" onclick="OrganizationModule.toggleInactiveDepts()" 
-                                        title="顯示停用" id="toggleInactiveBtn">
-                                    <i class="fas fa-eye-slash"></i>
-                                </button>
-                            </span>
-                            <span class="stat-item" id="searchResultCount" style="display:none;">
-                                找到 <strong>0</strong> 個符合結果
-                            </span>
-                        </div>
-                        
-                        <div class="tree-container scrollable-fade" id="departmentTree">
-                            <!-- 動態產生的樹狀結構（包含角色） -->
-                            <div class="loading-spinner">
-                                <div class="spinner"></div>
-                                <p>載入部門資料中...</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- 部門詳情面板 -->
-                    <div class="department-details" id="departmentDetails">
-                        <div class="details-card">
-                            <h3>部門資訊</h3>
-                            <div class="details-content">
-                                <p class="text-muted">請選擇一個部門查看詳情</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-            
-            <!-- 角色管理區塊 -->
-            <section id="roles-section" class="content-section">
-                <div class="section-header">
-                    <div class="header-left">
-                        <button class="btn btn-success" id="addRoleBtn" disabled>
-                            <i class="fa-solid fa-plus"></i> 新增角色
+
+        <!-- 主要內容區 -->
+        <main class="admin-main">
+            <!-- 抽屜式布局 -->
+            <div class="org-layout">
+                <!-- 左側抽屜容器 -->
+                <div id="orgDrawerContainer" class="drawer-open">
+                    <!-- 抽屜控制按鈕 -->
+                    <div id="orgDrawerButtons">
+                        <button onclick="OrgDrawerManager.toggleDrawer()" class="drawer-toggle-btn" title="展開/收合">
+                            <i class="fas fa-bars"></i>
                         </button>
-                        <button class="btn btn-ai-analysis" id="roleAnalysisBtn" onclick="OrganizationRoleAnalysisModule.showRoleRelationshipAnalysis()" title="AI 智能分析角色關係並提供優化建議">
-                            <i class="fas fa-magic"></i> 
-                            <span>AI 角色優化</span>
-                        </button>
-                    </div>                    
+                    </div>
+
+                    <!-- 抽屜內容 -->
+                    <div id="orgDrawerContent">
+                        <h4>組織管理</h4>
+                        <nav class="org-menu">
+                            <!-- 角色模板管理（置頂） -->
+                            <a href="#" class="org-menu-item" data-section="role-templates">
+                                <i class="fas fa-user-cog"></i>
+                                <span>角色模板</span>
+                            </a>
+                            <hr class="menu-divider">
+
+                            <!-- 原有項目 -->
+                            <a href="#" class="org-menu-item active" data-section="departments">
+                                <i class="fas fa-sitemap"></i>
+                                <span>部門管理</span>
+                            </a>
+                            <a href="#" class="org-menu-item" data-section="roles">
+                                <i class="fas fa-users-cog"></i>
+                                <span>角色管理</span>
+                            </a>
+                            <a href="#" class="org-menu-item" data-section="employees">
+                                <i class="fas fa-id-card"></i>
+                                <span>員工管理</span>
+                            </a>
+                        </nav>
+                    </div>
                 </div>
-                
-                <div class="section-content">
-                    <div class="roles-container">
-                        <!-- 左側：部門選擇器 -->
-                        <div class="dept-selector-panel">
-                            <div class="tree-toolbar">
-                                <!-- 搜尋和工具列 -->
-                                
-                                <div class="tree-search-box">
-                                    <input type="text" class="form-control" id="roleSearchInput" placeholder="搜尋部門或角色名稱...">
-                                    <button class="btn btn-search" onclick="OrganizationRolesModule.searchDeptAndRoles()">
-                                        <i class="fa-solid fa-search"></i>
-                                    </button>
-                                </div>
-                                
-                                <div class="panel-actions">
-                                    <button class="btn btn-sm btn-outline" onclick="OrganizationRolesModule.expandAll()" title="展開全部">
-                                        <i class="fas fa-expand-alt"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline" onclick="OrganizationRolesModule.collapseAll()" title="收合全部">
-                                        <i class="fas fa-compress-alt"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline" onclick="OrganizationRolesModule.refreshDeptTree()" title="重新整理">
-                                        <i class="fas fa-sync-alt"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <!-- 角色統計 -->
-                            <div class="tree-stats">
-                                <span class="stat-item">
-                                    <i class="fas fa-sitemap"></i>
-                                    總共 <strong id="rolesTotalDeptCount">0</strong> 個部門
-                                </span>
-                                <span class="stat-item">
-                                    <i class="fas fa-users-cog"></i>
-                                    總共 <strong id="rolesTotalRoleCount">0</strong> 個角色
-                                </span>
-                                <span class="stat-item" id="rolesActiveRoleCount">
-                                    <i class="fas fa-check-circle" style="color: #28a745;"></i>
-                                    啟用 <strong>0</strong> 個
-                                </span>
-                                <span class="stat-item" id="rolesInactiveRoleCount">
-                                    <i class="fas fa-times-circle" style="color: #dc3545;"></i>
-                                    停用 <strong>0</strong> 個
-                                    <button class="toggle-inactive-btn" onclick="OrganizationRolesModule.toggleInactiveRoles()" 
-                                            title="顯示停用" id="toggleInactiveRolesBtn">
-                                        <i class="fas fa-eye-slash"></i>
-                                    </button>
-                                </span>
-                                <span class="stat-item" id="rolesSearchResultCount" style="display:none;">
-                                    找到 <strong>0</strong> 個符合結果
-                                </span>
-                            </div>
-                            
-                            <div class="dept-tree-container scrollable-fade" id="roleDeptTree">
-                                <!-- 動態載入部門樹 -->
+
+                <!-- 右側主工作區 -->
+                <div class="org-main-content">
+                    <!-- 狀態列 -->
+                    <div class="org-status-bar">
+                        <div class="current-org-info">
+                            <i id="sectionIcon" class="fas fa-sitemap"></i>
+                            <span id="sectionTitle">部門管理</span>
+                        </div>
+                        <div class="section-stats">
+                            <span class="stat-item" id="departmentCount">
+                                <i class="fas fa-sitemap"></i>
+                                <span>0</span> 個部門
+                            </span>
+                            <span class="stat-item" id="roleCount">
+                                <i class="fas fa-users-cog"></i>
+                                <span>0</span> 個啟用角色
+                            </span>
+                            <span class="stat-item" id="employeeCount">
+                                <i class="fas fa-id-card"></i>
+                                <span>0</span> 位員工
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- 角色模板管理區塊 -->
+                    <section id="role-templates-section" class="content-section">
+                        <div class="section-header">
+                            <button class="btn btn-success" id="addTemplateBtn">
+                                <i class="fa-solid fa-plus"></i> 新增模板
+                            </button>
+                        </div>
+
+                        <div class="section-content">
+                            <div class="template-grid" id="templateGrid">
+                                <!-- 動態載入模板卡片 -->
                                 <div class="loading-spinner">
                                     <div class="spinner"></div>
-                                    <p>載入部門資料中...</p>
+                                    <p>載入角色模板中...</p>
                                 </div>
                             </div>
                         </div>
-                        
-                        <!-- 右側：角色列表 -->
-                        <div class="roles-list-panel">
-                            <div class="roles-header">
-                                <div class="roles-title">
-                                    <h5 id="selectedDeptName">請選擇部門查看角色</h5>
-                                    <span class="badge badge-info" id="selectedDeptRoleCount">0 個角色</span>
-                                </div>
-                                <div class="roles-stats" id="rolesStats">
-                                    <!-- 動態載入統計資訊 -->
-                                </div>
-                            </div>
-                            <div id="rolesList" class="roles-grid scrollable-fade">
-                                <!-- 動態載入角色卡片 -->
-                                <div class="empty-state">
-                                    <i class="fas fa-users-cog fa-3x text-muted"></i>
-                                    <p class="text-muted">請從左側選擇部門查看角色</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-            
+                    </section>
 
-            <!-- 員工管理區塊 -->
-            <section id="employees-section" class="content-section">
-                <div class="section-header">
-                    <div class="header-actions">
-                        <button class="btn btn-success" id="addEmployeeBtn">
-                            <i class="fa-solid fa-plus"></i> 新增員工
-                        </button>
+
+                    <!-- 部門管理區塊 -->
+                    <section id="departments-section" class="content-section active">
+                        <div class="section-header">
+                            <button class="btn btn-success" id="addDepartmentBtn">
+                                <i class="fa-solid fa-plus"></i> 新增部門
+                            </button>
+                        </div>
+
+                        <div class="section-content">
+                            <!-- 部門樹狀結構 -->
+                            <div class="department-tree">
+                                <!-- 搜尋和工具列 -->
+                                <div class="tree-toolbar">
+                                    <div class="tree-search-box">
+                                        <input type="text" class="form-control" id="deptSearchInput" placeholder="搜尋部門名稱或代碼...">
+                                        <button class="btn btn-search" onclick="OrganizationModule.searchDepartment()">
+                                            <i class="fa-solid fa-search"></i>
+                                        </button>
+                                    </div>
+                                    <!-- 移除原本的停用部門開關 -->
+                                    <div class="tree-actions">
+                                        <button class="btn btn-sm btn-outline" onclick="OrganizationModule.expandAll()" title="展開全部">
+                                            <i class="fas fa-expand-alt"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline" onclick="OrganizationModule.collapseAll()" title="收合全部">
+                                            <i class="fas fa-compress-alt"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline" onclick="OrganizationModule.refreshTree()" title="重新整理">
+                                            <i class="fas fa-sync-alt"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- 部門統計 -->
+                                <div class="tree-stats">
+                                    <span class="stat-item">
+                                        <i class="fas fa-layer-group"></i>
+                                        總共 <strong id="totalDeptCount">0</strong> 個部門
+                                    </span>
+                                    <span class="stat-item" id="activeDeptCount">
+                                        <i class="fas fa-check-circle" style="color: #28a745;"></i>
+                                        啟用 <strong>0</strong> 個
+                                    </span>
+                                    <span class="stat-item" id="inactiveDeptCount">
+                                        <i class="fas fa-times-circle" style="color: #dc3545;"></i>
+                                        停用 <strong>0</strong> 個
+                                        <button class="toggle-inactive-btn" onclick="OrganizationModule.toggleInactiveDepts()" title="顯示停用" id="toggleInactiveBtn">
+                                            <i class="fas fa-eye-slash"></i>
+                                        </button>
+                                    </span>
+                                    <span class="stat-item" id="searchResultCount" style="display:none;">
+                                        找到 <strong>0</strong> 個符合結果
+                                    </span>
+                                </div>
+
+                                <div class="tree-container scrollable-fade" id="departmentTree">
+                                    <!-- 動態產生的樹狀結構（包含角色） -->
+                                    <div class="loading-spinner">
+                                        <div class="spinner"></div>
+                                        <p>載入部門資料中...</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 部門詳情面板 -->
+                            <div class="department-details" id="departmentDetails">
+                                <div class="details-card">
+                                    <h3>部門資訊</h3>
+                                    <div class="details-content">
+                                        <p class="text-muted">請選擇一個部門查看詳情</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- 角色管理區塊 -->
+                    <section id="roles-section" class="content-section">
+                        <div class="section-header">
+                            <div class="header-left">
+                                <button class="btn btn-success" id="addRoleBtn" disabled>
+                                    <i class="fa-solid fa-plus"></i> 新增角色
+                                </button>
+                                <button class="btn btn-ai-analysis" id="roleAnalysisBtn" onclick="OrganizationRoleAnalysisModule.showRoleRelationshipAnalysis()" title="AI 智能分析角色關係並提供優化建議">
+                                    <i class="fas fa-magic"></i>
+                                    <span>AI 角色優化</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="section-content">
+                            <div class="roles-container">
+                                <!-- 左側：部門選擇器 -->
+                                <div class="dept-selector-panel">
+                                    <div class="tree-toolbar">
+                                        <!-- 搜尋和工具列 -->
+
+                                        <div class="tree-search-box">
+                                            <input type="text" class="form-control" id="roleSearchInput" placeholder="搜尋部門或角色名稱...">
+                                            <button class="btn btn-search" onclick="OrganizationRolesModule.searchDeptAndRoles()">
+                                                <i class="fa-solid fa-search"></i>
+                                            </button>
+                                        </div>
+
+                                        <div class="panel-actions">
+                                            <button class="btn btn-sm btn-outline" onclick="OrganizationRolesModule.expandAll()" title="展開全部">
+                                                <i class="fas fa-expand-alt"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline" onclick="OrganizationRolesModule.collapseAll()" title="收合全部">
+                                                <i class="fas fa-compress-alt"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline" onclick="OrganizationRolesModule.refreshDeptTree()" title="重新整理">
+                                                <i class="fas fa-sync-alt"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- 角色統計 -->
+                                    <div class="tree-stats">
+                                        <span class="stat-item">
+                                            <i class="fas fa-users-cog"></i>
+                                            總共 <strong id="rolesTotalRoleCount">0</strong> 個角色
+                                        </span>
+                                        <span class="stat-item" id="rolesActiveRoleCount">
+                                            <i class="fas fa-check-circle" style="color: #28a745;"></i>
+                                            啟用 <strong>0</strong> 個
+                                        </span>
+                                        <span class="stat-item" id="rolesInactiveRoleCount">
+                                            <i class="fas fa-times-circle" style="color: #dc3545;"></i>
+                                            停用 <strong>0</strong> 個
+                                            <button class="toggle-inactive-btn" onclick="OrganizationRolesModule.toggleInactiveRoles()" title="顯示停用" id="toggleInactiveRolesBtn">
+                                                <i class="fas fa-eye-slash"></i>
+                                            </button>
+                                        </span>
+                                        <span class="stat-item" id="rolesSearchResultCount" style="display:none;">
+                                            找到 <strong>0</strong> 個符合結果
+                                        </span>
+                                    </div>
+
+                                    <div class="dept-tree-container scrollable-fade" id="roleDeptTree">
+                                        <!-- 動態載入部門樹 -->
+                                        <div class="loading-spinner">
+                                            <div class="spinner"></div>
+                                            <p>載入部門資料中...</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 右側：角色列表 -->
+                                <div class="roles-list-panel">
+                                    <div class="roles-header">
+                                        <div class="roles-title">
+                                            <h3 id="selectedDeptName">請選擇部門查看角色</h3>
+                                            <span class="badge badge-info" id="selectedDeptRoleCount">0 個角色</span>
+                                        </div>
+                                        <div class="roles-stats" id="rolesStats">
+                                            <!-- 動態載入統計資訊 -->
+                                        </div>
+                                    </div>
+                                    <div id="rolesList" class="roles-grid scrollable-fade">
+                                        <!-- 動態載入角色卡片 -->
+                                        <div class="empty-state">
+                                            <i class="fas fa-users-cog fa-3x text-muted"></i>
+                                            <p class="text-muted">請從左側選擇部門查看角色</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+
+                    <!-- 員工管理區塊 -->
+                    <section id="employees-section" class="content-section">
+                        <div class="section-header">
+                            <div class="header-left">
+                                <button class="btn btn-success" id="addEmployeeBtn" disabled>
+                                    <i class="fa-solid fa-plus"></i> 新增員工
+                                </button>
+                                <!-- 待處理帳號提醒橫幅 -->
+                                <div class="pending-accounts-banner-inline" id="pendingAccountsBanner" style="display:none;">
+                                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                                    <span class="banner-text">有 <strong id="pendingCount">0</strong> 個帳號尚未完成員工設定</span>
+                                    <button class="btn btn-sm btn-outline-warning ms-2" onclick="showPendingAccountsModal()">
+                                        <i class="fas fa-list"></i> 查看詳情
+                                    </button>
+                                    <button class="btn btn-sm btn-text ms-1" onclick="hidePendingBanner()" title="暫時隱藏提醒">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="section-content">
+                            <div class="employees-container">
+                                <!-- 左側：部門樹與員工節點 -->
+                                <div class="emp-tree-panel">
+                                    <div class="tree-toolbar">
+                                        <!-- 搜尋和工具列 -->
+                                        <div class="tree-search-box">
+                                            <input type="text" class="form-control" id="employeeTreeSearch" placeholder="搜尋部門或員工名稱...">
+                                            <button class="btn btn-search" onclick="OrganizationEmployeeTreeModule.searchTree(document.getElementById('employeeTreeSearch').value)">
+                                                <i class="fa-solid fa-search"></i>
+                                            </button>
+                                        </div>
+
+                                        <div class="panel-actions">
+                                            <button class="btn btn-sm btn-outline" id="empTreeExpandAll" title="展開全部">
+                                                <i class="fas fa-expand-alt"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline" id="empTreeCollapseAll" title="收合全部">
+                                                <i class="fas fa-compress-alt"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline" id="empTreeRefresh" title="重新整理">
+                                                <i class="fas fa-sync-alt"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="tree-stats">
+                                        <span class="stat-item">
+                                            <i class="fas fa-id-card"></i>
+                                            總共 <strong id="totalEmployeeCount">0</strong> 位員工
+                                        </span>
+                                        <span class="stat-item" id="activeEmployeeCount">
+                                            <i class="fas fa-check-circle" style="color: #28a745;"></i>
+                                            啟用 <strong>0</strong> 位
+                                        </span>
+                                        <span class="stat-item" id="inactiveEmployeeCount">
+                                            <i class="fas fa-times-circle" style="color: #dc3545;"></i>
+                                            停用 <strong>0</strong> 位
+                                            <button class="toggle-inactive-btn" onclick="OrganizationEmployeeTreeModule.toggleInactive()" title="顯示停用" id="toggleInactiveEmpTreeBtn">
+                                                <i class="fas fa-eye-slash"></i>
+                                            </button>
+                                        </span>
+                                        <span class="stat-item" id="empTreeSearchResultCount" style="display:none;">
+                                            找到 <strong>0</strong> 個符合結果
+                                        </span>
+                                    </div>
+
+                                    <div class="emp-tree-container scrollable-fade" id="employeeTreeContainer">
+                                        <!-- 動態載入部門樹與員工節點 -->
+                                        <div class="loading-spinner">
+                                            <div class="spinner"></div>
+                                            <p>載入部門資料中...</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 右側：員工卡片列表 -->
+                                <div class="emp-cards-panel">
+                                    <div class="cards-header">
+                                        <div class="cards-title">
+                                            <h3 id="selectedEmpDeptName">請選擇部門查看員工</h3>
+                                            <span class="badge badge-info" id="selectedEmpDeptCount">0 位員工</span>
+                                        </div>
+                                        <div class="cards-filters">
+                                            <select class="form-control form-control-sm" id="empSortBy" onchange="OrganizationEmployeeCardModule.sortCards(this.value)">
+                                                <option value="role">按角色排序</option>
+                                                <option value="employee_no">按員工編號排序</option>
+                                                <option value="name">按姓名排序</option>
+                                                <option value="lastLogin">按最後登入</option>
+                                                <option value="status">按狀態排序</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div id="employeeCardsContainer" class="cards-grid scrollable-fade">
+                                        <!-- 動態載入員工卡片 -->
+                                        <div class="empty-state">
+                                            <i class="fas fa-users fa-3x text-muted"></i>
+                                            <p class="text-muted">請從左側選擇部門查看員工</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </main>
+
+        <!-- 底部資訊 -->
+        <footer class="admin-footer">
+            <p>&copy; E-Help 知識庫智能管理系統. All rights reserved.</p>
+        </footer>
+
+        <!-- 部門模態框 -->
+        <div id="departmentModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="departmentModalTitle">新增部門</h3>
+                    <button class="modal-close" onclick="closeDepartmentModal()">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body scrollable-fade">
+                    <form id="departmentForm">
+                        <input type="hidden" name="id" id="departmentId">
+                        <div class="form-group">
+                            <label class="form-label">部門代碼 <span class="required">*</span></label>
+                            <input type="text" class="form-control" name="code" id="deptCode" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">部門名稱 <span class="required">*</span></label>
+                            <input type="text" class="form-control" name="name" id="deptName" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">上級部門</label>
+                            <select class="form-control searchable-select" name="parent_id" id="parentDepartment" data-placeholder="請選擇上級部門..." data-search-placeholder="搜尋部門名稱..." data-no-results="找不到符合的部門">
+                                <option value="">無（頂層部門）</option>
+                            </select>
+                        </div>
+                        <!-- 角色模板選擇 -->
+                        <div class="form-group">
+                            <label class="form-label">角色建立 <span class="required">*</span></label>
+                            <div class="alert alert-info mb-2">
+                                <i class="fas fa-info-circle"></i>
+                                <small>新增部門時可同時建立多個角色，勾選需要的角色模板並可選擇性自訂名稱</small>
+                            </div>
+                            <div class="role-template-selector" id="roleTemplateSelector">
+                                <!-- 動態載入模板選項 -->
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">部門描述</label>
+                            <textarea class="form-control" name="description" id="deptDescription" rows="3"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">排序順序</label>
+                            <input type="number" class="form-control" name="sort_order" id="deptSort" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                <input type="checkbox" name="is_active" id="deptActive" checked>
+                                啟用此部門
+                            </label>
+                        </div>
+
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeDepartmentModal()">取消</button>
+                    <button class="btn btn-primary" onclick="saveDepartment()">儲存</button>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- 員工模態框 -->
+        <div id="employeeModal" class="modal">
+            <div class="modal-content modal-lg">
+                <div class="modal-header">
+                    <h3 id="employeeModalTitle">新增員工</h3>
+                    <button class="modal-close" onclick="closeEmployeeModal()">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body scrollable-fade">
+                    <form id="userForm">
+                        <input type="hidden" name="id" id="userId">
+                        
+                        <!-- 待處理帳號建議 -->
+                        <div class="account-suggestions" id="accountSuggestions" style="display:none;">
+                            <div class="alert alert-info">
+                                <i class="fas fa-lightbulb"></i>
+                                <strong>建議完成以下帳號設定：</strong>
+                                <select class="form-control mt-2" id="suggestedAccountSelect" onchange="fillAccountInfo(this.value)">
+                                    <option value="">選擇現有帳號...</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- 基本資訊 -->
+                        <fieldset>
+                            <legend>基本資訊</legend>
+                            <div class="form-row">
+                                <div class="form-group col-6">
+                                    <label class="form-label">帳號 <span class="required">*</span></label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" name="loginid" id="userLoginid" required 
+                                               onblur="checkAccountStatus(this.value)" onkeyup="debounceAccountCheck(this.value)">
+                                        <div class="input-group-append">
+                                            <span class="input-group-text account-status-icon" id="accountStatusIcon">
+                                                <i class="fas fa-question-circle text-muted" title="檢查帳號狀態"></i>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <small class="form-text" id="accountStatusHint"></small>
+                                </div>
+                                <div class="form-group col-6">
+                                    <label class="form-label">姓名 <span class="required">*</span></label>
+                                    <input type="text" class="form-control" name="username" id="userUsername" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group col-6">
+                                    <label class="form-label">Email <span class="required">*</span></label>
+                                    <input type="email" class="form-control" name="email" id="userEmail" required>
+                                </div>
+                                <div class="form-group col-6">
+                                    <label class="form-label">員工編號 <span class="required">*</label>
+                                    <input type="text" class="form-control" name="employee_no" id="userEmployeeNo" pattern="^[A-Z0-9\-]+$" title="只能包含大寫英文、數字或短橫線">
+                                    <small class="form-text text-muted">只能包含大寫英文、數字或短橫線</small>
+                                </div>
+                            </div>
+                        </fieldset>
+
+                        <!-- 組織資訊 -->
+                        <fieldset>
+                            <legend>組織資訊</legend>
+                            <div class="form-row">
+                                <div class="form-group col-6">
+                                    <label class="form-label">部門 <span class="required">*</span></label>
+                                    <select class="form-control searchable-select" name="department_id" id="userDepartment" required data-placeholder="請選擇部門..." data-search-placeholder="搜尋部門名稱..." data-no-results="找不到符合的部門">
+                                        <option value="">請選擇部門</option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-6">
+                                    <label class="form-label">職稱</label>
+                                    <input type="text" class="form-control" name="title" id="userTitle">
+                                </div>
+                            </div>
+
+                            <!-- 新增：部門角色選擇 -->
+                            <div class="form-row">
+                                <div class="form-group col-6">
+                                    <label class="form-label">主要角色 <span class="required">*</span></label>
+                                    <select class="form-control searchable-select-role" name="primary_role_id" id="userPrimaryRole" required data-placeholder="請選擇主要角色" data-search-placeholder="搜尋角色..." data-no-results="找不到符合的角色"
+                                        onchange="OrganizationEmployeeRolesModule.onPrimaryRoleChange(this.value)" disabled>
+                                        <option value="">請先選擇部門</option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-6">
+                                    <label class="form-label">其他部門角色</label>
+                                    <button type="button" class="btn btn-outline-primary w-100" id="setOtherRolesBtn" onclick="OrganizationEmployeeRolesModule.showRolesModal()" disabled>
+                                        <i class="fas fa-users-cog"></i> 設定其他部門角色
+                                        <span class="badge badge-info ms-2" id="otherRolesCount" style="display:none;">0</span>
+                                    </button>
+                                    <small class="form-text text-muted">選擇主要角色後可設定其他部門角色</small>
+                                </div>
+                            </div>
+
+                            <!-- 個人權限設定 -->
+                            <div class="form-group">
+                                <label class="form-label">個人權限</label>
+                                <button type="button" class="btn btn-outline-primary w-100" id="setPersonalPermissionsBtn" onclick="OrganizationEmployeePermissionsModule.showPermissionsModal()">
+                                    <i class="fas fa-shield-alt"></i> 設定個人權限
+                                    <span class="badge badge-info ms-2" id="personalPermissionsCount" style="display:none;">0</span>
+                                </button>
+                                <small class="form-text text-muted">個人權限獨立於角色權限</small>
+                            </div>
+                        </fieldset>
+
+                        <!-- 密碼策略 -->
+                        <fieldset>
+                            <legend>密碼設定</legend>
+                            <div class="form-group">
+                                <label class="form-label">密碼策略</label>
+                                <select class="form-control" name="password_strategy" id="passwordStrategy" onchange="togglePasswordField()">
+                                    <option value="ACTIVATION_LINK">傳送啟用連結</option>
+                                    <option value="TEMP_PASSWORD">產生臨時密碼</option>
+                                    <option value="MANUAL">手動設定密碼</option>
+                                </select>
+                            </div>
+                            <div class="form-group" id="manualPasswordGroup" style="display:none;">
+                                <label class="form-label">密碼 <span class="required">*</span></label>
+                                <input type="password" class="form-control" name="password" id="userPassword" required minlength="6">
+                                <small class="form-text text-muted">至少6個字元，須包含數字和字母</small>
+                            </div>
+                        </fieldset>
+
+                        <!-- 帳號狀態 -->
+                        <fieldset>
+                            <legend>帳號狀態</legend>
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <input type="checkbox" name="is_active" id="userActive" checked>
+                                    啟用此帳號
+                                </label>
+                            </div>
+                        </fieldset>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeEmployeeModal()">取消</button>
+                    <button class="btn btn-primary" onclick="saveEmployee()">儲存</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 角色模板模態框 -->
+        <div id="roleTemplateModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="roleTemplateModalTitle">新增角色模板</h3>
+                    <button class="modal-close" onclick="OrganizationRolesModule.closeRoleTemplateModal()">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body scrollable-fade">
+                    <form id="roleTemplateForm">
+                        <input type="hidden" name="id" id="templateId">
+                        <div class="form-group">
+                            <label class="form-label">模板代碼 <span class="required">*</span></label>
+                            <input type="text" class="form-control" name="code" id="templateCode" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">模板名稱 <span class="required">*</span></label>
+                            <input type="text" class="form-control" name="name" id="templateName" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">角色類型 <span class="required">*</span></label>
+                            <select class="form-control" name="role_type" id="templateRoleType" required>
+                                <option value="manager">管理角色</option>
+                                <option value="staff">員工角色</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">角色層級</label>
+                            <input type="number" class="form-control" name="level" id="templateLevel" value="0" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">模板描述</label>
+                            <textarea class="form-control" name="description" id="templateDescription" rows="3"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">排序順序</label>
+                            <input type="number" class="form-control" name="sort_order" id="templateSortOrder" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                <input type="checkbox" name="is_active" id="templateActive" checked>
+                                啟用此模板
+                            </label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="OrganizationRolesModule.closeRoleTemplateModal()">取消</button>
+                    <button class="btn btn-primary" onclick="OrganizationRolesModule.saveRoleTemplate()">儲存</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 部門角色模態框 -->
+        <div id="departmentRoleModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="departmentRoleModalTitle">角色詳情</h3>
+                    <button class="modal-close" onclick="OrganizationRolesModule.closeDepartmentRoleModal()">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body scrollable-fade">
+                    <div id="departmentRoleDetails">
+                        <!-- 動態載入角色詳情 -->
                     </div>
                 </div>
-                
-                <div class="user-info-block">
-                    <div class="section-toolbar">
-                        <!-- 搜尋區 -->
-                        <div class="user-search-box">
-                            <input type="text" class="form-control" id="userSearchInput" placeholder="搜尋姓名、帳號、Email...">
-                            <button class="btn btn-search" onclick="searchUsers()">
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="OrganizationRolesModule.closeDepartmentRoleModal()">關閉</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 新增部門角色模態框 -->
+        <div id="addDepartmentRoleModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>為 <span id="addRoleDeptName"></span> 新增角色</h3>
+                    <button class="modal-close" onclick="OrganizationRolesModule.closeAddDepartmentRoleModal()">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body scrollable-fade">
+                    <form id="addDepartmentRoleForm">
+                        <input type="hidden" id="addRoleDeptId">
+
+                        <!-- 模式切換器 -->
+                        <div class="form-group">
+                            <div class="mode-switcher">
+                                <button type="button" class="btn btn-sm btn-outline-primary" id="singleModeBtn" onclick="OrganizationRolesModule.switchToSingleMode()">
+                                    <i class="fas fa-check-circle"></i> 單一新增
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="batchModeBtn" onclick="OrganizationRolesModule.switchToBatchMode()">
+                                    <i class="fas fa-list-check"></i> 批量新增
+                                </button>
+                                <small class="form-text text-info ms-3" id="modeHint">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span id="modeHintText">選擇一個角色模板進行精確新增</span>
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">選擇角色模板 <span class="required">*</span></label>
+                            <div id="roleTemplatesForAdd" class="role-template-selector">
+                                <!-- 動態載入模板選項 -->
+                            </div>
+                        </div>
+
+                        <!-- 單一模式的角色名稱輸入 -->
+                        <div class="form-group" id="singleRoleNameGroup">
+                            <label class="form-label">角色名稱（可選）</label>
+                            <input type="text" class="form-control" id="customRoleName" placeholder="留空將使用：部門名稱-模板名稱">
+                            <small class="form-text text-muted">例如：資訊部-主管</small>
+                        </div>
+
+                        <!-- 批量模式的提示 -->
+                        <div class="form-group d-none" id="batchRoleNamesHint">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i>
+                                <span>批量模式中，每個角色可單獨設定名稱</span>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="OrganizationRolesModule.closeAddDepartmentRoleModal()">取消</button>
+                    <button class="btn btn-primary" onclick="OrganizationRolesModule.confirmAddDepartmentRole()">
+                        <span id="confirmBtnText">新增</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 編輯部門角色模態框 -->
+        <div id="editDepartmentRoleModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>編輯角色</h3>
+                    <button class="modal-close" onclick="OrganizationRolesModule.closeEditDepartmentRoleModal()">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body scrollable-fade">
+                    <form id="editDepartmentRoleForm">
+                        <input type="hidden" id="editRoleId">
+                        <div class="form-group">
+                            <label class="form-label">角色代碼</label>
+                            <input type="text" class="form-control" id="editRoleCode" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">角色名稱 <span class="required">*</span></label>
+                            <input type="text" class="form-control" id="editRoleName" required>
+                        </div>
+
+                        <!-- 所屬部門選擇 -->
+                        <div class="form-group">
+                            <label class="form-label">所屬部門</label>
+                            <div class="input-group">
+                                <select class="form-control searchable-select" id="editRoleDepartment" data-placeholder="選擇部門..." data-search-placeholder="搜尋部門名稱..." data-no-results="找不到符合的部門"
+                                    onchange="OrganizationRolesModule.onEditRoleDepartmentChange()">
+                                    <!-- 動態載入部門選項 -->
+                                </select>
+                                <div class="input-group-append">
+                                    <button type="button" class="btn btn-secondary btn-reset" id="resetDepartmentBtn" onclick="OrganizationRolesModule.resetRoleDepartment()" title="還原到原始部門" disabled>
+                                        <i class="fas fa-undo"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <small class="form-text text-warning" id="deptChangeWarning" style="display:none;">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                變更部門將自動處理父角色關係，父角色欄位已禁用
+                            </small>
+                        </div>
+
+                        <!-- 父角色選擇 -->
+                        <div class="form-group">
+                            <label class="form-label">父角色</label>
+                            <select class="form-control searchable-select" id="editParentRoleSelect" data-placeholder="選擇父角色（留空表示頂層角色）..." data-search-placeholder="搜尋角色名稱..." data-no-results="找不到符合的角色">
+                                <option value="">無（頂層角色）</option>
+                                <!-- 動態載入角色選項 -->
+                            </select>
+                            <small class="form-text text-muted" id="parentRoleHint">留空表示頂層角色</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">角色類型</label>
+                            <input type="text" class="form-control" id="editRoleType" readonly>
+                        </div>
+
+                        <!-- 角色層級（可手動編輯） -->
+                        <div class="form-group">
+                            <label class="form-label">角色層級</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="editRoleLevel" min="1" max="100">
+                                <div class="input-group-append">
+                                    <button type="button" class="btn btn-warning" onclick="showRecalculateConfirm()">
+                                        <i class="fas fa-calculator"></i> 重算子節點層級
+                                    </button>
+                                </div>
+                            </div>
+                            <small class="form-text text-warning">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                層級範圍：1-100（每層+10）。修改層級不會自動影響子角色，需手動觸發重算
+                            </small>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                <input type="checkbox" id="editRoleActive">
+                                啟用此角色
+                            </label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="OrganizationRolesModule.closeEditDepartmentRoleModal()">取消</button>
+                    <button class="btn btn-primary" onclick="OrganizationRolesModule.confirmEditDepartmentRole()">儲存</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 角色詳情模態框（改進版） -->
+        <div id="roleDetailsModal" class="modal">
+            <div class="modal-content modal-lg">
+                <div class="modal-header">
+                    <h3>角色詳情</h3>
+                    <button class="modal-close" onclick="OrganizationRolesModule.closeRoleDetailsModal()">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body scrollable-fade">
+                    <div id="roleDetailsContent">
+                        <!-- 動態載入角色詳情 -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="OrganizationRolesModule.closeRoleDetailsModal()">關閉</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 角色搜尋模態框 -->
+        <div id="roleSearchModal" class="modal">
+            <div class="modal-content modal-lg">
+                <div class="modal-header">
+                    <h3>選擇角色</h3>
+                    <button class="modal-close" onclick="closeRoleSearchModal()">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body scrollable-fade">
+                    <!-- 搜尋框 -->
+                    <div class="form-group">
+                        <div class="search-input-group">
+                            <input type="text" class="form-control" id="roleModalSearchInput" placeholder="搜尋角色名稱或部門名稱...">
+                            <button class="btn btn-primary" onclick="performRoleSearch()">
+                                <i class="fas fa-search"></i> 搜尋
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 搜尋結果 -->
+                    <div class="search-results" id="roleSearchResults">
+                        <div class="empty-state">
+                            <i class="fas fa-search fa-2x text-muted"></i>
+                            <p class="text-muted">請輸入關鍵字搜尋角色</p>
+                        </div>
+                    </div>
+
+                    <!-- 選中的角色 -->
+                    <input type="hidden" id="selectedRoleId">
+                    <input type="hidden" id="searchModalContext"><!-- 用於區分是新增還是編輯 -->
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeRoleSearchModal()">取消</button>
+                    <button class="btn btn-primary" onclick="confirmRoleSelection()" disabled id="confirmRoleBtn">確認選擇</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 重算確認對話框 -->
+        <div id="recalculateConfirmModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>重新計算子節點層級</h3>
+                    <button class="modal-close" onclick="closeRecalculateConfirmModal()">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="recalculate-warning">
+                        <div class="warning-icon">
+                            <i class="fas fa-exclamation-triangle text-warning fa-3x"></i>
+                        </div>
+                        <div class="warning-content">
+                            <h4>重要提醒</h4>
+                            <p>此操作將影響 <strong id="affectedRoleCount">0</strong> 個子角色：</p>
+
+                            <div class="affected-roles-container">
+                                <div id="affectedRolesList" class="affected-roles-list scrollable-fade">
+                                    <!-- 動態載入影響的角色清單 -->
+                                </div>
+                            </div>
+
+                            <p class="text-danger mt-3">
+                                <strong>此操作無法復原，是否繼續？</strong>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeRecalculateConfirmModal()">取消</button>
+                    <button class="btn btn-danger" onclick="executeRecalculate()" id="executeRecalculateBtn">
+                        <i class="fas fa-calculator"></i> 繼續執行
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 父角色變更確認對話框 -->
+        <div id="parentRoleChangeConfirmModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>父角色變更確認</h3>
+                    <button class="modal-close" onclick="closeParentRoleChangeConfirmModal()">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="parent-role-change-warning">
+                        <div class="warning-icon">
+                            <i class="fas fa-exclamation-triangle text-warning fa-2x"></i>
+                        </div>
+                        <div class="warning-content">
+                            <h4>父角色變更提醒</h4>
+                            <p>修改父角色將會自動重新計算此角色的所有子角色層級。</p>
+                            <p>此操作將影響 <strong id="parentChangeAffectedCount">0</strong> 個子角色：</p>
+
+                            <div class="affected-roles-container" id="parentChangeAffectedContainer" style="display: none;">
+                                <div id="parentChangeAffectedList" class="affected-roles-list scrollable-fade">
+                                    <!-- 動態載入影響的角色清單 -->
+                                </div>
+                            </div>
+
+                            <p class="text-info mt-3">
+                                <strong>確定要繼續修改父角色嗎？</strong>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeParentRoleChangeConfirmModal()">取消</button>
+                    <button class="btn btn-primary" onclick="confirmParentRoleChange()" id="confirmParentChangeBtn">
+                        <i class="fas fa-check"></i> 確認變更
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 角色關係分析模態框 -->
+        <div id="roleRelationshipAnalysisModal" class="modal">
+            <div class="modal-content modal-lg">
+                <div class="modal-header">
+                    <h3>角色關係智能分析</h3>
+                    <button class="modal-close" onclick="OrganizationRoleAnalysisModule.closeRoleRelationshipAnalysisModal()">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body scrollable-fade">
+                    <!-- 分析選項面板 -->
+                    <div class="analysis-options-panel">
+                        <div class="option-item">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="includeInactiveRoles" checked onchange="OrganizationRoleAnalysisModule.toggleIncludeInactive()">
+                                <span class="toggle-slider"></span>
+                                <span class="toggle-label">包含停用角色分析</span>
+                            </label>
+                            <span class="option-hint">
+                                <i class="fas fa-info-circle"></i>
+                                分析所有角色（包含已停用）的關係問題
+                            </span>
+                        </div>
+                    </div>
+                    <div id="roleAnalysisContent">
+                        <div class="loading-spinner">
+                            <div class="spinner"></div>
+                            <p>正在分析角色關係...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="OrganizationRoleAnalysisModule.closeRoleRelationshipAnalysisModal()">關閉</button>
+                    <button class="btn btn-primary d-none" id="applyAnalysisBtn" onclick="OrganizationRoleAnalysisModule.showBulkAdjustmentModal()">
+                        <i class="fas fa-magic"></i> 套用建議調整
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 批量角色調整預覽模態框 -->
+        <div id="bulkRoleAdjustmentModal" class="modal">
+            <div class="modal-content modal-lg">
+                <div class="modal-header">
+                    <h3>批量角色調整預覽</h3>
+                    <button class="modal-close" onclick="OrganizationRoleAnalysisModule.closeBulkAdjustmentModal()">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body scrollable-fade">
+                    <div class="adjustment-warning">
+                        <div class="warning-icon">
+                            <i class="fas fa-exclamation-triangle text-warning fa-2x"></i>
+                        </div>
+                        <div class="warning-content">
+                            <h4>批量調整確認</h4>
+                            <p>此操作將調整多個角色的父子關係，請仔細檢查以下預覽內容。</p>
+                            <p class="text-danger"><strong>此操作無法自動復原，請謹慎執行。</strong></p>
+                        </div>
+                    </div>
+
+                    <div id="adjustmentPreviewContent">
+                        <div class="loading-spinner">
+                            <div class="spinner"></div>
+                            <p>正在生成調整預覽...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="OrganizationRoleAnalysisModule.closeBulkAdjustmentModal()">取消</button>
+                    <button class="btn btn-danger" id="confirmBulkAdjustmentBtn" onclick="OrganizationRoleAnalysisModule.confirmBulkAdjustment()" disabled>
+                        <i class="fas fa-check"></i> 確認執行調整
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 員工多角色選擇模態框 -->
+        <div id="employeeRolesModal" class="modal">
+            <div class="modal-content modal-lg">
+                <div class="modal-header">
+                    <h3>設定其他部門角色</h3>
+                    <button class="modal-close" onclick="OrganizationEmployeeRolesModule.closeRolesModal()">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body scrollable-fade">
+                    <!-- 提示訊息 -->
+                    <div class="alert alert-info mb-3">
+                        <i class="fas fa-info-circle"></i>
+                        <span>可選擇多個部門的角色，主要角色 <strong id="modalPrimaryRoleName"></strong> 已自動排除</span>
+                    </div>
+
+                    <!-- 搜尋和工具列 -->
+                    <div class="tree-toolbar" style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+                        <div class="tree-search-box" style="flex: 1;">
+                            <input type="text" class="form-control" id="rolesTreeSearch" placeholder="搜尋部門或角色名稱...">
+                            <button class="btn btn-search" onclick="OrganizationEmployeeRolesModule.searchRoles()">
                                 <i class="fa-solid fa-search"></i>
                             </button>
                         </div>
+                        <!-- 操作按鈕移到外部 -->
+                        <div class="tree-actions" style="display: flex; gap: 5px;">
+                            <button class="btn btn-sm btn-outline" onclick="OrganizationEmployeeRolesModule.expandAll()" title="展開全部">
+                                <i class="fas fa-expand-alt"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline" onclick="OrganizationEmployeeRolesModule.collapseAll()" title="收合全部">
+                                <i class="fas fa-compress-alt"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline" onclick="OrganizationEmployeeRolesModule.clearSelection()" title="清除選擇">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
                     </div>
-                    
-                    <!-- 員工統計 -->
-                    <div class="user-stats">
+
+                    <!-- 統計資訊 -->
+                    <div class="tree-stats">
                         <span class="stat-item">
-                            <i class="fas fa-id-card"></i>
-                            總共 <strong id="totalEmployeeCount">0</strong> 位員工
+                            <i class="fas fa-sitemap"></i>
+                            共 <strong id="totalRolesCount">0</strong> 個可選角色
                         </span>
-                        <span class="stat-item" id="activeEmployeeCount">
-                            <i class="fas fa-check-circle" style="color: #28a745;"></i>
-                            啟用 <strong>0</strong> 位員工
-                        </span>
-                        <span class="stat-item" id="inactiveEmployeeCount">
-                            <i class="fas fa-times-circle" style="color: #dc3545;"></i>
-                            停用 <strong>0</strong> 位員工
-                            <button class="toggle-inactive-btn" onclick="OrganizationModule.toggleInactiveEmployees()" 
-                                    title="顯示停用" id="toggleInactiveEmployeesBtn">
-                                <i class="fas fa-eye-slash"></i>
-                            </button>
+                        <span class="stat-item">
+                            <i class="fas fa-check-circle text-success"></i>
+                            已選擇 <strong id="selectedRolesCount">0</strong> 個
                         </span>
                     </div>
-                    
-                    <div class="section-content">
-                        <!-- 員工列表 -->
-                        <div class="user-list">
-                            <div class="user-table-wrapper">
-                                <table class="data-table">
-                                    <thead>
-                                        <tr>
-                                            <th><input type="checkbox" id="selectAll"></th>
-                                            <th>帳號</th>
-                                            <th>姓名</th>
-                                            <th>Email</th>
-                                            <th>部門</th>
-                                            <th>權限</th>
-                                            <th>認證方式</th>
-                                            <th>狀態</th>
-                                            <th>最後登入</th>
-                                            <th>操作</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="employeeTableBody" class="scrollable-fade">
-                                        <tr>
-                                            <td colspan="10" class="text-center">
-                                                <div class="loading-spinner">
-                                                    <div class="spinner"></div>
-                                                    <p>載入員工資料中...</p>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                        
-                        <!-- 分頁 -->
-                        <div class="pagination">
-                            <button class="btn btn-sm" id="prevPage" disabled>上一頁</button>
-                            <span class="page-info">第 <span id="currentPage">1</span> 頁，共 <span id="totalPages">1</span> 頁</span>
-                            <button class="btn btn-sm" id="nextPage">下一頁</button>
+
+                    <!-- 組織樹容器 -->
+                    <div class="roles-tree-container scrollable-fade" id="rolesTreeContainer" style="max-height: 400px;">
+                        <div class="loading-spinner">
+                            <div class="spinner"></div>
+                            <p>載入角色資料中...</p>
                         </div>
                     </div>
                 </div>
-            </section>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="OrganizationEmployeeRolesModule.closeRolesModal()">取消</button>
+                    <button class="btn btn-primary" onclick="OrganizationEmployeeRolesModule.confirmRolesSelection()">
+                        確認選擇
+                    </button>
+                </div>
             </div>
         </div>
-    </main>
-    
-    <!-- 底部資訊 -->
-    <footer class="admin-footer">
-        <p>&copy; E-Help 知識庫智能管理系統. All rights reserved.</p>
-    </footer>
-    
-    <!-- 部門模態框 -->
-    <div id="departmentModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="departmentModalTitle">新增部門</h3>
-                <button class="modal-close" onclick="closeDepartmentModal()">
-                    <i class="fa-solid fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body scrollable-fade">
-                <form id="departmentForm">
-                    <input type="hidden" name="id" id="departmentId">
-                    <div class="form-group">
-                        <label class="form-label">部門代碼 <span class="required">*</span></label>
-                        <input type="text" class="form-control" name="code" id="deptCode" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">部門名稱 <span class="required">*</span></label>
-                        <input type="text" class="form-control" name="name" id="deptName" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">上級部門</label>
-                        <select class="form-control searchable-select" name="parent_id" id="parentDepartment" 
-                                data-placeholder="請選擇上級部門..." 
-                                data-search-placeholder="搜尋部門名稱..." 
-                                data-no-results="找不到符合的部門">
-                            <option value="">無（頂層部門）</option>
-                        </select>
-                    </div>
-                    <!-- 角色模板選擇 -->
-                    <div class="form-group">
-                        <label class="form-label">角色建立 <span class="required">*</span></label>
-                        <div class="alert alert-info mb-2">
+
+        <!-- 待處理帳號詳情模態框 -->
+        <div id="pendingAccountsModal" class="modal">
+            <div class="modal-content modal-lg">
+                <div class="modal-header">
+                    <h3>待處理帳號清單</h3>
+                    <button class="modal-close" onclick="closePendingAccountsModal()">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body scrollable-fade">
+                    <div class="pending-accounts-info mb-3">
+                        <div class="alert alert-info">
                             <i class="fas fa-info-circle"></i>
-                            <small>新增部門時可同時建立多個角色，勾選需要的角色模板並可選擇性自訂名稱</small>
+                            <span>以下帳號已建立但尚未完成員工設定，請選擇並完成設定</span>
                         </div>
-                        <div class="role-template-selector" id="roleTemplateSelector">
-                            <!-- 動態載入模板選項 -->
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">部門描述</label>
-                        <textarea class="form-control" name="description" id="deptDescription" rows="3"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">排序順序</label>
-                        <input type="number" class="form-control" name="sort_order" id="deptSort" value="0">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">
-                            <input type="checkbox" name="is_active" id="deptActive" checked>
-                            啟用此部門
-                        </label>
                     </div>
                     
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeDepartmentModal()">取消</button>
-                <button class="btn btn-primary" onclick="saveDepartment()">儲存</button>
-            </div>
-        </div>
-    </div>
-    
-    
-    <!-- 員工模態框 -->
-    <div id="employeeModal" class="modal">
-        <div class="modal-content modal-lg">
-            <div class="modal-header">
-                <h3 id="employeeModalTitle">新增員工</h3>
-                <button class="modal-close" onclick="closeEmployeeModal()">
-                    <i class="fa-solid fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form id="userForm">
-                    <input type="hidden" name="id" id="userId">
-                    <!-- 基本資訊 -->
-                    <fieldset>
-                        <legend>基本資訊</legend>
-                        <div class="form-row">
-                            <div class="form-group col-6">
-                                <label class="form-label">帳號 <span class="required">*</span></label>
-                                <input type="text" class="form-control" name="loginid" id="userLoginid" required>
-                            </div>
-                            <div class="form-group col-6">
-                                <label class="form-label">姓名 <span class="required">*</span></label>
-                                <input type="text" class="form-control" name="username" id="userUsername" required>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group col-6">
-                                <label class="form-label">Email <span class="required">*</span></label>
-                                <input type="email" class="form-control" name="email" id="userEmail" required>
-                            </div>
-                            <div class="form-group col-6">
-                                <label class="form-label">員工編號</label>
-                                <input type="text" class="form-control" name="employee_no" id="userEmployeeNo">
-                            </div>
-                        </div>
-                    </fieldset>
-                    
-                    <!-- 組織資訊 -->
-                    <fieldset>
-                        <legend>組織資訊</legend>
-                        <div class="form-row">
-                            <div class="form-group col-6">
-                                <label class="form-label">部門 <span class="required">*</span></label>
-                                <select class="form-control searchable-select" name="department_id" id="userDepartment" required
-                                        data-placeholder="請選擇部門..." 
-                                        data-search-placeholder="搜尋部門名稱..." 
-                                        data-no-results="找不到符合的部門">
-                                    <option value="">請選擇部門</option>
-                                </select>
-                            </div>
-                            <div class="form-group col-6">
-                                <label class="form-label">職稱</label>
-                                <input type="text" class="form-control" name="title" id="userTitle">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">權限</label>
-                            <div class="permission-group-checkboxes">
-                                <!-- 動態載入權限群組選項 -->
-                            </div>
-                        </div>
-                    </fieldset>
-                    
-                    <!-- 密碼策略 -->
-                    <fieldset>
-                        <legend>密碼設定</legend>
-                        <div class="form-group">
-                            <label class="form-label">密碼策略</label>
-                            <select class="form-control" name="password_strategy" id="passwordStrategy" onchange="togglePasswordField()">
-                                <option value="ACTIVATION_LINK">傳送啟用連結</option>
-                                <option value="TEMP_PASSWORD">產生臨時密碼</option>
-                                <option value="MANUAL">手動設定密碼</option>
-                            </select>
-                        </div>
-                        <div class="form-group" id="manualPasswordGroup" style="display:none;">
-                            <label class="form-label">密碼</label>
-                            <input type="password" class="form-control" name="password" id="userPassword">
-                        </div>
-                    </fieldset>
-                    
-                    <!-- 帳號狀態 -->
-                    <fieldset>
-                        <legend>帳號狀態</legend>
-                        <div class="form-group">
-                            <label class="form-label">
-                                <input type="checkbox" name="is_active" id="userActive" checked>
-                                啟用此帳號
-                            </label>
-                        </div>
-                    </fieldset>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeEmployeeModal()">取消</button>
-                <button class="btn btn-primary" onclick="saveEmployee()">儲存</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- 角色模板模態框 -->
-    <div id="roleTemplateModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="roleTemplateModalTitle">新增角色模板</h3>
-                <button class="modal-close" onclick="OrganizationRolesModule.closeRoleTemplateModal()">
-                    <i class="fa-solid fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body scrollable-fade">
-                <form id="roleTemplateForm">
-                    <input type="hidden" name="id" id="templateId">
-                    <div class="form-group">
-                        <label class="form-label">模板代碼 <span class="required">*</span></label>
-                        <input type="text" class="form-control" name="code" id="templateCode" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">模板名稱 <span class="required">*</span></label>
-                        <input type="text" class="form-control" name="name" id="templateName" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">角色類型 <span class="required">*</span></label>
-                        <select class="form-control" name="role_type" id="templateRoleType" required>
-                            <option value="manager">管理角色</option>
-                            <option value="staff">員工角色</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">角色層級</label>
-                        <input type="number" class="form-control" name="level" id="templateLevel" value="0" min="0">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">模板描述</label>
-                        <textarea class="form-control" name="description" id="templateDescription" rows="3"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">排序順序</label>
-                        <input type="number" class="form-control" name="sort_order" id="templateSortOrder" value="0">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">
-                            <input type="checkbox" name="is_active" id="templateActive" checked>
-                            啟用此模板
-                        </label>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="OrganizationRolesModule.closeRoleTemplateModal()">取消</button>
-                <button class="btn btn-primary" onclick="OrganizationRolesModule.saveRoleTemplate()">儲存</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- 部門角色模態框 -->
-    <div id="departmentRoleModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="departmentRoleModalTitle">角色詳情</h3>
-                <button class="modal-close" onclick="OrganizationRolesModule.closeDepartmentRoleModal()">
-                    <i class="fa-solid fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body scrollable-fade">
-                <div id="departmentRoleDetails">
-                    <!-- 動態載入角色詳情 -->
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="OrganizationRolesModule.closeDepartmentRoleModal()">關閉</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- 新增部門角色模態框 -->
-    <div id="addDepartmentRoleModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>為 <span id="addRoleDeptName"></span> 新增角色</h3>
-                <button class="modal-close" onclick="OrganizationRolesModule.closeAddDepartmentRoleModal()">
-                    <i class="fa-solid fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body scrollable-fade">
-                <form id="addDepartmentRoleForm">
-                    <input type="hidden" id="addRoleDeptId">
-                    
-                    <!-- 模式切換器 -->
-                    <div class="form-group">
-                        <div class="mode-switcher">
-                            <button type="button" class="btn btn-sm btn-outline-primary" id="singleModeBtn" onclick="OrganizationRolesModule.switchToSingleMode()">
-                                <i class="fas fa-check-circle"></i> 單一新增
+                    <!-- 搜尋框 -->
+                    <div class="pending-search-container mb-3">
+                        <div class="tree-search-box">
+                            <input type="text" class="form-control" id="pendingAccountsSearch" placeholder="搜尋帳號、姓名或Email...">
+                            <button class="btn btn-search" onclick="searchPendingAccounts()">
+                                <i class="fa-solid fa-search"></i>
                             </button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" id="batchModeBtn" onclick="OrganizationRolesModule.switchToBatchMode()">
-                                <i class="fas fa-list-check"></i> 批量新增
-                            </button>
-                            <small class="form-text text-info ms-3" id="modeHint">
-                                <i class="fas fa-info-circle"></i> 
-                                <span id="modeHintText">選擇一個角色模板進行精確新增</span>
+                        </div>
+                        <div class="search-stats" style="display: none;">
+                            <small class="text-muted">
+                                找到 <strong id="pendingSearchResultCount">0</strong> 個符合的帳號
                             </small>
                         </div>
                     </div>
                     
-                    <div class="form-group">
-                        <label class="form-label">選擇角色模板 <span class="required">*</span></label>
-                        <div id="roleTemplatesForAdd" class="role-template-selector">
-                            <!-- 動態載入模板選項 -->
+                    <div id="pendingAccountsList" class="pending-accounts-list">
+                        <div class="loading-spinner">
+                            <div class="spinner"></div>
+                            <p>載入待處理帳號中...</p>
                         </div>
-                    </div>
-                    
-                    <!-- 單一模式的角色名稱輸入 -->
-                    <div class="form-group" id="singleRoleNameGroup">
-                        <label class="form-label">角色名稱（可選）</label>
-                        <input type="text" class="form-control" id="customRoleName" 
-                               placeholder="留空將使用：部門名稱-模板名稱">
-                        <small class="form-text text-muted">例如：資訊部-主管</small>
-                    </div>
-                    
-                    <!-- 批量模式的提示 -->
-                    <div class="form-group d-none" id="batchRoleNamesHint">
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle"></i>
-                            <span>批量模式中，每個角色可單獨設定名稱</span>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="OrganizationRolesModule.closeAddDepartmentRoleModal()">取消</button>
-                <button class="btn btn-primary" onclick="OrganizationRolesModule.confirmAddDepartmentRole()">
-                    <span id="confirmBtnText">新增</span>
-                </button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- 編輯部門角色模態框 -->
-    <div id="editDepartmentRoleModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>編輯角色</h3>
-                <button class="modal-close" onclick="OrganizationRolesModule.closeEditDepartmentRoleModal()">
-                    <i class="fa-solid fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body scrollable-fade">
-                <form id="editDepartmentRoleForm">
-                    <input type="hidden" id="editRoleId">
-                    <div class="form-group">
-                        <label class="form-label">角色代碼</label>
-                        <input type="text" class="form-control" id="editRoleCode" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">角色名稱 <span class="required">*</span></label>
-                        <input type="text" class="form-control" id="editRoleName" required>
-                    </div>
-                    
-                    <!-- 所屬部門選擇 -->
-                    <div class="form-group">
-                        <label class="form-label">所屬部門</label>
-                        <div class="input-group">
-                            <select class="form-control searchable-select" id="editRoleDepartment"
-                                    data-placeholder="選擇部門..."
-                                    data-search-placeholder="搜尋部門名稱..."
-                                    data-no-results="找不到符合的部門"
-                                    onchange="OrganizationRolesModule.onEditRoleDepartmentChange()">
-                                <!-- 動態載入部門選項 -->
-                            </select>
-                            <div class="input-group-append">
-                                <button type="button" class="btn btn-secondary btn-reset" id="resetDepartmentBtn"
-                                        onclick="OrganizationRolesModule.resetRoleDepartment()"
-                                        title="還原到原始部門" disabled>
-                                    <i class="fas fa-undo"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <small class="form-text text-warning" id="deptChangeWarning" style="display:none;">
-                            <i class="fas fa-exclamation-triangle"></i> 
-                            變更部門將自動處理父角色關係，父角色欄位已禁用
-                        </small>
-                    </div>
-                    
-                    <!-- 父角色選擇 -->
-                    <div class="form-group">
-                        <label class="form-label">父角色</label>
-                        <select class="form-control searchable-select" id="editParentRoleSelect" 
-                                data-placeholder="選擇父角色（留空表示頂層角色）..." 
-                                data-search-placeholder="搜尋角色名稱..." 
-                                data-no-results="找不到符合的角色">
-                            <option value="">無（頂層角色）</option>
-                            <!-- 動態載入角色選項 -->
-                        </select>
-                        <small class="form-text text-muted" id="parentRoleHint">留空表示頂層角色</small>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">角色類型</label>
-                        <input type="text" class="form-control" id="editRoleType" readonly>
-                    </div>
-                    
-                    <!-- 角色層級（可手動編輯） -->
-                    <div class="form-group">
-                        <label class="form-label">角色層級</label>
-                        <div class="input-group">
-                            <input type="number" class="form-control" id="editRoleLevel" min="1" max="100">
-                            <div class="input-group-append">
-                                <button type="button" class="btn btn-warning" onclick="showRecalculateConfirm()">
-                                    <i class="fas fa-calculator"></i> 重算子節點層級
-                                </button>
-                            </div>
-                        </div>
-                        <small class="form-text text-warning">
-                            <i class="fas fa-exclamation-triangle"></i> 
-                            層級範圍：1-100（每層+10）。修改層級不會自動影響子角色，需手動觸發重算
-                        </small>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">
-                            <input type="checkbox" id="editRoleActive">
-                            啟用此角色
-                        </label>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="OrganizationRolesModule.closeEditDepartmentRoleModal()">取消</button>
-                <button class="btn btn-primary" onclick="OrganizationRolesModule.confirmEditDepartmentRole()">儲存</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- 角色詳情模態框（改進版） -->
-    <div id="roleDetailsModal" class="modal">
-        <div class="modal-content modal-lg">
-            <div class="modal-header">
-                <h3>角色詳情</h3>
-                <button class="modal-close" onclick="OrganizationRolesModule.closeRoleDetailsModal()">
-                    <i class="fa-solid fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body scrollable-fade">
-                <div id="roleDetailsContent">
-                    <!-- 動態載入角色詳情 -->
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="OrganizationRolesModule.closeRoleDetailsModal()">關閉</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- 角色搜尋模態框 -->
-    <div id="roleSearchModal" class="modal">
-        <div class="modal-content modal-lg">
-            <div class="modal-header">
-                <h3>選擇角色</h3>
-                <button class="modal-close" onclick="closeRoleSearchModal()">
-                    <i class="fa-solid fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body scrollable-fade">
-                <!-- 搜尋框 -->
-                <div class="form-group">
-                    <div class="search-input-group">
-                        <input type="text" class="form-control" id="roleSearchInput" 
-                               placeholder="搜尋角色名稱或部門名稱...">
-                        <button class="btn btn-primary" onclick="performRoleSearch()">
-                            <i class="fas fa-search"></i> 搜尋
-                        </button>
                     </div>
                 </div>
-                
-                <!-- 搜尋結果 -->
-                <div class="search-results" id="roleSearchResults">
-                    <div class="empty-state">
-                        <i class="fas fa-search fa-2x text-muted"></i>
-                        <p class="text-muted">請輸入關鍵字搜尋角色</p>
-                    </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closePendingAccountsModal()">關閉</button>
                 </div>
-                
-                <!-- 選中的角色 -->
-                <input type="hidden" id="selectedRoleId">
-                <input type="hidden" id="searchModalContext"><!-- 用於區分是新增還是編輯 -->
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeRoleSearchModal()">取消</button>
-                <button class="btn btn-primary" onclick="confirmRoleSelection()" disabled id="confirmRoleBtn">確認選擇</button>
             </div>
         </div>
-    </div>
-    
-    <!-- 重算確認對話框 -->
-    <div id="recalculateConfirmModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>重新計算子節點層級</h3>
-                <button class="modal-close" onclick="closeRecalculateConfirmModal()">
-                    <i class="fa-solid fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="recalculate-warning">
-                    <div class="warning-icon">
-                        <i class="fas fa-exclamation-triangle text-warning fa-3x"></i>
+
+        <!-- 個人權限選擇模態框 -->
+        <div id="personalPermissionsModal" class="modal">
+            <div class="modal-content modal-lg">
+                <div class="modal-header">
+                    <h3>設定個人權限</h3>
+                    <button class="modal-close" onclick="OrganizationEmployeePermissionsModule.closePermissionsModal()">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body scrollable-fade">
+                    <!-- 提示訊息 -->
+                    <div class="alert alert-info mb-3">
+                        <i class="fas fa-info-circle"></i>
+                        <span>個人權限獨立於角色權限，可選擇多個權限群組</span>
                     </div>
-                    <div class="warning-content">
-                        <h4>重要提醒</h4>
-                        <p>此操作將影響 <strong id="affectedRoleCount">0</strong> 個子角色：</p>
-                        
-                        <div class="affected-roles-container">
-                            <div id="affectedRolesList" class="affected-roles-list scrollable-fade">
-                                <!-- 動態載入影響的角色清單 -->
+
+                    <!-- 搜尋和工具列 -->
+                    <div class="tree-toolbar" style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+                        <div class="tree-search-box" style="flex: 1;">
+                            <input type="text" class="form-control" id="permissionsSearch" placeholder="搜尋權限群組名稱...">
+                            <button class="btn btn-search" onclick="OrganizationEmployeePermissionsModule.searchPermissions()">
+                                <i class="fa-solid fa-search"></i>
+                            </button>
+                        </div>
+                        <!-- 操作按鈕 -->
+                        <div class="tree-actions" style="display: flex; gap: 5px;">
+                            <button class="btn btn-sm btn-outline" onclick="OrganizationEmployeePermissionsModule.selectAll()" title="全選">
+                                <i class="fas fa-check-double"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline" onclick="OrganizationEmployeePermissionsModule.clearSelection()" title="清除選擇">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 統計資訊 -->
+                    <div class="tree-stats">
+                        <span class="stat-item">
+                            <i class="fas fa-shield-alt"></i>
+                            共 <strong id="totalPermissionsCount">0</strong> 個權限群組
+                        </span>
+                        <span class="stat-item">
+                            <i class="fas fa-check-circle text-success"></i>
+                            已選擇 <strong id="selectedPermissionsCount">0</strong> 個
+                        </span>
+                    </div>
+
+                    <!-- 權限群組列表容器 -->
+                    <div class="permissions-list-container scrollable-fade" id="permissionsListContainer" style="max-height: 400px;">
+                        <div class="loading-spinner">
+                            <div class="spinner"></div>
+                            <p>載入權限群組中...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="OrganizationEmployeePermissionsModule.closePermissionsModal()">取消</button>
+                    <button class="btn btn-primary" onclick="OrganizationEmployeePermissionsModule.confirmPermissionsSelection()">
+                        確認選擇
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 員工停用確認對話框 -->
+        <div id="employeeDeactivateModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>確認停用員工</h3>
+                    <button class="modal-close" onclick="closeEmployeeDeactivateModal()">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="deactivate-warning">
+                        <div class="warning-icon">
+                            <i class="fas fa-exclamation-triangle text-warning fa-2x"></i>
+                        </div>
+                        <div class="warning-content">
+                            <h4>即將停用員工帳號</h4>
+                            <p>員工：<strong id="deactivateEmployeeName">載入中...</strong></p>
+                            <p>帳號：<strong id="deactivateEmployeeLogin">載入中...</strong></p>
+                        </div>
+                    </div>
+                    
+                    <div class="deactivate-options">
+                        <div class="form-group">
+                            <label class="form-label">停用方式</label>
+                            <div class="deactivate-mode-selector">
+                                <label class="radio-option">
+                                    <input type="radio" name="deactivateMode" value="immediate" checked>
+                                    <span class="radio-label">
+                                        <i class="fas fa-ban text-danger"></i>
+                                        <strong>立即停用</strong>
+                                        <small>帳號將立即停用，員工無法再登入系統</small>
+                                    </span>
+                                </label>
+                                <label class="radio-option">
+                                    <input type="radio" name="deactivateMode" value="scheduled">
+                                    <span class="radio-label">
+                                        <i class="fas fa-clock text-warning"></i>
+                                        <strong>排程停用</strong>
+                                        <small>設定停用時間，到期後自動停用帳號</small>
+                                    </span>
+                                </label>
                             </div>
                         </div>
                         
-                        <p class="text-danger mt-3">
-                            <strong>此操作無法復原，是否繼續？</strong>
-                        </p>
+                        <!-- 排程停用時間設定 -->
+                        <div class="form-group" id="scheduledDeactivateGroup" style="display: none;">
+                            <label class="form-label">停用時間 <span class="required">*</span></label>
+                            <div class="datetime-input-group">
+                                <input type="datetime-local" class="form-control" id="deactivateDateTime" required>
+                                <small class="form-text text-muted">
+                                    <i class="fas fa-info-circle"></i>
+                                    系統將在指定時間自動停用該員工帳號
+                                </small>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeRecalculateConfirmModal()">取消</button>
-                <button class="btn btn-danger" onclick="executeRecalculate()" id="executeRecalculateBtn">
-                    <i class="fas fa-calculator"></i> 繼續執行
-                </button>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeEmployeeDeactivateModal()">取消</button>
+                    <button class="btn btn-danger" id="confirmDeactivateBtn" onclick="confirmEmployeeDeactivate()">
+                        <i class="fas fa-ban"></i> 確認停用
+                    </button>
+                </div>
             </div>
         </div>
-    </div>
-    
-    <!-- 父角色變更確認對話框 -->
-    <div id="parentRoleChangeConfirmModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>父角色變更確認</h3>
-                <button class="modal-close" onclick="closeParentRoleChangeConfirmModal()">
-                    <i class="fa-solid fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="parent-role-change-warning">
-                    <div class="warning-icon">
-                        <i class="fas fa-exclamation-triangle text-warning fa-3x"></i>
+
+        <!-- 員工啟用確認對話框 -->
+        <div id="employeeActivateModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>確認啟用員工</h3>
+                    <button class="modal-close" onclick="closeEmployeeActivateModal()">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="activate-warning">
+                        <div class="warning-icon">
+                            <i class="fas fa-check-circle text-success fa-2x"></i>
+                        </div>
+                        <div class="warning-content">
+                            <h4>即將啟用員工帳號</h4>
+                            <p>員工：<strong id="activateEmployeeName">載入中...</strong></p>
+                            <p>帳號：<strong id="activateEmployeeLogin">載入中...</strong></p>
+                        </div>
                     </div>
-                    <div class="warning-content">
-                        <h4>父角色變更提醒</h4>
-                        <p>修改父角色將會自動重新計算此角色的所有子角色層級。</p>
-                        <p>此操作將影響 <strong id="parentChangeAffectedCount">0</strong> 個子角色：</p>
-                        
-                        <div class="affected-roles-container" id="parentChangeAffectedContainer" style="display: none;">
-                            <div id="parentChangeAffectedList" class="affected-roles-list scrollable-fade">
-                                <!-- 動態載入影響的角色清單 -->
+                    
+                    <div class="activate-options">
+                        <div class="form-group">
+                            <label class="form-label">啟用方式</label>
+                            <div class="activate-mode-selector">
+                                <label class="radio-option">
+                                    <input type="radio" name="activateMode" value="immediate" checked onchange="toggleActivateScheduleOptions()">
+                                    <span class="radio-label">
+                                        <i class="fas fa-check text-success"></i>
+                                        <strong>立即啟用</strong>
+                                        <small>帳號將立即啟用，員工可以登入系統</small>
+                                    </span>
+                                </label>
+                                <label class="radio-option">
+                                    <input type="radio" name="activateMode" value="scheduled" onchange="toggleActivateScheduleOptions()">
+                                    <span class="radio-label">
+                                        <i class="fas fa-clock text-primary"></i>
+                                        <strong>預約啟用</strong>
+                                        <small>設定啟用時間，到期後自動啟用帳號</small>
+                                    </span>
+                                </label>
                             </div>
                         </div>
                         
-                        <p class="text-info mt-3">
-                            <strong>確定要繼續修改父角色嗎？</strong>
-                        </p>
+                        <!-- 預約啟用時間設定 -->
+                        <div class="form-group" id="scheduledActivateGroup" style="display: none;">
+                            <label class="form-label">啟用時間 <span class="required">*</span></label>
+                            <div class="datetime-input-group">
+                                <input type="datetime-local" class="form-control" id="activateDateTime" required>
+                                <small class="form-text text-muted">
+                                    <i class="fas fa-info-circle"></i>
+                                    系統將在指定時間自動啟用該員工帳號
+                                </small>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeParentRoleChangeConfirmModal()">取消</button>
-                <button class="btn btn-primary" onclick="confirmParentRoleChange()" id="confirmParentChangeBtn">
-                    <i class="fas fa-check"></i> 確認變更
-                </button>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeEmployeeActivateModal()">取消</button>
+                    <button class="btn btn-success" id="confirmActivateBtn" onclick="confirmEmployeeActivate()">
+                        <i class="fas fa-check"></i> 確認啟用
+                    </button>
+                </div>
             </div>
         </div>
-    </div>
-    
-    <!-- 角色關係分析模態框 -->
-    <div id="roleRelationshipAnalysisModal" class="modal">
-        <div class="modal-content modal-lg">
-            <div class="modal-header">
-                <h3>角色關係智能分析</h3>
-                <button class="modal-close" onclick="OrganizationRoleAnalysisModule.closeRoleRelationshipAnalysisModal()">
-                    <i class="fa-solid fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body scrollable-fade">
-                <div id="roleAnalysisContent">
-                    <div class="loading-spinner">
-                        <div class="spinner"></div>
-                        <p>正在分析角色關係...</p>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="OrganizationRoleAnalysisModule.closeRoleRelationshipAnalysisModal()">關閉</button>
-                <button class="btn btn-primary d-none" id="applyAnalysisBtn" onclick="OrganizationRoleAnalysisModule.showBulkAdjustmentModal()">
-                    <i class="fas fa-magic"></i> 套用建議調整
-                </button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- 批量角色調整預覽模態框 -->
-    <div id="bulkRoleAdjustmentModal" class="modal">
-        <div class="modal-content modal-lg">
-            <div class="modal-header">
-                <h3>批量角色調整預覽</h3>
-                <button class="modal-close" onclick="OrganizationRoleAnalysisModule.closeBulkAdjustmentModal()">
-                    <i class="fa-solid fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body scrollable-fade">
-                <div class="adjustment-warning">
-                    <div class="warning-icon">
-                        <i class="fas fa-exclamation-triangle text-warning fa-2x"></i>
-                    </div>
-                    <div class="warning-content">
-                        <h4>批量調整確認</h4>
-                        <p>此操作將調整多個角色的父子關係，請仔細檢查以下預覽內容。</p>
-                        <p class="text-danger"><strong>此操作無法自動復原，請謹慎執行。</strong></p>
-                    </div>
-                </div>
-                
-                <div id="adjustmentPreviewContent">
-                    <div class="loading-spinner">
-                        <div class="spinner"></div>
-                        <p>正在生成調整預覽...</p>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="OrganizationRoleAnalysisModule.closeBulkAdjustmentModal()">取消</button>
-                <button class="btn btn-danger" id="confirmBulkAdjustmentBtn" onclick="OrganizationRoleAnalysisModule.confirmBulkAdjustment()" disabled>
-                    <i class="fas fa-check"></i> 確認執行調整
-                </button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Scripts -->
-    <!-- 載入 Dialog 元件 -->
-    <script src="/js/components/dialog.js"></script>
-    <!-- 載入 SearchableSelect 元件 -->
-    <script src="/js/components/searchable-select.js"></script>
-    
+
+    </div> <!-- 結束 pageContent -->
+
     <!-- 載入腳本 -->
     <script>
         // 臨時的全域函數，等待模組載入
-        window.returnToAdmin = function() {
+        window.returnToAdmin = function () {
             window.location.href = '/admin';
         };
-        
+
         // 密碼策略切換
-        window.togglePasswordField = function() {
+        window.togglePasswordField = function () {
             const strategy = document.getElementById('passwordStrategy').value;
             const passwordGroup = document.getElementById('manualPasswordGroup');
             if (strategy === 'MANUAL') {
@@ -1114,11 +1468,20 @@
                 passwordGroup.style.display = 'none';
             }
         };
-        
-        // 角色相關函數已移至 organization-roles.js 模組中
-        
-        // 角色層級相關功能已移至 organization-roles.js 模組
-        
+
+        // 員工停用對話框相關函數
+        window.closeEmployeeDeactivateModal = function () {
+            if (window.OrganizationEmployeeModule && window.OrganizationEmployeeModule.closeEmployeeDeactivateModal) {
+                window.OrganizationEmployeeModule.closeEmployeeDeactivateModal();
+            }
+        };
+
+        window.confirmEmployeeDeactivate = function () {
+            if (window.OrganizationEmployeeModule && window.OrganizationEmployeeModule.confirmEmployeeDeactivate) {
+                window.OrganizationEmployeeModule.confirmEmployeeDeactivate();
+            }
+        };
+
         // 內嵌簡單的載入函數（避免快取問題）
         function loadWithTimestamp(src) {
             const script = document.createElement('script');
@@ -1129,75 +1492,95 @@
                 document.head.appendChild(script);
             });
         }
-        
+
         // 依序載入模組
-        (async function() {
+        (async function () {
             try {
                 // 基礎模組
-                await loadWithTimestamp('/js/modules/script-loader.js');
-                
+                await loadWithTimestamp('/js/modules/resource-loader.js');
+
+                // 動態載入所有 CSS
+                await ResourceLoader.loadStyles([
+                    '/css/core/all.min.css',
+                    '/css/core/base.css',
+                    '/css/core/components.css',
+                    '/css/core/layouts.css',
+                    '/css/core/utilities.css',
+                    '/css/components/dialog.css',
+                    '/css/components/role-hierarchy.css',
+                    '/css/components/searchable-select.css',
+                    '/css/themes/theme-variables.css',
+                    '/css/pages/admin.css',
+                    '/css/pages/dashboard.css',
+                    '/css/pages/organization.css',
+                    '/css/pages/organization-dep.css',
+                    '/css/pages/organization-role.css',
+                    '/css/pages/organization-emp.css',
+                    '/css/pages/organization-permissions.css'
+                ]);
+
+                // 隱藏頁面載入器，顯示內容
+                document.getElementById('pageLoader').classList.add('hidden');
+                document.getElementById('pageContent').classList.add('visible');
+
                 // 載入公共模組
-                await ScriptLoader.loadModulesInOrder([
+                await ResourceLoader.loadModulesInOrder([
+                    '/js/components/dialog.js',
+                    '/js/components/searchable-select.js',
                     '/js/modules/common-ui.js',
                     '/js/modules/user-menu-module.js'
                 ]);
-                
+
                 // 載入受保護的管理員模組
-                await ScriptLoader.loadProtectedAdminScriptsInOrder([
+                await ResourceLoader.loadProtectedAdminScriptsInOrder([
                     'organization/organization.js',                    // 組織管理主模組（協調其他模組）
                     'organization/organization-drawer-manager.js',     // 抽屜管理器
                     'organization/organization-dep.js',                // 部門管理模組
                     'organization/organization-role-template.js',      // 角色模板管理模組
                     'organization/organization-role-tree.js',          // 角色樹狀結構子模組
-                    'organization/organization-roles.js',              // 角色管理模組（提供統計服務）
+                    'organization/organization-roles-crud.js',         // 角色 CRUD 子模組
+                    'organization/organization-roles-drag.js',         // 角色拖曳功能子模組
+                    'organization/organization-roles-modal.js',        // 角色 Modal 與 Dialog 子模組
+                    'organization/organization-roles-hover-card.js',   // 角色懸浮卡片子模組
+                    'organization/organization-roles-search.js',       // 角色搜尋子模組
+                    'organization/organization-roles-department.js',   // 角色部門管理子模組
+                    'organization/organization-roles-state.js',        // 角色狀態管理子模組
+                    'organization/organization-roles-card.js',         // 角色卡片渲染子模組
+                    'organization/organization-roles-hierarchy.js',    // 角色層級管理子模組
+                    'organization/organization-roles-users.js',        // 角色用戶管理子模組
+                    'organization/organization-roles-init.js',         // 角色初始化與事件綁定子模組
+                    'organization/organization-roles.js',              // 角色管理主模組
                     'organization/organization-role-analysis.js',      // 角色分析管理模組
-                    'organization/organization-emp.js',                // 員工管理模組
+                    'organization/organization-emp-tree.js',           // 員工樹狀結構子模組
+                    'organization/organization-emp-card.js',           // 員工卡片顯示子模組
+                    'organization/organization-emp-roles.js',          // 員工角色選擇子模組
+                    'organization/organization-emp-permissions.js',    // 員工權限選擇子模組
+                    'organization/organization-emp-crud.js',           // 員工 CRUD 操作模組
+                    'organization/organization-emp-hover-card.js',     // 員工懸浮卡片子模組
+                    'organization/organization-emp-modal.js',          // 員工模態框子模組
+                    'organization/organization-emp.js',                // 員工管理主模組
                 ]);
-                
+
                 // 初始化 UserMenu（載入用戶資訊）
                 if (window.UserMenu) {
                     await UserMenu.init();
                 }
-                
-                // 初始化角色管理模組（必須先初始化，因為組織管理模組依賴它）
-                if (window.OrganizationRolesModule) {
-                    await OrganizationRolesModule.init();
-                }
-                               
+
                 // 初始化組織管理主模組（協調其他模組）
                 if (window.OrganizationModule) {
                     await OrganizationModule.init();
                 }
-                
+
                 // 初始化抽屜管理器（最後初始化，以便正確處理保存的狀態）
                 if (window.OrgDrawerManager) {
-                    OrgDrawerManager.init();
-                    
-                    // 如果當前保存的區塊是角色管理，手動觸發初始化
-                    const savedSection = localStorage.getItem('orgSelectedSection');
-                    if (savedSection === 'roles' && window.OrganizationRolesModule) {
-                        // 延遲執行，確保 DOM 已渲染
-                        setTimeout(() => {
-                            OrganizationRolesModule.initRoleManagement();
-                        }, 100);
-                    }
+                    await OrgDrawerManager.init();
                 }
-                
+
                 // 隱藏載入動畫（如果有的話）
                 if (window.CommonUI) {
-                    CommonUI.hideSpinner();
+                    await CommonUI.hideSpinner();
                 }
-                
-                // 簡單搜尋框事件
-                const roleSearchInput = document.getElementById('roleSearchInput');
-                if (roleSearchInput) {
-                    roleSearchInput.addEventListener('keypress', function(e) {
-                        if (e.key === 'Enter') {
-                            performRoleSearch();
-                        }
-                    });
-                }
-                
+
                 console.log('組織管理模組載入完成');
             } catch (error) {
                 console.error('模組載入失敗:', error);
@@ -1216,4 +1599,5 @@
         })();
     </script>
 </body>
+
 </html>

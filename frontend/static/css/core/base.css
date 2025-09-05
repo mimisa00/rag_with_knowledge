@@ -391,6 +391,10 @@ summary {
   border-radius: var(--radius-sm);
 }
 
+.required {
+  color: #dc3545;
+}
+
 /* 列印樣式 */
 @media print {
   body {

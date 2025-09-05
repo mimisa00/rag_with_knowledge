@@ -484,11 +484,11 @@
 ### 5.3 新增/編輯使用者模態框
 
 ```html
-<div id="userModal" class="modal">
+<div id="employeeModal" class="modal">
     <div class="modal-content modal-lg">
         <div class="modal-header">
             <h3>新增使用者</h3>
-            <button class="modal-close" onclick="closeUserModal()">
+            <button class="modal-close" onclick="closeEmployeeModal()">
                 <i class="fa-solid fa-times"></i>
             </button>
         </div>

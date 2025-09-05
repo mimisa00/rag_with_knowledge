@@ -102,55 +102,6 @@
     gap: 1rem;
 }
 
-/* 停用部門切換按鈕 */
-.org-layout .toggle-inactive-btn {
-    background: none;
-    border: none;
-    color: #999;
-    cursor: pointer;
-    padding: 0 0.5rem;
-    margin-left: 0.5rem;
-    font-size: 0.875rem;
-    transition: all 0.3s ease;
-    position: relative;
-}
-
-.org-layout .toggle-inactive-btn:hover {
-    color: var(--primary);
-    transform: scale(1.1);
-}
-
-.org-layout .toggle-inactive-btn.active {
-    color: var(--primary);
-}
-
-.org-layout .toggle-inactive-btn.active i::before {
-    content: '\f06e'; /* fa-eye icon */
-}
-
-/* Tooltip for toggle button */
-.org-layout .toggle-inactive-btn::after {
-    content: attr(title);
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.8);
-    color: white;
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
-    font-size: 0.75rem;
-    white-space: nowrap;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.3s ease;
-    margin-bottom: 0.25rem;
-}
-
-.org-layout .toggle-inactive-btn:hover::after {
-    opacity: 1;
-}
-
 .tree-actions {
     display: flex;
     gap: 0.5rem;
@@ -172,21 +123,86 @@
 /* 部門統計 */
 .department-tree .tree-stats {
     display: flex;
-    gap: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
     margin-bottom: 1rem;
-    padding: 0.5rem;
+    padding: 0.75rem;
     background: var(--bg-light);
-    border-radius: 4px;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    border: 1px solid var(--border-color);
+}
+
+.department-tree .tree-stats .org-layout .stat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.department-tree .tree-stats .stat-item strong {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.department-tree .tree-stats .stat-item i {
     font-size: 0.875rem;
 }
 
-.tree-stats .org-layout .stat-item {
-    color: var(--text-secondary);
+.department-tree .tree-stats .toggle-inactive-btn {
+    margin-left: 0.5rem;
+    padding: 2px 6px;
+    font-size: 0.75rem;
 }
 
-.tree-stats .stat-item strong {
+/* 停用部門切換按鈕 */
+.department-tree .tree-stats .toggle-inactive-btn {
+    background: none;
+    border: none;
+    color: #999;
+    cursor: pointer;
+    padding: 0 0.5rem;
+    margin-left: 0.5rem;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.department-tree .tree-stats .toggle-inactive-btn:hover {
     color: var(--primary);
-    font-weight: 600;
+    transform: scale(1.1);
+}
+
+.department-tree .tree-stats .toggle-inactive-btn.active {
+    color: var(--primary);
+}
+
+.department-tree .tree-stats .toggle-inactive-btn.active i::before {
+    content: '\f06e'; /* fa-eye icon */
+}
+
+/* Tooltip for toggle button */
+.department-tree .tree-stats .toggle-inactive-btn::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    margin-bottom: 0.25rem;
+}
+
+.department-tree .tree-stats .toggle-inactive-btn:hover::after {
+    opacity: 1;
 }
 
 .tree-container {
@@ -429,12 +445,6 @@
     font-weight: 500;
 }
 
-.node-count {
-    color: var(--text-muted);
-    font-size: 0.875rem;
-    margin-left: 0.375rem;
-}
-
 .node-actions {
     display: flex;
     gap: 0.375rem;  /* 稍微增加按鈕間距 */
@@ -525,7 +535,7 @@
 .details-card h3 {
     margin: 0 0 1rem 0;
     color: var(--text-primary);
-    padding-bottom: 0.5rem;
+    padding-bottom: 0.8rem;
     border-bottom: 1px solid var(--border-color);
 }
 
