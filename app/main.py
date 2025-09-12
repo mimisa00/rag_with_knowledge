@@ -290,6 +290,7 @@ from app.api.routes.conversation import router as conversation_router
 from app.api.routes.query import router as query_router
 from app.api.routes.organization import router as organization_router
 from app.api.routes.permissions import router as permissions_router
+from app.api.routes.system import router as system_router
 
 app.include_router(static_router, tags=["頁面"])
 app.include_router(config_router, prefix="/api", tags=["配置"])
@@ -302,6 +303,7 @@ app.include_router(conversation_router, prefix="/api", tags=["對話"])
 app.include_router(query_router, prefix="/api", tags=["查詢"])
 app.include_router(organization_router, prefix="/api",tags=["組織管理"])
 app.include_router(permissions_router, prefix="/api", tags=["權限管理"])
+app.include_router(system_router, prefix="/api", tags=["系統管理"])
 
 # 掛載靜態文件服務
 static_dir = path_config.get_base_paths()["STATIC_DIR"]
@@ -312,6 +314,8 @@ static_dirs = {
     "css": os.path.join(static_dir, "css"),
     "js/modules": os.path.join(static_dir, "js", "modules"),  # 只掛載公共模組
     "js/lib": os.path.join(static_dir, "js", "lib"),  # 第三方函式庫 (marked.js 等)
+    "js/pages": os.path.join(static_dir, "js", "pages"),  # 頁面特定 JS 檔案
+    "js/components": os.path.join(static_dir, "js", "components"),  # JS 元件檔案
     "components": os.path.join(static_dir, "components")
 }
 

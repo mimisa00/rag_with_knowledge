@@ -7,14 +7,24 @@ const PermDrawerManager = (function() {
     
     // 私有變數
     let isDrawerOpen = true;
-    let currentSection = 'groups';
+    let currentSection = 'matrix';  // 預設為權限矩陣
     
     // 區塊配置
     const sections = {
+        'matrix': {
+            icon: 'fas fa-th',
+            title: '權限矩陣',
+            color: '#667eea'
+        },
         'groups': {
             icon: 'fas fa-users-cog',
             title: '群組權限',
             color: '#667eea'
+        },
+        'access': {
+            icon: 'fas fa-lock',
+            title: '存取控制',
+            color: '#10b981'
         },
         'data-scope': {
             icon: 'fas fa-database',
@@ -50,7 +60,7 @@ const PermDrawerManager = (function() {
         isDrawerOpen = true;
         
         // 顯示預設區塊
-        switchSection('groups', false);
+        switchSection('matrix', false);
         
         // 載入儲存的抽屜狀態（但預設保持開啟）
         // const savedState = localStorage.getItem('permDrawerState');
@@ -64,7 +74,7 @@ const PermDrawerManager = (function() {
             switchSection(savedSection, false);
         } else {
             // 確保初始麵包屑正確設置
-            updateBreadcrumb('groups', sections['groups']);
+            updateBreadcrumb('matrix', sections['matrix']);
         }
         
         // 綁定選單項目點擊事件

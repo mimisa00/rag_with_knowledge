@@ -570,7 +570,7 @@ select.form-control {
   text-align: center;
   white-space: nowrap;
   vertical-align: baseline;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-md);
 }
 
 .badge-primary {

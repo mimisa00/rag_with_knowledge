@@ -18,7 +18,6 @@ const OrganizationRolesModule = (function() {
     let crudModule = null;
     let dragModule = null;
     let modalModule = null;
-    let hoverCardModule = null;
     let searchModule = null;
     let departmentModule = null;
 
@@ -43,7 +42,6 @@ const OrganizationRolesModule = (function() {
             crudModule = modules.crudModule;
             dragModule = modules.dragModule;
             modalModule = modules.modalModule;
-            hoverCardModule = modules.hoverCardModule;
             searchModule = modules.searchModule;
             departmentModule = modules.departmentModule;
             cardModule = modules.cardModule;
@@ -716,6 +714,11 @@ const OrganizationRolesModule = (function() {
                 }
             }, 100);
             
+            // 設定當前編輯的角色資料給 modal 模組
+            if (modalModule && modalModule.setCurrentEditingRole) {
+                modalModule.setCurrentEditingRole(role);
+            }
+            
             // 顯示模態框
             const modal = document.getElementById('editDepartmentRoleModal');
             if (modal) {
@@ -724,6 +727,36 @@ const OrganizationRolesModule = (function() {
                 if (window.CommonUI && window.CommonUI.initScrollFadeEffect) {
                     setTimeout(() => window.CommonUI.initScrollFadeEffect(), 100);
                 }
+            }
+            
+        } catch (error) {
+            console.error('載入角色資訊失敗:', error);
+            if (window.Dialog) {
+                window.Dialog.error('載入角色資訊失敗');
+            }
+        }
+    }
+    
+    /**
+     * 直接編輯角色權限（不打開編輯模態框）
+     */
+    async function editRolePermissions(roleId) {
+        if (!crudModule) {
+            throw new Error('CRUD 模組未初始化');
+        }
+
+        try {
+            // 先取得角色資訊
+            const role = await crudModule.getDepartmentRole(roleId);
+            
+            // 設定當前編輯的角色資料給 modal 模組
+            if (modalModule && modalModule.setCurrentEditingRole) {
+                modalModule.setCurrentEditingRole(role);
+            }
+            
+            // 直接打開權限編輯模態框
+            if (modalModule && modalModule.showRolePermissionsModal) {
+                await modalModule.showRolePermissionsModal();
             }
             
         } catch (error) {
@@ -749,6 +782,28 @@ const OrganizationRolesModule = (function() {
                 selectDepartmentForRoles,
                 expandDepartmentByRoleId
             });
+        }
+    }
+    
+    /**
+     * 顯示角色用戶懸浮卡片
+     */
+    function showRoleUsers(roleId, roleName) {
+        // 確保統一的員工懸浮卡片模組已載入並初始化
+        if (window.EmployeeHoverCard) {
+            if (!window.EmployeeHoverCard._initialized) {
+                window.EmployeeHoverCard.init();
+                window.EmployeeHoverCard._initialized = true;
+            }
+            
+            // 使用統一的懸浮卡片模組顯示角色用戶
+            window.EmployeeHoverCard.show({
+                type: 'role',
+                id: roleId,
+                title: roleName || '角色用戶'
+            });
+        } else {
+            console.error('EmployeeHoverCard 模組未載入');
         }
     }
     
@@ -951,7 +1006,11 @@ const OrganizationRolesModule = (function() {
             const state = stateModule.getState();
             await departmentModule.loadDepartmentRolesForManagement(
                 deptId, 
-                (roles) => cardModule.renderRoleCards(roles, state.departmentRolesCache || {}),
+                async (roles) => {
+                    // 批次載入所有角色的權限
+                    const rolePermissionsCache = await loadRolesPermissionsBatch(roles);
+                    cardModule.renderRoleCards(roles, state.departmentRolesCache || {}, rolePermissionsCache);
+                },
                 (roles) => window.OrganizationRoleAnalysisModule.updateRoleStats(roles)
             );
         }
@@ -960,11 +1019,48 @@ const OrganizationRolesModule = (function() {
     /**
      * 渲染角色卡片
      */
-    function renderRoleCards(roles) {
+    async function renderRoleCards(roles) {
         if (cardModule && stateModule) {
             const state = stateModule.getState();
-            cardModule.renderRoleCards(roles, state.departmentRolesCache || {});
+            // 批次載入所有角色的權限
+            const rolePermissionsCache = await loadRolesPermissionsBatch(roles);
+            cardModule.renderRoleCards(roles, state.departmentRolesCache || {}, rolePermissionsCache);
         }
+    }
+    
+    /**
+     * 批次載入多個角色的權限資料
+     * @param {Array} roles - 角色資料陣列
+     * @returns {Object} 角色權限資料對照表 (roleId -> permissions)
+     */
+    async function loadRolesPermissionsBatch(roles) {
+        const rolePermissionsCache = {};
+        
+        if (!roles || roles.length === 0) {
+            return rolePermissionsCache;
+        }
+        
+        // 批次載入所有角色的權限
+        const permissionPromises = roles.map(async (role) => {
+            try {
+                if (window.OrganizationEmployeePermissionsModule) {
+                    const permissions = await window.OrganizationEmployeePermissionsModule.loadExistingPermissions('role', role.id);
+                    rolePermissionsCache[role.id] = permissions || [];
+                } else {
+                    console.warn('OrganizationEmployeePermissionsModule 不存在，無法載入角色權限');
+                    rolePermissionsCache[role.id] = [];
+                }
+            } catch (error) {
+                console.error(`載入角色 ${role.id} 權限失敗:`, error);
+                rolePermissionsCache[role.id] = [];
+            }
+        });
+        
+        // 等待所有權限載入完成
+        await Promise.all(permissionPromises);
+        
+        console.log('批次載入角色權限完成:', Object.keys(rolePermissionsCache).length, '個角色');
+        return rolePermissionsCache;
     }
 
     // ===== 停用角色顯示切換 =====
@@ -1263,26 +1359,7 @@ const OrganizationRolesModule = (function() {
         }
     }
 
-    // ===== 懸浮卡片功能 =====
-    
-    /**
-     * 顯示角色用戶懸浮卡片
-     */
-    async function showRoleUsersHoverCard(roleId) {
-        if (hoverCardModule && stateModule) {
-            const state = stateModule.getState();
-            await hoverCardModule.show(roleId, state.departmentRolesCache || {});
-        }
-    }
-    
-    /**
-     * 隱藏角色用戶懸浮卡片
-     */
-    function hideRoleUsersHoverCard() {
-        if (hoverCardModule) {
-            hoverCardModule.hide();
-        }
-    }
+    // ===== 舊懸浮卡片功能已移除，改用統一的 EmployeeHoverCard 模組 =====
 
     // ===== 拖曳功能 =====
     
@@ -1390,8 +1467,10 @@ const OrganizationRolesModule = (function() {
         refreshDeptTree,
         viewRoleDetails: viewRoleDetails,
         editDepartmentRole: editDepartmentRole,
+        editRolePermissions: editRolePermissions,
         getDepartmentRole: getDepartmentRole,
         updateDepartmentRole: updateDepartmentRole,
+        showRoleUsers,
         toggleInactiveRoles,
         searchDeptAndRoles,
         // 展開收合功能
@@ -1423,9 +1502,6 @@ const OrganizationRolesModule = (function() {
         showParentRoleChangeConfirm,
         closeParentRoleChangeConfirmModal,
         confirmParentRoleChange,
-        // 角色用戶懸浮卡片功能
-        showRoleUsersHoverCard,
-        hideRoleUsersHoverCard,
         // 暴露 selectedDeptId 供外部使用
         get selectedDeptId() { 
             return stateModule ? stateModule.getState().selectedDeptId : null; 
@@ -1434,7 +1510,34 @@ const OrganizationRolesModule = (function() {
         onEditRoleDepartmentChange,
         resetRoleDepartment,
         resetDepartmentState, 
-        bindRoleDragEvents,     
+        bindRoleDragEvents,
+        
+        // 權限管理功能
+        switchEditTab: function(tabName) {
+            if (modalModule && modalModule.switchEditTab) {
+                return modalModule.switchEditTab(tabName);
+            }
+        },
+        showRolePermissionsModal: function() {
+            if (modalModule && modalModule.showRolePermissionsModal) {
+                return modalModule.showRolePermissionsModal();
+            }
+        },
+        clearRolePermissions: function() {
+            if (modalModule && modalModule.clearRolePermissions) {
+                return modalModule.clearRolePermissions();
+            }
+        },
+        refreshRolePermissions: function(roleId) {
+            if (modalModule && modalModule.refreshRolePermissions) {
+                return modalModule.refreshRolePermissions(roleId);
+            }
+        },
+        setCurrentEditingRole: function(role) {
+            if (modalModule && modalModule.setCurrentEditingRole) {
+                return modalModule.setCurrentEditingRole(role);
+            }
+        }    
     };
 
 })();

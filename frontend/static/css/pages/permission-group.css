@@ -1,0 +1,920 @@
+/* ========================================
+   批次組織設定相關樣式
+   ======================================== */
+
+/* 查看部門詳情模態框 */
+#viewDepartmentModal .modal-content {
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh;
+    height: auto;
+    overflow-x: hidden;
+}
+
+#viewDepartmentModal .modal-header,
+#viewDepartmentModal .modal-footer {
+    flex-shrink: 0;
+    background: white;
+    z-index: 10;
+}
+
+#viewDepartmentModal .modal-header {
+    border-bottom: 1px solid var(--border-color);
+    border-radius: 8px 8px 0 0;
+}
+
+#viewDepartmentModal .modal-footer {
+    border-top: 1px solid var(--border-color);
+    border-radius: 0 0 8px 8px;
+}
+
+#viewDepartmentModal .modal-body {
+    flex: 1;
+    overflow-y: auto;
+    max-height: calc(90vh - 140px);
+    padding: 20px;
+}
+
+/* 批次組織設定模態框 */
+#batchOrgModal .modal-content {
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh;
+    height: auto;
+    overflow-x:hidden;
+}
+
+#batchOrgModal .modal-header,
+#batchOrgModal .modal-footer {
+    flex-shrink: 0;
+    background: white;
+    z-index: 10;
+}
+
+#batchOrgModal .modal-header {
+    border-bottom: 1px solid var(--border-color);
+    border-radius: 8px 8px 0 0;
+}
+
+#batchOrgModal .modal-footer {
+    border-top: 1px solid var(--border-color);
+    border-radius: 0 0 8px 8px;
+}
+
+#batchOrgModal .modal-body {
+    flex: 1;
+    overflow-y: auto;
+    max-height: calc(90vh - 140px);
+    padding: 20px;
+}
+
+/* 批次組織資訊區塊 */
+.batch-org-info .alert {
+    margin-bottom: 0;
+    padding: 12px 16px;
+    border-radius: 6px;
+    border-left: 4px solid var(--primary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+/* 組織樹容器 */
+.org-tree-container {
+    padding:10px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-main);
+    overflow-y: auto;
+    max-height: 450px;
+    overflow-x:hidden;
+}
+
+/* 載入和空狀態樣式 */
+.org-tree-container .loading-spinner,
+.org-tree-container .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.org-tree-container .loading-spinner .spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--border-light);
+    border-top: 3px solid var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 16px;
+}
+
+.org-tree-container .empty-state i {
+    font-size: 48px;
+    color: var(--text-light);
+    margin-bottom: 16px;
+}
+
+.org-tree-container .empty-state h3 {
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    font-size: 16px;
+}
+
+.org-tree-container .empty-state p {
+    color: var(--text-muted);
+    font-size: 14px;
+    margin: 0;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* 組織樹節點樣式 (採用員工樹結構) */
+.org-tree .tree-node {
+    margin: 0;
+}
+
+.org-tree .node-content {
+    padding: 3px 6px;
+    line-height: 1.2;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 3px;
+    transition: all 0.2s ease;
+}
+
+/* 部門節點樣式 */
+.org-tree .dept-node .node-content {
+    font-weight: 500;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    color: var(--text-primary);
+}
+
+/* 部門節點懸停效果 - 當有子節點時 */
+.org-tree .dept-node .node-content[onclick]:hover {
+    background-color: rgba(var(--primary-rgb), 0.05);
+    border-radius: 3px;
+}
+
+/* 節點切換圖標 */
+.org-tree .node-toggle {
+    width: 16px;
+    text-align: center;
+    cursor: pointer;
+    color: var(--text-secondary);
+}
+
+.org-tree .node-toggle i {
+    transition: transform 0.2s;
+    color: var(--text-secondary);
+}
+
+/* 當父節點懸停時，圖標也變色 */
+.org-tree .dept-node .node-content[onclick]:hover .node-toggle i {
+    color: var(--primary);
+}
+
+/* 角色節點樣式 */
+.org-tree .role-node {
+    display: block !important; /* 確保角色節點顯示 */
+}
+
+.org-tree .role-node .node-content {
+    padding: 6px 10px;
+    background: transparent;
+    color: var(--text-primary);
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    display: flex !important; /* 確保內容顯示 */
+    align-items: center;
+}
+
+/* 角色節點整行懸停效果 */
+.org-tree .role-node .node-content:hover {
+    background-color: rgba(var(--primary-rgb), 0.08);
+    transform: translateX(2px);
+    padding-left: 12px;
+}
+
+/* 角色節點選中狀態 */
+.org-tree .role-node .node-content:has(input:checked) {
+    background-color: rgba(var(--primary-rgb), 0.05);
+    padding-left: 5px;
+}
+
+/* 角色節點中的圖標 */
+.org-tree .role-node .node-content i {
+    margin-right: 6px;
+    width: 16px;
+    text-align: center;
+}
+
+/* 角色節點中的 checkbox */
+.org-tree .role-node .node-content .form-check-input {
+    margin-right: 8px;
+    cursor: pointer;
+}
+
+/* 角色節點中的 label */
+.org-tree .role-node .node-content .form-check-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    margin: 0;
+    flex: 1;
+}
+
+/* 子節點容器 */
+.org-tree .node-children {
+    transition: all 0.2s ease;
+}
+
+/* 節點名稱 */
+.org-tree .node-name {
+    flex: 1;
+    font-weight: inherit;
+}
+
+.org-tree .role-node .role-name {
+    margin-left: 4px;
+}
+
+/* 節點徽章 */
+.org-tree .node-badge {
+    background: var(--bg-light);
+    color: var(--text-muted);
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 400;
+    margin-left: 8px;
+}
+
+
+/* 已設定權限的徽章 */
+.org-tree .existing-badge {
+    background: var(--success);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 500;
+    margin-left: 8px;
+}
+
+/* 搜尋高亮樣式 */
+.org-tree .tree-node.search-highlight-dept .node-content {
+    background: linear-gradient(90deg,
+            rgba(13, 110, 253, 0.15) 0%,
+            rgba(13, 110, 253, 0.08) 50%,
+            transparent 100%);
+    border-radius: 4px;
+}
+
+.org-tree .tree-node.search-highlight-role .node-content {
+    background: linear-gradient(90deg,
+            rgba(255, 193, 7, 0.15) 0%,
+            rgba(255, 193, 7, 0.08) 50%,
+            transparent 100%);
+    border-radius: 4px;
+}
+
+/* 管理角色特殊樣式 */
+.org-tree .role-node .node-content .fa-user-tie {
+    color: var(--warning);
+}
+
+.org-tree .role-node .node-content .fa-user {
+    color: var(--primary);
+}
+
+/* 樹狀結構統計樣式 */
+.tree-stats {
+    display: flex;
+    gap: 16px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-light);
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.tree-stats .stat-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.tree-stats .stat-item i {
+    font-size: 14px;
+}
+
+.tree-stats .stat-item strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+/* 搜尋和工具列樣式 */
+/* 工具列按鈕分組 - 搜尋框右側內嵌樣式 */
+
+.tree-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.tree-toolbar .tree-actions-inline {
+    display: flex;
+    gap: 4px;
+    margin-left: 8px;
+    padding-left: 8px;
+    border-left: 1px solid var(--border-color);
+}
+
+.tree-toolbar .tree-actions-inline .btn {
+    padding: 4px 8px;
+    font-size: 0.875rem;
+    background: transparent;
+    color: var(--text-secondary);
+    transition: all 0.2s;
+}
+
+.tree-toolbar .tree-actions-inline .btn:hover {
+    background: var(--bg-hover);
+    color: var(--primary);
+}
+
+
+.tree-search-box {
+    display: flex;
+    flex: 1;
+    max-width: 400px;
+    position: relative;
+}
+
+.tree-search-box input {
+    flex: 1;
+    padding-right: 40px;
+    border-radius: 20px;
+}
+
+.tree-search-box .btn-search {
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--primary);
+    cursor: pointer;
+    padding: 5px 10px;
+}
+
+.tree-search-box .btn-search:hover {
+    color: var(--primary-dark);
+}
+
+
+.tree-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.tree-actions .btn {
+    padding: 6px 10px;
+    font-size: 12px;
+    min-width: auto;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    .tree-toolbar {
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .tree-stats {
+        justify-content: center;
+    }
+    
+    .org-tree .tree-node .node-content {
+        padding: 10px 8px;
+    }
+    
+    .org-tree .node-badge {
+        display: none;
+    }
+}
+
+/* ========================================
+   模態框統一優化
+   ======================================== */
+
+/* 統一所有權限管理模態框的固定 header/footer 樣式 */
+#groupModal .modal-content {
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh;
+    height: auto;
+}
+
+#groupModal .modal-header,
+#groupModal .modal-footer {
+    flex-shrink: 0;
+    background: white;
+    z-index: 10;
+}
+
+/* header 樣式 */
+#groupModal .modal-header {
+    border-bottom: 1px solid var(--border-color);
+    border-radius: 8px 8px 0 0;
+}
+
+/* footer 樣式 */
+#groupModal .modal-footer {
+    border-top: 1px solid var(--border-color);
+    border-radius: 0 0 8px 8px;
+}
+
+/* body 可捲動區域 */
+#groupModal .modal-body {
+    flex: 1;
+    overflow-y: auto;
+    max-height: calc(90vh - 120px);
+    padding: 20px;
+}
+
+/* 權限網格在角色模態框中的特殊優化 */
+#groupModal .permission-grid {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 15px;
+    background: var(--bg-light);
+}
+
+#groupModal .permission-item {
+    margin-bottom: 15px;
+}
+
+#groupModal .permission-item:last-child {
+    margin-bottom: 0;
+}
+
+/* 樹狀結構工具列 - 保留給group使用 */
+.group-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.group-search-box {
+    display: flex;
+    flex: 1;
+    max-width: 400px;
+    position: relative;
+}
+
+.group-search-box input {
+    flex: 1;
+    padding-right: 40px;
+    border-radius: 20px;
+}
+
+.group-search-box .btn-search {
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--primary);
+    cursor: pointer;
+    padding: 5px 10px;
+}
+
+.group-search-box .btn-search:hover {
+    color: var(--primary-dark);
+}
+
+
+
+/* 群組統計 */
+.group-stats {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 1rem;
+    padding: 0.5rem;
+    background: var(--bg-light);
+    border-radius: 4px;
+    font-size: 0.875rem;
+}
+
+.group-stats .stat-item {
+    color: var(--text-secondary);
+}
+
+.group-stats .stat-item strong {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.group-description {
+    color: var(--text-secondary);
+    line-height: 1.5;
+    font-size: 0.95rem;
+}
+
+/* 群組權限 */
+.group-info-block {
+    background: white;
+    border-radius: 8px;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 365px); /* 從 280px 調整為 400px，更精確計算固定元素高度 */
+    min-height: 500px; /* 添加最小高度確保可用性 */
+    overflow: hidden;
+}
+
+/* 群組權限詳情 */
+.group-details {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    overflow-y: auto;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 群組權限統計 */
+.group-stats {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 1rem;
+    padding: 0.5rem;
+    background: var(--bg-light);
+    border-radius: 4px;
+    font-size: 0.875rem;
+}
+
+.group-stats .stat-item {
+    color: var(--text-secondary);
+}
+
+.group-stats .stat-item strong {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.group-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.group-search-box {
+    display: flex;
+    flex: 1;
+    max-width: 400px;
+    position: relative;
+}
+
+.group-search-box input {
+    flex: 1;
+    padding-right: 40px;
+    border-radius: 20px;
+}
+
+.group-search-box .btn-search {
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--primary);
+    cursor: pointer;
+    padding: 5px 10px;
+}
+
+.group-search-box .btn-search:hover {
+    color: var(--primary-dark);
+}
+
+/* 群組權限列表容器 - 新增固定高度和滾動 */
+.group-list {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+/* 群組權限表格可滾動區域 */
+.group-table-wrapper {
+    flex: 1;
+    overflow: hidden; /* 改為 hidden，不要整個 wrapper 滾動 */
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 350px; /* 確保表格容器有足夠空間 */
+}
+
+/* 群組權限表格結構 */
+.group-table-wrapper .data-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 350px; /* 與 wrapper 配合，確保表格本身有正確高度 */
+}
+
+.group-table-wrapper .data-table thead {
+    flex-shrink: 0;
+    display: block;
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--secondary) 100%);
+    padding-right: 8px; /* 預留 scrollbar 寬度 */
+}
+
+.group-table-wrapper .data-table tbody {
+    flex: 1;
+    display: block;
+    overflow-y: auto;
+    min-height: 300px; /* 添加最小高度確保 scrollbar 顯示 */
+    max-height: 100%; /* 確保不超過父容器 */
+}
+
+/* 調整 thead 和 tbody 的 tr 為 table 佈局 */
+.group-table-wrapper .data-table thead tr,
+.group-table-wrapper .data-table tbody tr {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+}
+
+.group-table-wrapper .data-table thead th {
+    display: table-cell;
+    position: relative;
+    background: inherit;
+    border-bottom: 2px solid var(--primary-dark);
+    padding: 1rem;
+}
+
+.group-table-wrapper .data-table tbody td {
+    display: table-cell;
+    padding: 1rem;
+}
+
+/* 權限資訊極簡化樣式 */
+.permission-info-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    max-height: calc(100vh - 445px);
+    overflow-y: auto;
+    /* scrollbar 樣式已統一至 base.css，使用 scrollable-fade class */
+}
+
+.permission-tags {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.permission-category-block {
+    margin-bottom: 1rem;
+}
+
+.permission-category-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--primary);
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.25rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.permission-category-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.permission-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    background: rgba(40, 167, 69, 0.1);
+    color: #28a745;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.permission-tag.denied {
+    background: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+}
+
+.permission-tag i {
+    font-size: 0.8rem;
+}
+
+/* 權限網格 */
+.permission-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+.permission-item {
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 1rem;
+}
+
+.permission-header {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.permission-header i {
+    margin-right: 0.5rem;
+    color: var(--primary);
+}
+
+.permission-actions {
+    display: flex;
+    gap: 1rem;
+    margin-left: 1.5rem;
+}
+
+.permission-actions label {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    cursor: pointer;
+}
+
+/* 響應式高度調整 */
+@media (max-height: 800px) {
+    .group-info-block {
+        height: calc(100vh - 350px);
+        min-height: 400px;
+    }
+    
+    .group-table-wrapper .data-table tbody {
+        min-height: 250px;
+    }
+    
+    .group-table-wrapper {
+        min-height: 300px;
+    }
+    
+    .group-table-wrapper .data-table {
+        min-height: 300px;
+    }
+}
+
+@media (max-height: 600px) {
+    .group-info-block {
+        height: calc(100vh - 300px);
+        min-height: 300px;
+    }
+    
+    .group-table-wrapper .data-table tbody {
+        min-height: 200px;
+    }
+    
+    .group-table-wrapper {
+        min-height: 250px;
+    }
+    
+    .group-table-wrapper .data-table {
+        min-height: 250px;
+    }
+}
+
+/* ========================================
+   停用項目的垃圾桶按鈕樣式
+   ======================================== */
+
+/* 停用狀態的垃圾桶按鈕樣式 - 使用高權重選擇器覆蓋所有hover效果 */
+.data-table .btn-icon.disabled,
+.data-table .btn-icon.disabled:hover,
+table .btn-icon.disabled,
+table .btn-icon.disabled:hover,
+.btn-icon.disabled,
+.btn-icon.disabled:hover {
+    pointer-events: none !important;
+    opacity: 0.3 !important;
+    color: var(--text-muted) !important;
+    cursor: not-allowed !important;
+    background: none !important;
+    border: none !important;
+    /* 覆蓋可能的transform和box-shadow效果 */
+    transform: none !important;
+    box-shadow: none !important;
+    /* 禁用transition避免動畫效果 */
+    transition: none !important;
+}
+
+.data-table .btn-icon.disabled:hover .fa-trash,
+table .btn-icon.disabled:hover .fa-trash,
+.btn-icon.disabled:hover .fa-trash {
+    color: var(--text-muted) !important;
+}
+
+
+/* 資料表格 */
+.data-table {
+    width: 100%;
+    background: white;
+    border-radius: 8px;
+    overflow: visible; /* 改為 visible 以顯示 sticky header */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.data-table thead {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: white;
+}
+
+.data-table th {
+    padding: 1rem;
+    text-align: left;
+    font-weight: 500;
+    color: white; /* 改為 white 以配合漸層背景 */
+    white-space: nowrap; /* 防止文字換行 */
+}
+
+.data-table tbody tr {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.data-table tbody tr:hover {
+    background-color: var(--bg-hover);
+}
+
+.data-table tbody tr.selected {
+    background-color: rgba(102, 126, 234, 0.1);
+    border-left: 3px solid var(--primary);
+}
+
+.data-table tbody tr {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.data-table td {
+    padding: 1rem;
+    color: var(--text-primary);
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    
+    .data-table {
+        font-size: 0.875rem;
+    }
+    
+
+}

@@ -11,31 +11,36 @@ const AdminRouter = (() => {
             title: '知識庫管理',
             url: '/admin/knowledge-base.html',
             module: 'knowledge-base-module.js',
-            roles: ['admin', 'org_admin']
+            roles: ['admin', 'org_admin'],
+            permission: 'KB.LIST_VIEW'
         },
         'system-params': {
             title: '系統參數',
             url: '/admin/system-params.html',
             module: 'system-params-module.js',
-            roles: ['admin']
+            roles: ['admin'],
+            permission: 'SYSTEM.PARAM_VIEW'
         },
         'user-management': {
             title: '帳號管理',
             url: '/admin/user-management.html',
             module: 'user-management-module.js',
-            roles: ['admin']
+            roles: ['admin'],
+            permission: 'ADMIN.ACCESS'
         },
         'organization': {
             title: '組織管理',
             url: '/admin/organization.html',
             module: 'organization/organization.js',
-            roles: ['admin']
+            roles: ['admin'],
+            permission: 'ORG.DEPT_VIEW'
         },
         'permission-management': {
             title: '權限管理',
             url: '/admin/permission-management.html',
             module: 'permission-management.js',
-            roles: ['admin']
+            roles: ['admin'],
+            permission: 'PERM.MATRIX_VIEW'
         }
     };
     
@@ -48,7 +53,18 @@ const AdminRouter = (() => {
     function hasPermission(functionName, userRole) {
         const route = routes[functionName];
         if (!route) return false;
-        return route.roles.includes(userRole);
+        
+        // 檢查角色權限
+        if (route.roles && route.roles.includes(userRole)) {
+            return true;
+        }
+        
+        // 檢查功能權限（使用 PermissionChecker）
+        if (route.permission && window.PermissionChecker) {
+            return window.PermissionChecker.hasPermission(route.permission);
+        }
+        
+        return false;
     }
     
     /**

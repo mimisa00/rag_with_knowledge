@@ -411,3 +411,40 @@ summary {
     display: none !important;
   }
 }
+
+/* ========================================
+   節點人數顯示 - 統一樣式
+   ======================================== */
+   .node-count {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    margin-left: 0.375rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-block;
+}
+
+.node-count:hover {
+    color: var(--primary);
+    transform: scale(1.05);
+}
+
+/* ========================================
+   使用者資訊 - 統一樣式
+   ======================================== */
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--bg-light);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.user-info:hover {
+  background: var(--bg-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}

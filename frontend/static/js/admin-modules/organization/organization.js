@@ -649,11 +649,3 @@ window.closeEmployeeModal = function() {
         if (form) form.reset();
     }
 };
-
-window.togglePasswordField = function() {
-    const strategy = document.getElementById('passwordStrategy').value;
-    const passwordGroup = document.getElementById('manualPasswordGroup');
-    if (passwordGroup) {
-        passwordGroup.style.display = strategy === 'MANUAL' ? 'block' : 'none';
-    }
-};

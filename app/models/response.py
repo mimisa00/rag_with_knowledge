@@ -23,6 +23,12 @@ class UserResponse(BaseModel):
     id: int
     username: str
     role: str
+    title: Optional[str] = None
+    employee_no: Optional[str] = None
+    department_name: Optional[str] = None
+    primary_role_name: Optional[str] = None
+    primary_role_type: Optional[str] = None
+    permission_groups: Optional[List[Dict[str, str]]] = None
 
 
 class KnowledgeBaseResponse(BaseModel):
@@ -72,3 +78,10 @@ class ValidationResponse(BaseModel):
     status: str  # ok, invalid
     reason: Optional[str] = None
     vectors: Optional[int] = None
+
+
+class TokenVerificationResponse(BaseResponse):
+    """Token 驗證回應模型"""
+    valid: bool = False
+    user: Optional[Dict[str, Any]] = None
+    password_requirements: Optional[Dict[str, Any]] = None

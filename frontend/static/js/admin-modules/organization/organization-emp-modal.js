@@ -104,17 +104,15 @@ window.OrganizationEmployeeModalModule = (function() {
             // 新增模式：啟用帳號欄位
             document.getElementById('userLoginid').disabled = false;
             
-            // 設定密碼策略為手動（新增模式需要密碼）
-            document.getElementById('passwordStrategy').value = 'MANUAL';
-            document.getElementById('manualPasswordGroup').style.display = 'block';
-            document.getElementById('userPassword').value = '';
+            // 密碼策略將在表單選項載入後設定
+            document.getElementById('userPassword').value = mainModule.generateRandomPassword();
             document.getElementById('userPassword').placeholder = '請輸入密碼';
             
             // 載入表單選項
             if (mainModule && mainModule.loadUserFormOptions) {
                 mainModule.loadUserFormOptions();
             }
-            
+            fetchAndDisplayActivationExpiry();
             // 預設選中目前選擇的部門並載入角色
             setTimeout(async () => {
                 const deptSelect = document.getElementById('userDepartment');
@@ -133,6 +131,38 @@ window.OrganizationEmployeeModalModule = (function() {
                             await OrganizationEmployeeRolesModule.onDepartmentChange(selectedDepartmentId);
                         }
                     }
+                }
+                
+                // 設定密碼策略預設值為啟用連結並禁用編輯（在 SearchableSelect 初始化後）
+                const passwordStrategySelect = document.getElementById('passwordStrategy');
+                if (passwordStrategySelect) {
+                    passwordStrategySelect.value = 'ACTIVATION_LINK';
+                    passwordStrategySelect.disabled = true;
+                    
+                    // 更新 SearchableSelect 顯示
+                    if (passwordStrategySelect.searchableSelectInstance) {
+                        passwordStrategySelect.searchableSelectInstance.updateDisplay();
+                    }
+                    
+                    // 更新密碼欄位提示文字
+                    const passwordField = document.getElementById('userPassword');
+                    if (passwordField && passwordStrategySelect.value === 'ACTIVATION_LINK') {
+                        passwordField.placeholder = '（將自動生成，無需填寫）';
+                        passwordField.value = mainModule.generateRandomPassword(); // 清空欄位
+                    }
+                    
+                    // 觸發密碼策略切換
+                    if (window.OrganizationEmployeeModule && window.OrganizationEmployeeModule.togglePasswordField) {
+                        window.OrganizationEmployeeModule.togglePasswordField();
+                    }
+                    
+                    // 顯示啟用連結有效期限提示
+                    fetchAndDisplayActivationExpiry();
+                }
+                
+                // 初始化帳號狀態選擇器（新增模式）
+                if (window.OrganizationEmployeeModule && window.OrganizationEmployeeModule.initAccountStatusSelector) {
+                    window.OrganizationEmployeeModule.initAccountStatusSelector(true, true);
                 }
             }, 200);  // 增加延遲確保 searchable-select 已初始化
             
@@ -195,9 +225,7 @@ window.OrganizationEmployeeModalModule = (function() {
             // 新增模式：啟用帳號欄位
             document.getElementById('userLoginid').disabled = false;
             
-            // 設定密碼策略為手動（新增模式需要密碼）
-            document.getElementById('passwordStrategy').value = 'MANUAL';
-            document.getElementById('manualPasswordGroup').style.display = 'block';
+            // 密碼策略將在表單選項載入後設定
             document.getElementById('userPassword').value = '';
             document.getElementById('userPassword').placeholder = '請輸入密碼';
             
@@ -205,6 +233,38 @@ window.OrganizationEmployeeModalModule = (function() {
             if (mainModule && mainModule.loadUserFormOptions) {
                 mainModule.loadUserFormOptions();
             }
+            
+            // 延遲設定密碼策略和初始化狀態選擇器 - 確保表單已就緒
+            setTimeout(() => {
+                // 設定密碼策略預設值為啟用連結並禁用編輯（在 SearchableSelect 初始化後）
+                const passwordStrategySelect = document.getElementById('passwordStrategy');
+                if (passwordStrategySelect) {
+                    passwordStrategySelect.value = 'ACTIVATION_LINK';
+                    passwordStrategySelect.disabled = true;
+                    
+                    // 更新 SearchableSelect 顯示
+                    if (passwordStrategySelect.searchableSelectInstance) {
+                        passwordStrategySelect.searchableSelectInstance.updateDisplay();
+                    }
+                    
+                    // 更新密碼欄位提示文字
+                    const passwordField = document.getElementById('userPassword');
+                    if (passwordField && passwordStrategySelect.value === 'ACTIVATION_LINK') {
+                        passwordField.placeholder = '（將自動生成，無需填寫）';
+                        passwordField.value = ''; // 清空欄位
+                    }
+                    
+                    // 觸發密碼策略切換
+                    if (window.OrganizationEmployeeModule && window.OrganizationEmployeeModule.togglePasswordField) {
+                        window.OrganizationEmployeeModule.togglePasswordField();
+                    }
+                }
+                
+                // 初始化帳號狀態選擇器（新增模式）
+                if (window.OrganizationEmployeeModule && window.OrganizationEmployeeModule.initAccountStatusSelector) {
+                    window.OrganizationEmployeeModule.initAccountStatusSelector(true, true);
+                }
+            }, 200);  // 增加延遲確保 searchable-select 已初始化
             
             modal.classList.add('show');
             document.body.classList.add('modal-open');
@@ -253,11 +313,49 @@ window.OrganizationEmployeeModalModule = (function() {
             hasEmployeeInfo: true 
         });
         
-        // 設定密碼策略為手動（編輯模式預設不改密碼）
-        document.getElementById('passwordStrategy').value = 'MANUAL';
-        document.getElementById('manualPasswordGroup').style.display = 'block';
-        document.getElementById('userPassword').value = '';
-        document.getElementById('userPassword').placeholder = '不修改請留空';
+        // 根據員工狀態處理密碼設定顯示
+        const passwordFieldset = Array.from(document.querySelectorAll('#userForm fieldset')).find(fs => 
+            fs.querySelector('legend')?.textContent?.trim() === '密碼設定');
+
+        if (user.is_active) {
+            // 啟用狀態：隱藏整個密碼設定區塊
+            if (passwordFieldset) {
+                passwordFieldset.style.display = 'none';
+            }
+        } else {
+            // 停用狀態：顯示密碼設定但固定為啟用連結模式
+            if (passwordFieldset) {
+                passwordFieldset.style.display = 'block';
+            }
+            
+            const passwordStrategySelect = document.getElementById('passwordStrategy');
+            const manualPasswordGroup = document.getElementById('manualPasswordGroup');
+            
+            if (passwordStrategySelect) {
+                passwordStrategySelect.value = 'ACTIVATION_LINK';
+                passwordStrategySelect.disabled = true;
+                
+                // 更新 SearchableSelect 顯示（如果已初始化）
+                if (passwordStrategySelect.searchableSelectInstance) {
+                    passwordStrategySelect.searchableSelectInstance.updateDisplay();
+                }
+            }
+            
+            if (manualPasswordGroup) {
+                manualPasswordGroup.style.display = 'none';
+            }
+            
+            // 手動設定密碼策略資訊顯示（避免調用 togglePasswordField 造成錯誤）
+            const passwordStrategyInfo = document.getElementById('passwordStrategyInfo');
+            if (passwordStrategyInfo) {
+                passwordStrategyInfo.innerHTML = `
+                    <div class="alert alert-info">
+                        <i class="fas fa-envelope"></i>
+                        <span>系統將自動發送啟用連結至用戶郵箱</span>
+                    </div>
+                `;
+            }
+        }
         
         // 設定權限群組（延遲執行確保選項已載入）
         setTimeout(async () => {
@@ -291,6 +389,12 @@ window.OrganizationEmployeeModalModule = (function() {
                         department_roles: user.department_roles
                     });
                 }
+            }
+            
+            // 初始化帳號狀態選擇器（編輯模式）
+            if (window.OrganizationEmployeeModule && window.OrganizationEmployeeModule.initAccountStatusSelector) {
+                const isCurrentlyActive = user.is_active !== false && user.is_active !== 0;
+                window.OrganizationEmployeeModule.initAccountStatusSelector(false, isCurrentlyActive);
             }
         }, 200);  // 增加延遲確保 searchable-select 已初始化
         
@@ -427,8 +531,39 @@ window.OrganizationEmployeeModalModule = (function() {
         const title = user.user_extension?.title || user.title || '未設定';
         const departmentName = user.department?.name || user.department_name || '未分配';
         const authType = getAuthTypeDisplay(user.auth_type || 'local');
-        const status = user.is_active ? '啟用' : '停用';
         const lastLogin = formatDateTime(user.last_login_at);
+        
+        // 判斷帳號狀態（包含排程）
+        const now = new Date();
+        const isActive = user.is_active;
+        const activationScheduled = user.user_extension.activation_scheduled ? new Date(user.user_extension.activation_scheduled) : null;
+        const activationExpires = user.user_extension.activation_expires ? new Date(user.user_extension.activation_expires) : null;
+        
+        let statusInfo = {
+            text: isActive ? '啟用' : '停用',
+            class: isActive ? 'badge-success' : 'badge-danger',
+            icon: isActive ? 'check-circle' : 'times-circle',
+            hasSchedule: false,
+            scheduleText: '',
+            scheduleClass: ''
+        };
+        
+        // 檢查排程狀態
+        if (activationScheduled && activationScheduled > now) {
+            statusInfo.text = '停用中（排程啟用）';
+            statusInfo.class = 'badge-warning';
+            statusInfo.icon = 'clock';
+            statusInfo.hasSchedule = true;
+            statusInfo.scheduleText = `將於 ${formatDateTime(activationScheduled)} 自動啟用`;
+            statusInfo.scheduleClass = 'text-primary';
+        } else if (activationExpires && activationExpires > now && isActive) {
+            statusInfo.text = '啟用中（排程停用）';
+            statusInfo.class = 'badge-info';
+            statusInfo.icon = 'clock';
+            statusInfo.hasSchedule = true;
+            statusInfo.scheduleText = `將於 ${formatDateTime(activationExpires)} 自動停用`;
+            statusInfo.scheduleClass = 'text-warning';
+        }
         
         // 處理部門角色
         let departmentRolesHtml = '';
@@ -448,16 +583,73 @@ window.OrganizationEmployeeModalModule = (function() {
             departmentRolesHtml = '<span class="text-muted">無部門角色</span>';
         }
         
-        // 處理系統權限群組
+        // 處理系統權限群組（合併個人權限和角色權限）
         let permissionGroupsHtml = '';
-        if (user.permission_groups && user.permission_groups.length > 0) {
-            permissionGroupsHtml = user.permission_groups.map(perm => {
-                const permName = typeof perm === 'object' ? perm.name : perm;
-                const permLevel = typeof perm === 'object' ? perm.level : 0;
+        
+        // 取得個人權限
+        const directPermissions = user.permission_groups || [];
+        
+        // 取得角色權限
+        const rolePermissions = user.role_permission_groups || [];
+        
+        // 合併權限（去重）
+        const allPermissions = [];
+        const permissionMap = new Map();
+        
+        // 添加個人權限
+        directPermissions.forEach(perm => {
+            const permId = typeof perm === 'object' ? perm.id : perm;
+            const permName = typeof perm === 'object' ? perm.name : perm;
+            const permLevel = typeof perm === 'object' ? perm.level : 0;
+            const permType = typeof perm === 'object' ? perm.permission_type : 'user';
+            
+            permissionMap.set(permId, {
+                id: permId,
+                name: permName,
+                level: permLevel,
+                type: permType,
+                source: 'personal'
+            });
+        });
+        
+        // 添加角色權限（不覆蓋個人權限）
+        rolePermissions.forEach(perm => {
+            const permId = typeof perm === 'object' ? perm.id : perm;
+            const permName = typeof perm === 'object' ? perm.name : perm;
+            const permLevel = typeof perm === 'object' ? perm.level : 0;
+            const permType = typeof perm === 'object' ? perm.permission_type : 'user';
+            
+            if (!permissionMap.has(permId)) {
+                permissionMap.set(permId, {
+                    id: permId,
+                    name: permName,
+                    level: permLevel,
+                    type: permType,
+                    source: 'role'
+                });
+            }
+        });
+        
+        // 轉換為陣列並排序
+        const mergedPermissions = Array.from(permissionMap.values()).sort((a, b) => {
+            // 按權限類型排序：admin > manager > user > other
+            const typeOrder = { 'admin': 0, 'manager': 1, 'user': 2 };
+            const aOrder = typeOrder[a.type] ?? 3;
+            const bOrder = typeOrder[b.type] ?? 3;
+            if (aOrder !== bOrder) return aOrder - bOrder;
+            return a.name.localeCompare(b.name, 'zh-TW');
+        });
+        
+        if (mergedPermissions.length > 0) {
+            permissionGroupsHtml = mergedPermissions.map(perm => {
+                const sourceIcon = perm.source === 'personal' ? 'user' : 'users-cog';
+                const sourceText = perm.source === 'personal' ? '個人權限' : '角色權限';
+                const badgeClass = perm.source === 'personal' ? 'badge-info' : 'badge-secondary';
+                
                 return `
-                    <span class="badge badge-info" title="權限等級: ${permLevel}">
-                        <i class="fas fa-shield-alt"></i>
-                        ${permName}
+                    <span class="badge ${badgeClass}" title="${sourceText} - 權限等級: ${perm.level}">
+                        <i class="fas fa-${sourceIcon}"></i>
+                        ${perm.name}
                     </span>
                 `;
             }).join(' ');
@@ -550,12 +742,23 @@ window.OrganizationEmployeeModalModule = (function() {
                         <div class="detail-item">
                             <label>帳號狀態</label>
                             <div class="detail-value">
-                                <span class="badge ${user.is_active ? 'badge-success' : 'badge-danger'}">
-                                    <i class="fas fa-${user.is_active ? 'check-circle' : 'times-circle'}"></i>
-                                    ${status}
+                                <span class="badge ${statusInfo.class}">
+                                    <i class="fas fa-${statusInfo.icon}"></i>
+                                    ${statusInfo.text}
                                 </span>
                             </div>
                         </div>
+                        ${statusInfo.hasSchedule ? `
+                        <div class="detail-item">
+                            <label>排程資訊</label>
+                            <div class="detail-value">
+                                <span class="${statusInfo.scheduleClass}">
+                                    <i class="fas fa-clock"></i>
+                                    ${statusInfo.scheduleText}
+                                </span>
+                            </div>
+                        </div>
+                        ` : ''}
                         <div class="detail-item">
                             <label>最後登入</label>
                             <div class="detail-value">${lastLogin}</div>
@@ -1110,6 +1313,39 @@ window.OrganizationEmployeeModalModule = (function() {
         });
     }
     
+    // 獲取並顯示啟用連結有效期限
+    async function fetchAndDisplayActivationExpiry() {
+        try {
+            const response = await fetch('/api/config/activation-expire-hours', {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                const hours = data.hours || 168; // 預設 168 小時
+                const days = data.days || Math.floor(hours / 24);
+                const passwordStrategyInfo = document.getElementById('passwordStrategyInfo');
+                if (passwordStrategyInfo) {
+                    passwordStrategyInfo.innerHTML = `
+                        <div class="alert alert-info mb-0">
+                            <i class="fas fa-info-circle"></i>
+                            啟用連結有效期限為 <strong>${days} 天</strong>（${hours} 小時）
+                        </div>
+                         <small>連結將寄送至員工信箱，如果要重送郵件，請點擊員工資訊卡片  <i class="fas fa-envelope"></i> 圖示</small>
+                    `;
+                }
+            } else {
+                console.warn('無法獲取啟用連結有效期限設定');
+            }
+        } catch (error) {
+            console.error('獲取啟用連結有效期限時發生錯誤:', error);
+        }
+    }
+    
     // 公開 API
     return {
         init,
@@ -1126,7 +1362,8 @@ window.OrganizationEmployeeModalModule = (function() {
         editEmployeeFromDetail,
         refreshPendingAccountsModal,
         updateAccountStatusDisplay,
-        clearFormErrors
+        clearFormErrors,
+        fetchAndDisplayActivationExpiry
     };
 })();
 

@@ -9,6 +9,8 @@ from typing import Dict, Any, Optional
 
 from app.config.paths import path_config
 from app.api.dependencies import get_current_user, get_current_user_optional, get_admin_user
+from app.core.security.permissions import permission_required
+from app.core.security.permissions import check_permission
 from app.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -23,10 +25,12 @@ html_paths = path_config.get_html_paths()
 def login_page(
     current_user: Optional[Dict[str, Any]] = Depends(get_current_user_optional)
 ):
-    """登入頁面"""
+
+    # 一般權限管理員（透過角色或權限）
     if current_user:
         return RedirectResponse(url="/dashboard", status_code=302)
-    
+
+    # 未登入狀態下導回登入頁
     return FileResponse(
         html_paths["HTML_PATH_LOGIN"],
         headers={
@@ -55,7 +59,20 @@ def register_page(
     )
 
 
+@router.get("/activate")
+def activate_page():
+    """帳號啟用頁面"""
+    return FileResponse(
+        html_paths["HTML_PATH_ACTIVATE"],
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        },
+    )
+
 @router.get("/dashboard")
+@permission_required("USER.QUERY")
 def dashboard_page(current_user: Dict[str, Any] = Depends(get_current_user)):
     """主儀表板頁面"""
     try:
@@ -66,7 +83,7 @@ def dashboard_page(current_user: Dict[str, Any] = Depends(get_current_user)):
             "Expires": "0",
         }
         
-        if current_user["role"] == "admin":
+        if current_user["role"] == "admin" or  check_permission(current_user, "ADMIN.ACCESS"):
             return FileResponse(html_paths["HTML_PATH_DASHBOARD_ADMIN"], headers=headers)
         else:
             return FileResponse(html_paths["HTML_PATH_DASHBOARD"], headers=headers)
@@ -76,18 +93,21 @@ def dashboard_page(current_user: Dict[str, Any] = Depends(get_current_user)):
 
 
 @router.get("/admin")
+@permission_required("ADMIN.ACCESS")
 def admin_page(current_user: Dict[str, Any] = Depends(get_admin_user)):
     """管理首頁（管理員專用）"""
     return FileResponse(html_paths["HTML_PATH_ADMIN"])
 
 
 @router.get("/admin/knowledge-base")
+@permission_required("KB.LIST_VIEW")
 def knowledge_base_page(current_user: Dict[str, Any] = Depends(get_admin_user)):
     """知識庫管理頁面（管理員專用）"""
     return FileResponse(html_paths["HTML_PATH_KNOWLEDGE_BASE"])
 
 
 @router.get("/admin/system-params")
+@permission_required("SYSTEM.PARAM_VIEW")
 def system_params_page(current_user: Dict[str, Any] = Depends(get_admin_user)):
     """系統參數管理頁面（管理員專用）"""
     return FileResponse(html_paths["HTML_PATH_SYSTEM_PARAMS"])
@@ -100,18 +120,21 @@ def user_management_page(current_user: Dict[str, Any] = Depends(get_admin_user))
 
 
 @router.get("/admin/organization")
+@permission_required("ORG.DEPT_VIEW")
 def organization_page(current_user: Dict[str, Any] = Depends(get_admin_user)):
     """組織管理頁面（管理員專用）"""
     return FileResponse(html_paths["HTML_PATH_ORGANIZATION"])
 
 
 @router.get("/admin/permission-management")
+@permission_required("PERM.MATRIX_VIEW")
 def permission_management_page(current_user: Dict[str, Any] = Depends(get_admin_user)):
     """權限管理頁面（管理員專用）"""
     return FileResponse(html_paths["HTML_PATH_PERMISSION_MANAGEMENT"])
 
 
 @router.get("/dashboard_admin")
+@permission_required("ADMIN.DASHBOARD")
 def dashboard_admin_page(current_user: Dict[str, Any] = Depends(get_admin_user)):
     """傳統管理頁面（管理員專用）"""
     return FileResponse(html_paths["HTML_PATH_DASHBOARD_ADMIN"])

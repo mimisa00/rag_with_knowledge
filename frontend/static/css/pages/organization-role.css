@@ -632,7 +632,8 @@
     border: 1px solid var(--border-color);
     border-radius: 8px;
     padding: 20px;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
     display: flex;
     flex-direction: column;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -698,7 +699,7 @@
     border-radius: 8px;
     padding: 16px;
     transition: all 0.2s;
-    min-height: 180px;
+    min-height: 250px;
     height: auto;
     position: relative;
     overflow: hidden;
@@ -791,6 +792,30 @@
 
 .role-stats i {
     font-size: 0.9rem;
+}
+
+/* 角色用戶數量連結樣式 */
+.role-user-count-link {
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    border-radius: 4px;
+    padding: 2px 4px;
+    margin: -2px -4px;
+}
+
+.role-user-count-link:hover {
+    color: var(--primary) !important;
+    background: rgba(var(--primary-rgb), 0.1);
+    transform: translateY(-1px);
+}
+
+.role-user-count-link:active {
+    transform: translateY(0);
+}
+
+/* 當沒有用戶時，保持原樣 */
+.role-stats span:not([onclick]) {
+    cursor: default;
 }
 
 .role-template {
@@ -2329,4 +2354,230 @@
 
 .role-tree-node.role-manager .node-actions .btn-icon:hover .fa-trash {
     color: var(--danger) !important;
+}
+
+/* ========================================
+   角色權限 Badges 樣式 
+   ======================================== */
+
+/* 角色權限容器 */
+.role-permissions-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.5rem 0;
+    flex-wrap: wrap;
+}
+
+/* 角色權限 badge 基本樣式 */
+.role-permission-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 10px;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    border: 1px solid;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+    /* 預設背景顏色，防止透明問題 */
+    background: #6b7280;
+    color: white;
+    border-color: rgba(107, 114, 128, 0.5);
+}
+
+.role-permission-badge i {
+    font-size: 9px;
+}
+
+/* 管理員權限 */
+.emploroleyee-permission-badge.permission-admin {
+    background: #dc2626;
+    color: white;
+    border-color: rgba(220, 38, 38, 0.4);
+    box-shadow: 0 2px 6px rgba(220, 38, 38, 0.3);
+}
+
+.role-permission-badge.permission-admin:hover {
+    transform: translateY(-1px);
+    background: #ef4444;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+}
+
+/* 主管權限 */
+.role-permission-badge.permission-manager {
+    background: #f59e0b;
+    color: white;
+    border-color: rgba(245, 158, 11, 0.4);
+    box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3);
+}
+
+.role-permission-badge.permission-manager:hover {
+    transform: translateY(-1px);
+    background: #fbbf24;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+}
+
+/* 一般權限樣式 */
+.role-permission-badge.permission-user {
+    background: #3b82f6;
+    color: white;
+    border-color: rgba(59, 130, 246, 0.4);
+    box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
+}
+
+.role-permission-badge.permission-user:hover {
+    transform: translateY(-1px);
+    background: #60a5fa;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+/* 權限樣式 */
+.role-permission-badge.permission-default {
+    background: linear-gradient(135deg, #6b7280 0%, #9ca3af 100%);
+    color: white;
+    border-color: rgba(107, 114, 128, 0.5);
+    box-shadow: 0 2px 4px rgba(107, 114, 128, 0.3);
+}
+
+.role-permission-badge.permission-default:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(107, 114, 128, 0.4);
+}
+
+.role-permission-badge.permission-read {
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+    border-color: rgba(34, 197, 94, 0.2);
+}
+
+.role-permission-badge.permission-read:hover {
+    background: rgba(34, 197, 94, 0.2);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(34, 197, 94, 0.3);
+}
+
+/* 寫入權限 */
+.role-permission-badge.permission-write {
+    background: rgba(99, 102, 241, 0.1);
+    color: #6366f1;
+    border-color: rgba(99, 102, 241, 0.2);
+}
+
+.role-permission-badge.permission-write:hover {
+    background: rgba(99, 102, 241, 0.2);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(99, 102, 241, 0.3);
+}
+
+/* 刪除權限 */
+.role-permission-badge.permission-delete {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, 0.2);
+}
+
+.role-permission-badge.permission-delete:hover {
+    background: rgba(239, 68, 68, 0.2);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);
+}
+
+/* 權限展開容器 */
+.role-permission-expandable {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    position: relative;
+    cursor: pointer;
+}
+
+/* "+N" 標記樣式 */
+.role-permission-more {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    background: var(--text-muted);
+    color: white;
+    border-radius: 50%;
+    font-size: 0.65rem;
+    font-weight: var(--font-weight-bold);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.role-permission-more:hover {
+    background: var(--primary);
+    transform: scale(1.1);
+}
+
+/* 展開的權限列表 */
+.role-permission-expanded {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 1000;
+    background: white;
+    border: 0px solid var(--border-color);
+    border-radius: var(--radius-md);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    padding: 0.5rem;
+    gap: 0.25rem;
+    flex-direction: column;
+}
+
+/* 展開時的動畫效果 */
+.role-permission-expandable:hover .role-permission-expanded {
+    display: flex;
+    animation: fadeInUp 0.2s ease-out forwards;
+    background:transparent;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 角色卡片內的權限 badges 調整 */
+.role-card .role-permissions-container {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--border-light);
+}
+
+/* 懸停效果 */
+.role-permission-badge:hover {
+    
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+/* 響應式調整 */
+@media (max-width: 768px) {
+    .role-permissions-container {
+        gap: 0.25rem;
+    }
+    
+    .role-permission-badge {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.4rem;
+    }
+    
+    .role-permission-expanded {
+        min-width: 150px;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
 }

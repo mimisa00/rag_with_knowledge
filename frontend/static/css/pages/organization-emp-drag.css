@@ -1,0 +1,534 @@
+/**
+ * 組織管理 - 員工拖放功能樣式
+ */
+
+/* ===== 拖放基本樣式 ===== */
+
+/* 啟用拖放的員工節點 */
+.employee-tree-node[draggable="true"] {
+    cursor: grab;
+    transition: all 0.2s ease;
+}
+
+.employee-tree-node[draggable="true"]:hover {
+    transform: translateX(2px);
+    background-color: var(--color-hover, #f8f9fa);
+    border-radius: 4px;
+}
+
+/* 正在拖放中的員工節點 */
+.employee-tree-node.dragging {
+    opacity: 0.5;
+    cursor: grabbing;
+    transform: scale(0.95);
+}
+
+/* 拖放中的全局樣式 */
+.employee-dragging {
+    user-select: none;
+}
+
+.employee-dragging * {
+    cursor: grabbing !important;
+}
+
+/* ===== 多選功能樣式 ===== */
+
+/* 多選中的員工節點 */
+.employee-tree-node.multi-selected {
+    background-color: var(--color-primary-light, #e3f2fd);
+    border-left: 3px solid var(--color-primary, #007bff);
+    padding-left: calc(1rem - 3px);
+}
+
+.employee-tree-node.multi-selected .role-name {
+    font-weight: 600;
+    color: var(--color-primary-dark, #0056b3);
+}
+
+/* 多選指示器 */
+.multi-select-indicator {
+    display: none;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: linear-gradient(135deg, var(--color-primary, #007bff), var(--color-primary-dark, #0056b3));
+    color: white;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.multi-select-indicator i {
+    margin-right: 8px;
+}
+
+.multi-select-indicator .count {
+    font-weight: bold;
+    color: #ffd700;
+}
+
+.multi-select-indicator .btn-clear {
+    background: none;
+    border: none;
+    color: white;
+    margin-left: 12px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.multi-select-indicator .btn-clear:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* ===== 拖放目標樣式 ===== */
+
+/* 有效的放置目標 */
+.tree-node.drag-over {
+    background-color: var(--color-success-light, #d1edcc);
+    border: 2px dashed var(--color-success, #28a745);
+    border-radius: 6px;
+    animation: dragOverPulse 1s ease-in-out infinite alternate;
+}
+
+@keyframes dragOverPulse {
+    from {
+        background-color: var(--color-success-light, #d1edcc);
+        border-color: var(--color-success, #28a745);
+    }
+    to {
+        background-color: var(--color-success-lighter, #e8f5e8);
+        border-color: var(--color-success-dark, #1e7e34);
+    }
+}
+
+.tree-node.drag-over .node-content {
+    background-color: transparent;
+}
+
+.tree-node.drag-over .node-name {
+    font-weight: 600;
+    color: var(--color-success-dark, #1e7e34);
+}
+
+/* 無效的放置目標（相同部門） */
+.tree-node.drag-invalid {
+    background-color: var(--color-danger-light, #f8d7da);
+    border: 2px dashed var(--color-danger, #dc3545);
+    border-radius: 6px;
+}
+
+/* ===== 拖放視覺回饋 ===== */
+
+/* 拖放幽靈元素 */
+.drag-ghost {
+    position: fixed;
+    top: -1000px;
+    left: -1000px;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.9;
+    transform: rotate(-5deg);
+}
+
+.drag-ghost .ghost-item {
+    background: linear-gradient(135deg, #6c757d, #495057);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.drag-ghost .ghost-item.multi {
+    background: linear-gradient(135deg, var(--color-primary, #007bff), var(--color-primary-dark, #0056b3));
+}
+
+.drag-ghost .ghost-item i {
+    font-size: 1rem;
+}
+
+/* ===== 拖放提示 ===== */
+
+/* 拖放提示文字 */
+.drag-hint {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.employee-dragging .drag-hint {
+    opacity: 1;
+}
+
+/* ===== 響應式設計 ===== */
+
+/* 手機和平板適配 */
+@media (max-width: 768px) {
+    /* 在小螢幕上禁用拖放功能 */
+    .employee-tree-node[draggable="true"] {
+        cursor: default;
+    }
+    
+    .employee-tree-node[draggable="true"]:hover {
+        transform: none;
+    }
+    
+    /* 調整多選指示器大小 */
+    .multi-select-indicator {
+        font-size: 0.8rem;
+        padding: 6px 10px;
+    }
+    
+    /* 拖放視覺回饋調整 */
+    .drag-ghost .ghost-item {
+        font-size: 0.8rem;
+        padding: 6px 10px;
+    }
+}
+
+/* 平板適配 */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .drag-ghost .ghost-item {
+        font-size: 0.85rem;
+    }
+}
+
+/* ===== 輔助功能 ===== */
+
+/* 提供鍵盤操作提示 */
+.keyboard-hint {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.employees-section:hover .keyboard-hint {
+    opacity: 1;
+}
+
+/* 高對比度模式支援 */
+@media (prefers-contrast: high) {
+    .employee-tree-node.multi-selected {
+        background-color: #000;
+        color: #fff;
+        border-color: #fff;
+    }
+    
+    .tree-node.drag-over {
+        background-color: #fff;
+        border-color: #000;
+    }
+    
+    .drag-ghost .ghost-item {
+        background: #000;
+        border: 2px solid #fff;
+    }
+}
+
+/* 減少動畫偏好設定 */
+@media (prefers-reduced-motion: reduce) {
+    .employee-tree-node,
+    .tree-node,
+    .drag-ghost,
+    .multi-select-indicator {
+        animation: none;
+        transition: none;
+    }
+    
+    .employee-tree-node[draggable="true"]:hover {
+        transform: none;
+    }
+}
+
+/* ===== 特殊狀態樣式 ===== */
+
+/* 停用員工的拖放樣式 */
+.employee-tree-node.inactive[draggable="true"] {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.employee-tree-node.inactive[draggable="true"]:hover {
+    transform: none;
+    background-color: transparent;
+}
+
+/* 管理者節點特殊樣式 */
+.employee-tree-node.manager-node.multi-selected {
+    background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+    border-left-color: #f39c12;
+}
+
+.employee-tree-node.manager-node.multi-selected .role-name {
+    color: #d68910;
+}
+
+/* ===== 錯誤和成功狀態 ===== */
+
+/* 移動成功動畫 */
+@keyframes moveSuccess {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); background-color: #d4edda; }
+    100% { transform: scale(1); }
+}
+
+.employee-tree-node.move-success {
+    animation: moveSuccess 0.6s ease-in-out;
+}
+
+/* 移動錯誤動畫 */
+@keyframes moveError {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+.employee-tree-node.move-error {
+    animation: moveError 0.5s ease-in-out;
+    background-color: #f8d7da;
+}
+
+/* ===== 移動確認對話框樣式 ===== */
+
+/* 主容器 */
+.move-confirm-content {
+    text-align: left;
+    max-width: 100%;
+}
+
+.move-confirm-content h4 {
+    margin: 0 0 8px 0;
+    font-size: 1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* 部門移動資訊 */
+.move-info {
+    margin-bottom: 16px;
+    padding: 12px;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-radius: 8px;
+    border-left: 4px solid var(--color-primary, #007bff);
+}
+
+.dept-transfer {
+    font-size: 1.1rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.dept-name {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+.dept-name.source,
+.dept-name.target {
+    color: var(--primary);
+}
+
+
+/* 員工列表 */
+.employee-list {
+    margin-bottom: 16px;
+    padding: 12px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+.emp-list {
+    list-style: none;
+    padding: 0;
+    margin: 8px 0;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.emp-list li {
+    padding: 6px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.emp-list li:last-child {
+    border-bottom: none;
+}
+
+.emp-list li i {
+    width: 16px;
+    text-align: center;
+}
+
+.emp-count {
+    margin-top: 8px;
+    padding: 6px 12px;
+    background-color: #e3f2fd;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    text-align: center;
+    color: var(--color-primary-dark, #0056b3);
+}
+
+/* 警告框樣式 */
+.move-confirm-content .alert {
+    padding: 12px;
+    margin-bottom: 0;
+    border-radius: 8px;
+    border: 1px solid transparent;
+}
+
+.move-confirm-content .alert.alert-warning {
+    background-color: #fff3cd;
+    border-color: #ffeaa7;
+    color: #856404;
+}
+
+.move-confirm-content .alert h4 {
+    color: #856404;
+    margin-bottom: 8px;
+}
+
+.notice-list {
+    list-style: none;
+    padding: 0;
+    margin: 8px 0;
+}
+
+.notice-list li {
+    padding: 4px 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.notice-list li i {
+    width: 16px;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+/* 角色對應說明 */
+.role-mapping {
+    margin-top: 12px;
+    padding: 8px 0;
+    border-top: 1px solid #f0b90b;
+}
+
+.mapping-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    font-size: 0.9rem;
+    flex-wrap: wrap;
+}
+
+.mapping-item i {
+    width: 20px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.mapping-item span {
+    white-space: nowrap;
+}
+
+/* 響應式調整 */
+@media (max-width: 768px) {
+    .move-confirm-content {
+        font-size: 0.9rem;
+    }
+    
+    .dept-transfer {
+        font-size: 1rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+    
+    .mapping-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+    
+    .emp-list {
+        max-height: 150px;
+    }
+}
+
+/* 文字顏色輔助類別 */
+.text-primary { color: var(--color-primary, #007bff) !important; }
+.text-info { color: var(--color-info, #17a2b8) !important; }
+.text-success { color: var(--color-success, #28a745) !important; }
+.text-warning { color: var(--color-warning, #ffc107) !important; }
+.text-danger { color: var(--color-danger, #dc3545) !important; }
+.text-secondary { color: var(--color-secondary, #6c757d) !important; }
+.text-muted { color: #6c757d !important; }
+
+/* ===== Z-index 層級管理 ===== */
+
+.drag-ghost {
+    z-index: 9999;
+}
+
+.multi-select-indicator {
+    z-index: 10;
+}
+
+.drag-hint {
+    z-index: 1000;
+}
+
+.keyboard-hint {
+    z-index: 5;
+}

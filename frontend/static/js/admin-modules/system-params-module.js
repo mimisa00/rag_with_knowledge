@@ -143,11 +143,90 @@
             }
         },
 
+        // 測試郵件發送功能
+        sendTestEmail: async function() {
+            const testEmailInput = document.getElementById("test_email_recipient");
+            const testEmailAddress = testEmailInput?.value?.trim();
+
+            if (!testEmailAddress) {
+                if (window.Dialog) {
+                    window.Dialog.warning('請輸入測試郵件地址');
+                } else {
+                    alert('請輸入測試郵件地址');
+                }
+                return;
+            }
+
+            // 驗證郵件格式
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(testEmailAddress)) {
+                if (window.Dialog) {
+                    window.Dialog.warning('請輸入有效的郵件地址');
+                } else {
+                    alert('請輸入有效的郵件地址');
+                }
+                return;
+            }
+
+            try {
+                if (window.CommonUI) {
+                    window.CommonUI.showSpinner();
+                }
+
+                // 先保存當前設定（確保使用最新的 SMTP 設定）
+                const currentForm = this.getCurrentFormState();
+                await fetch("/api/config/update", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(currentForm)
+                });
+
+                // 發送測試郵件
+                const response = await fetch("/api/config/test-email", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email: testEmailAddress })
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    if (window.Dialog) {
+                        window.Dialog.success(`測試郵件已發送至 ${testEmailAddress}，請檢查收件匣`);
+                    } else {
+                        alert(`測試郵件已發送至 ${testEmailAddress}，請檢查收件匣`);
+                    }
+                    // 清空輸入框
+                    testEmailInput.value = '';
+                } else {
+                    throw new Error(result.message || '測試郵件發送失敗');
+                }
+
+            } catch (error) {
+                console.error('測試郵件發送錯誤：', error);
+                if (window.Dialog) {
+                    window.Dialog.error('測試郵件發送失敗：' + error.message);
+                } else {
+                    alert('測試郵件發送失敗：' + error.message);
+                }
+            } finally {
+                if (window.CommonUI) {
+                    window.CommonUI.stopSpinner();
+                }
+            }
+        },
+
         // 綁定事件
         bindEvents: function() {
             const updateConfigBtn = document.getElementById("updateConfigBtn");
             if (updateConfigBtn) {
                 updateConfigBtn.addEventListener("click", () => this.updateConfig());
+            }
+
+            // 綁定測試郵件發送按鈕
+            const sendTestEmailBtn = document.getElementById("sendTestEmailBtn");
+            if (sendTestEmailBtn) {
+                sendTestEmailBtn.addEventListener("click", () => this.sendTestEmail());
             }
 
             // Tab 切換時自動更新參數（僅在 dashboard_admin.html 中使用）

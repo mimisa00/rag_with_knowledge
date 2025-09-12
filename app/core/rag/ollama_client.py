@@ -48,7 +48,7 @@ def get_model_options() -> Dict[str, Any]:
     """獲取模型選項配置"""
     config = app_config.all
     
-    return {
+    options = {
         "num_ctx": int(config.get("num_ctx", "6144")),
         "repeat_last_n": int(config.get("repeat_last_n", "64")),
         "repeat_penalty": float(config.get("repeat_penalty", "1.1")),
@@ -60,6 +60,14 @@ def get_model_options() -> Dict[str, Any]:
         "top_p": float(config.get("top_p", "0.9")),
         "min_p": float(config.get("min_p", "0.0")),
     }
+    
+    # 支援動態 keep_alive 設定
+    keep_alive = os.getenv("OLLAMA_KEEP_ALIVE")
+    if keep_alive:
+        options["keep_alive"] = keep_alive
+        logger.debug(f"使用 keep_alive 設定: {keep_alive}")
+    
+    return options
 
 
 def update_ollama_model_options():
@@ -68,13 +76,14 @@ def update_ollama_model_options():
     config = app_config.all
     
     try:
+        options = get_model_options()
         client.generate(
             model=config.get("llm_model", "gemma3:4b"),
             prompt="TEST",
-            options=get_model_options(),
+            options=options,
             stream=False,
         )
-        logger.info("Ollama 模型參數更新成功")
+        logger.info(f"Ollama 模型參數更新成功，keep_alive: {options.get('keep_alive', '預設')}")
     except Exception as e:
         logger.error(f"更新 Ollama 模型參數失敗: {e}")
 

@@ -21,6 +21,11 @@ const OrganizationEmployeeTreeModule = (function () {
         // 綁定樹狀結構事件
         bindTreeEvents();
 
+        // 初始化拖放功能
+        if (window.OrganizationEmployeeDragModule) {
+            OrganizationEmployeeDragModule.init();
+        }
+
         // 載入部門樹
         loadDepartmentTree(mainModule);
     }
@@ -245,6 +250,14 @@ const OrganizationEmployeeTreeModule = (function () {
 
         // 綁定事件
         bindNodeEvents();
+        
+        // 啟用員工節點拖放功能
+        if (window.OrganizationEmployeeDragModule) {
+            setTimeout(() => {
+                OrganizationEmployeeDragModule.enableDragForEmployeeNodes();
+                OrganizationEmployeeDragModule.enableDropForDepartmentNodes();
+            }, 100);
+        }
     }
 
     /**
@@ -458,6 +471,9 @@ const OrganizationEmployeeTreeModule = (function () {
                         </button>
                         <button class="btn-icon" onclick="event.stopPropagation(); OrganizationEmployeeTreeModule.editEmployee(${userId})" title="編輯">
                             <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn-icon" onclick="event.stopPropagation(); OrganizationEmployeeTreeModule.editUserPermissions(${userId})" title="編輯權限">
+                            <i class="fas fa-shield-alt"></i>
                         </button>
                     </span>
                     <span class="role-info">${title}</span>
@@ -687,6 +703,15 @@ const OrganizationEmployeeTreeModule = (function () {
             window.OrganizationEmployeeModule.editEmployee(empId);
         }
     }
+    
+    /**
+     * 編輯員工權限
+     */
+    function editUserPermissions(empId) {
+        if (window.OrganizationEmployeeModule && window.OrganizationEmployeeModule.editUserPermissions) {
+            window.OrganizationEmployeeModule.editUserPermissions(empId);
+        }
+    }
 
     /**
      * 展開全部
@@ -742,6 +767,14 @@ const OrganizationEmployeeTreeModule = (function () {
                 
                 // 重新渲染樹狀結構以反映選中狀態
                 renderDepartmentTree(departmentTree);
+            }
+            
+            // 重新啟用拖放功能
+            if (window.OrganizationEmployeeDragModule) {
+                setTimeout(() => {
+                    OrganizationEmployeeDragModule.enableDragForEmployeeNodes();
+                    OrganizationEmployeeDragModule.enableDropForDepartmentNodes();
+                }, 200);
             }
             
             console.log('樹狀結構刷新完成，當前選中部門:', selectedDeptId);
@@ -951,6 +984,7 @@ const OrganizationEmployeeTreeModule = (function () {
         selectEmployee,
         viewDetails,
         editEmployee,
+        editUserPermissions,
         toggleInactive
     };
 })();

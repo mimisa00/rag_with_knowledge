@@ -5,6 +5,7 @@ from typing import Dict, Any, List
 import os
 
 from app.api.dependencies import get_admin_user
+from app.core.security.permissions import permission_required
 from app.core.rag.indexing import indexing
 from app.dao.knowledge_base import knowledge_base_dao
 from app.utils.logging import get_logger
@@ -15,6 +16,7 @@ router = APIRouter()
 
 
 @router.get("/vector/index/status")
+@permission_required("KB.INDEX_VIEW")
 def get_index_status(
     kb_id: str = Query(..., description="知識庫ID"),
     current_user: Dict[str, Any] = Depends(get_admin_user)
@@ -41,6 +43,7 @@ def get_index_status(
 
 # 依照選擇的檔案建立索引
 @router.post("/vector/index/prepare/file")
+@permission_required("KB.INDEX_CREATE")
 def api_prepare_files(
     filenames: List[str] = Form(...),
     kb_id: str = Form(None),
@@ -152,6 +155,7 @@ def api_prepare_files(
 
 # 顯示索引前100筆內容
 @router.get("/vector/index/summary/100")
+@permission_required("KB.INDEX_VIEW")
 def index_summary_100(
     response: Response,
     kb_id: str = Query(None), 
@@ -172,6 +176,7 @@ def index_summary_100(
 
 # 顯示索引完整內容
 @router.get("/vector/index/summary/all")
+@permission_required("KB.INDEX_VIEW")
 def index_summary_all(
     response: Response,
     kb_id: str = Query(None),
@@ -193,6 +198,7 @@ def index_summary_all(
 
 # 清除索引
 @router.post("/vector/index/clear")
+@permission_required("KB.INDEX_DELETE")
 def clear_index(
     kb_id: str = Form(None), 
     current_user: Dict[str, Any] = Depends(get_admin_user)
@@ -208,6 +214,7 @@ def clear_index(
 
 # 檢查索引與檔案內容是否一致
 @router.get("/vector/index/validate")
+@permission_required("KB.INDEX_VIEW")
 def validate_index(
     kb_id: str = Query(None),
     current_user: Dict[str, Any] = Depends(get_admin_user)

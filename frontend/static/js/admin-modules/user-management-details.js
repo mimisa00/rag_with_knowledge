@@ -103,7 +103,7 @@
                         <div class="detail-item">
                             <span class="detail-label">最後登入</span>
                             <span class="detail-value">
-                                ${user.last_login ? this.formatDateTime(user.last_login) : '從未登入'}
+                                ${user.last_login_at ? this.formatDateTime(user.last_login_at) : '從未登入'}
                             </span>
                         </div>
                         <div class="detail-item">

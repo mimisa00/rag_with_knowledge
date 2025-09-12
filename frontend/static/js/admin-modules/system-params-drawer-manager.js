@@ -35,6 +35,12 @@ const ParamDrawerManager = (function() {
             breadcrumb: '模型設定',
             color: '#9b59b6'
         },
+        'email': {
+            icon: 'fas fa-envelope',
+            title: '郵件服務設定',
+            breadcrumb: '郵件服務',
+            color: '#e67e22'
+        },
         'prompt': {
             icon: 'fas fa-comment-dots',
             title: '提示詞管理',

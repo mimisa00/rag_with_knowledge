@@ -1,0 +1,469 @@
+/* ========================================
+   帳號啟用頁面樣式
+   使用新的 CSS 架構，與登入/註冊頁面一致
+   ======================================== */
+
+/* 覆蓋 auth-layout 的背景 - 與登入/註冊頁面相同 */
+.auth-layout {
+    background: linear-gradient(135deg, var(--info) 0%, var(--bg-main) 100%);
+    justify-content: flex-end;
+    padding-right: 50px;
+}
+
+/* 調整深色模式的背景 */
+[data-theme="dark"] .auth-layout {
+    background: linear-gradient(135deg, var(--info-dark) 0%, var(--bg-main) 100%);
+}
+
+/* 企業主題的背景 */
+[data-theme="corporate"] .auth-layout {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--bg-main) 100%);
+}
+
+/* 調整容器樣式 */
+.auth-container {
+    animation: slideUp var(--transition-normal);
+}
+
+/* 啟用卡片樣式 - 保持原有的最大寬度但調整為與其他頁面一致 */
+.activate-card {
+    background: var(--bg-main);
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 450px;
+    padding: 2rem;
+    position: relative;
+    animation: slideUp 0.5s ease-out;
+    margin: 0 auto;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ========================================
+   標題區域 - 使用統一的 auth-header 樣式
+   ======================================== */
+
+.activate-card .auth-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.activate-card .auth-header h1 {
+    font-size: 1.8rem;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-sm);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.activate-card .auth-header h1 i {
+    color: var(--primary);
+}
+
+.activate-card .auth-header p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+/* ========================================
+   狀態顯示
+   ======================================== */
+
+.loading-state,
+.error-state,
+.success-state {
+    text-align: center;
+    padding: 2rem 0;
+}
+
+.loading-state {
+    color: var(--text-secondary);
+}
+
+.loading-spinner {
+    font-size: 2rem;
+    color: var(--primary);
+    margin-bottom: 1rem;
+}
+
+.error-state .error-icon,
+.success-state .success-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.error-state .error-icon {
+    color: var(--danger, #dc3545);
+}
+
+.success-state .success-icon {
+    color: var(--success, #28a745);
+}
+
+.error-state h3,
+.success-state h3 {
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.error-state p,
+.success-state p {
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+}
+
+.error-actions,
+.success-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+/* ========================================
+   使用者資訊
+   ======================================== */
+
+.user-avatar-info {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    background: var(--bg-light);
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.user-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+    margin-right: 1rem;
+}
+
+.user-details h3 {
+    margin: 0 0 0.25rem 0;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+}
+
+.user-details p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+/* ========================================
+   密碼輸入欄位
+   ======================================== */
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-primary);
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.password-input-wrapper {
+    position: relative;
+}
+
+.password-input-wrapper .form-control {
+    padding-right: 3rem;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.password-toggle:hover {
+    color: var(--primary);
+}
+
+/* ========================================
+   密碼強度指示器
+   ======================================== */
+
+.password-strength {
+    margin-top: 0.5rem;
+}
+
+.strength-bar {
+    height: 4px;
+    background: var(--bg-light);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 0.25rem;
+}
+
+.strength-fill {
+    height: 100%;
+    width: 0%;
+    transition: all 0.3s ease;
+    border-radius: 2px;
+}
+
+.strength-fill.weak {
+    width: 25%;
+    background: var(--danger, #dc3545);
+}
+
+.strength-fill.fair {
+    width: 50%;
+    background: var(--warning, #ffc107);
+}
+
+.strength-fill.good {
+    width: 75%;
+    background: var(--info, #17a2b8);
+}
+
+.strength-fill.strong {
+    width: 100%;
+    background: var(--success, #28a745);
+}
+
+.strength-text {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+/* ========================================
+   密碼確認提示
+   ======================================== */
+
+.password-match {
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.password-match.show {
+    opacity: 1;
+}
+
+.password-match.match {
+    color: var(--success, #28a745);
+}
+
+.password-match.no-match {
+    color: var(--danger, #dc3545);
+}
+
+/* ========================================
+   密碼要求列表
+   ======================================== */
+
+.password-requirements {
+    background: var(--bg-light);
+    border-radius: 6px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.password-requirements h4 {
+    margin: 0 0 0.75rem 0;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+.password-requirements ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.password-requirements li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+    transition: color 0.3s ease;
+}
+
+.password-requirements li:last-child {
+    margin-bottom: 0;
+}
+
+.password-requirements li i {
+    width: 12px;
+    font-size: 0.7rem;
+    transition: color 0.3s ease;
+}
+
+.password-requirements li.valid {
+    color: var(--success, #28a745);
+}
+
+.password-requirements li.valid i {
+    color: var(--success, #28a745);
+}
+
+.password-requirements li.valid i::before {
+    content: "\f00c"; /* fa-check */
+}
+
+/* ========================================
+   提交按鈕
+   ======================================== */
+
+.form-actions {
+    margin-top: 2rem;
+}
+
+.form-actions .btn {
+    height: 48px;
+    font-size: 1rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.form-actions .btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.form-actions .btn i {
+    font-size: 0.9rem;
+}
+
+/* ========================================
+   響應式設計
+   ======================================== */
+
+@media (max-width: 768px) {
+    .activate-card {
+        margin: 1rem;
+        padding: 1.5rem;
+    }
+    
+    .activate-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .error-actions,
+    .success-actions {
+        flex-direction: column;
+    }
+    
+    .user-info {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .user-avatar {
+        margin-right: 0;
+        margin-bottom: 0.5rem;
+    }
+}
+
+/* ========================================
+   公用類別
+   ======================================== */
+
+.d-none {
+    display: none !important;
+}
+
+.w-100 {
+    width: 100% !important;
+}
+
+/* ========================================
+   登入連結樣式
+   ======================================== */
+
+.login-link {
+    text-align: center;
+    margin-top: var(--spacing-md);
+}
+
+.login-link p {
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.login-link a {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: var(--font-weight-medium);
+    transition: color var(--transition-fast);
+}
+
+.login-link a:hover {
+    color: var(--primary-dark);
+    text-decoration: underline;
+}
+
+/* ========================================
+   動畫效果
+   ======================================== */
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease-out;
+}
+
+.slide-in {
+    animation: slideIn 0.3s ease-out;
+}

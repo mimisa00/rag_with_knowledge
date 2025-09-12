@@ -167,6 +167,11 @@
                                 <span>模型設定</span>
                                 <span class="category-badge">11</span>
                             </div>
+                            <div class="category-item" data-category="email" onclick="ParamDrawerManager.switchCategory('email')">
+                                <i class="fas fa-envelope"></i>
+                                <span>郵件服務</span>
+                                <span class="category-badge">6</span>
+                            </div>
                             <div class="category-item" data-category="prompt" onclick="ParamDrawerManager.switchCategory('prompt')">
                                 <i class="fas fa-comment-dots"></i>
                                 <span>提示詞</span>
@@ -434,6 +439,115 @@
                                                 <label for="stop" class="form-label">stop</label>
                                                 <input id="stop" type="text" name="stop" value="<|endoftext|>" class="form-control">
                                                 <small class="param-help">停止字串</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 郵件服務分類 -->
+                            <div id="emailCategory" class="param-category-section">
+                                <div class="param-cards-grid">
+                                    <div class="param-card">
+                                        <div class="param-card-header">
+                                            <span class="param-importance critical">🔴</span>
+                                            <h4>SMTP 伺服器設定</h4>
+                                        </div>
+                                        <div class="param-card-body">
+                                            <div class="mb-sm">
+                                                <label for="smtp_host" class="form-label">SMTP 主機</label>
+                                                <input id="smtp_host" type="text" name="smtp_host" value="smtp.gmail.com" class="form-control">
+                                                <small class="param-help">SMTP 伺服器位址（例：smtp.gmail.com, smtp.outlook.com）</small>
+                                            </div>
+                                            <div class="mb-sm">
+                                                <label for="smtp_port" class="form-label">SMTP 埠號</label>
+                                                <input id="smtp_port" type="number" name="smtp_port" value="587" class="form-control">
+                                                <small class="param-help">SMTP 伺服器埠號（587: STARTTLS, 465: SSL, 25: 無加密）</small>
+                                            </div>
+                                            <div>
+                                                <label for="smtp_use_tls" class="form-label">使用加密連線</label>
+                                                <select id="smtp_use_tls" name="smtp_use_tls" class="form-control">
+                                                    <option value="true" selected>是（STARTTLS）</option>
+                                                    <option value="false">否</option>
+                                                </select>
+                                                <small class="param-help">是否啟用 TLS 加密連線</small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="param-card">
+                                        <div class="param-card-header">
+                                            <span class="param-importance critical">🔴</span>
+                                            <h4>SMTP 認證設定</h4>
+                                        </div>
+                                        <div class="param-card-body">
+                                            <div class="mb-sm">
+                                                <label for="smtp_username" class="form-label">SMTP 使用者名稱</label>
+                                                <input id="smtp_username" type="text" name="smtp_username" value="" class="form-control">
+                                                <small class="param-help">SMTP 伺服器登入帳號（通常是完整的電子郵件地址）</small>
+                                            </div>
+                                            <div>
+                                                <label for="smtp_password" class="form-label">SMTP 密碼</label>
+                                                <input id="smtp_password" type="password" name="smtp_password" value="" class="form-control">
+                                                <small class="param-help">SMTP 伺服器登入密碼（Gmail 建議使用應用程式專用密碼）</small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="param-card">
+                                        <div class="param-card-header">
+                                            <span class="param-importance important">🟡</span>
+                                            <h4>寄件者資訊</h4>
+                                        </div>
+                                        <div class="param-card-body">
+                                            <div class="mb-sm">
+                                                <label for="mail_from_email" class="form-label">寄件者信箱</label>
+                                                <input id="mail_from_email" type="email" name="mail_from_email" value="" class="form-control">
+                                                <small class="param-help">系統寄出郵件時顯示的寄件者信箱</small>
+                                            </div>
+                                            <div>
+                                                <label for="mail_from_name" class="form-label">寄件者名稱</label>
+                                                <input id="mail_from_name" type="text" name="mail_from_name" value="E-Helper系統" class="form-control">
+                                                <small class="param-help">系統寄出郵件時顯示的寄件者名稱</small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="param-card">
+                                        <div class="param-card-header">
+                                            <span class="param-importance normal">🟢</span>
+                                            <h4>啟用連結設定</h4>
+                                        </div>
+                                        <div class="param-card-body">
+                                            <div class="mb-sm">
+                                                <label for="activation_base_url" class="form-label">啟用頁面基礎網址</label>
+                                                <input id="activation_base_url" type="text" name="activation_base_url" value="http://localhost:8080" class="form-control">
+                                                <small class="param-help">用戶收到啟用郵件中連結的基礎網址</small>
+                                            </div>
+                                            <div>
+                                                <label for="activation_token_expire_hours" class="form-label">啟用連結有效期限（小時）</label>
+                                                <input id="activation_token_expire_hours" type="number" name="activation_token_expire_hours" value="168" class="form-control">
+                                                <small class="param-help">啟用連結的有效時間（預設 168 小時 = 7 天）</small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="param-card param-card-wide">
+                                        <div class="param-card-header">
+                                            <span class="param-importance normal">🟢</span>
+                                            <h4>郵件測試功能</h4>
+                                        </div>
+                                        <div class="param-card-body">
+                                            <div class="mb-sm">
+                                                <label for="test_email_recipient" class="form-label">測試郵件收件者</label>
+                                                <input id="test_email_recipient" type="email" placeholder="輸入測試郵件地址" class="form-control">
+                                                <small class="param-help">輸入郵件地址來測試 SMTP 設定是否正確</small>
+                                            </div>
+                                            <div class="text-center">
+                                                <button type="button" id="sendTestEmailBtn" class="btn btn-info">
+                                                    <i class="fas fa-paper-plane"></i> 發送測試郵件
+                                                </button>
+                                                <small class="param-help d-block mt-2">點擊此按鈕會使用當前設定發送一封測試郵件</small>
                                             </div>
                                         </div>
                                     </div>

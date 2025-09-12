@@ -11,6 +11,8 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from app.dao.organization import UserOrganizationDAO
 from app.dao.user import UserDAO
+from app.dao.audit import audit_log_dao
+from app.models.organization import AuditLog
 
 
 logger = logging.getLogger(__name__)
@@ -73,8 +75,8 @@ class AccountScheduler:
     async def check_account_expiration(self):
         """檢查帳號過期狀態並執行相應操作"""
         try:
-            current_time = datetime.now(timezone.utc)
-            logger.debug(f"開始檢查帳號過期狀態 - 當前時間: {current_time}")
+            current_time = datetime.now()
+            logger.info(f"開始檢查帳號過期狀態 - 當前時間: {current_time}")
             
             # 檢查需要停用的帳號
             await self._process_deactivation_schedules(current_time)
@@ -94,7 +96,7 @@ class AccountScheduler:
                 FROM user_extensions ue
                 JOIN users u ON ue.user_id = u.id
                 WHERE ue.activation_expires IS NOT NULL
-                  AND ue.activation_expires >= %s
+                  AND ue.activation_expires <= %s
                   AND u.is_active = 1
             """
             
@@ -118,7 +120,7 @@ class AccountScheduler:
                 FROM user_extensions ue
                 JOIN users u ON ue.user_id = u.id
                 WHERE ue.activation_scheduled IS NOT NULL
-                  AND ue.activation_scheduled >= %s
+                  AND ue.activation_scheduled <= %s
                   AND u.is_active = 0
             """
             
@@ -155,7 +157,7 @@ class AccountScheduler:
                 logger.info(f"已自動停用使用者: {loginid} ({username}) - 過期時間: {user_data['activation_expires']}")
                 
                 # 記錄審計日誌
-                await self._log_audit_event(
+                audit_log_dao.create_audit_log(AuditLog(
                     user_id=None,  # 系統自動操作
                     action="AUTO_DEACTIVATE",
                     target_type="user",
@@ -166,7 +168,7 @@ class AccountScheduler:
                         "expires_at": user_data['activation_expires'].isoformat() if user_data['activation_expires'] else None,
                         "processed_at": current_time.isoformat()
                     }
-                )
+                ))
             else:
                 logger.error(f"停用使用者失敗: {loginid} ({username})")
                 
@@ -194,8 +196,11 @@ class AccountScheduler:
                 
                 logger.info(f"已自動啟用使用者: {loginid} ({username}) - 預約時間: {user_data['activation_scheduled']}")
                 
+                # 檢查是否需要發送啟用郵件
+                await self._handle_activation_email(user_id, loginid, username)
+                
                 # 記錄審計日誌
-                await self._log_audit_event(
+                audit_log_dao.create_audit_log(AuditLog(
                     user_id=None,  # 系統自動操作
                     action="AUTO_ACTIVATE",
                     target_type="user",
@@ -206,32 +211,48 @@ class AccountScheduler:
                         "scheduled_at": user_data['activation_scheduled'].isoformat() if user_data['activation_scheduled'] else None,
                         "processed_at": current_time.isoformat()
                     }
-                )
+                ))
             else:
                 logger.error(f"啟用使用者失敗: {loginid} ({username})")
                 
         except Exception as e:
             logger.error(f"執行使用者啟用時發生錯誤 {user_data.get('loginid', 'unknown')}: {e}")
     
-    async def _log_audit_event(self, user_id: Optional[int], action: str, target_type: str, 
-                             target_id: str, changes: Dict[str, Any]):
-        """記錄審計日誌"""
+    async def _handle_activation_email(self, user_id: int, loginid: str, username: str):
+        """處理啟用郵件發送"""
         try:
-            import json
-            
-            audit_query = """
-                INSERT INTO audit_logs (user_id, action, target_type, target_id, changes, created_at)
-                VALUES (%s, %s, %s, %s, %s, %s)
+            # 獲取使用者郵件地址
+            user_query = """
+                SELECT email
+                FROM users
+                WHERE id = %s
             """
+            user_result = self.user_org_dao.execute_query(user_query, (user_id,))
             
-            self.user_org_dao.execute_update(
-                audit_query,
-                (user_id, action, target_type, target_id, json.dumps(changes, ensure_ascii=False), 
-                 datetime.now(timezone.utc))
+            if not user_result or not user_result[0].get('email'):
+                logger.error(f"使用者 {loginid} 沒有郵件地址，無法發送啟用郵件")
+                return
+            
+            user_email = user_result[0]['email']
+            
+            # 使用統一的啟用郵件處理函數
+            from app.core.email import process_activation_email
+            
+            result = process_activation_email(
+                user_id=user_id,
+                user_email=user_email,
+                user_name=username,
+                clear_old_tokens=True,  # 排程啟用不需要清除舊 token
+                check_password_strategy=False  # 需要檢查密碼策略
             )
             
+            if result.get('email_sent'):
+                logger.info(f"預約啟用郵件成功發送給: {user_email} (user: {loginid})")
+            else:
+                logger.info(f"預約啟用處理結果: {result.get('message', '未知')} (user: {loginid})")
+                
         except Exception as e:
-            logger.warning(f"記錄審計日誌失敗: {e}")
+            logger.error(f"處理啟用郵件時發生錯誤 (user_id={user_id}): {e}")
     
     def get_scheduled_users(self) -> Dict[str, List[Dict[str, Any]]]:
         """取得所有有排程的使用者"""

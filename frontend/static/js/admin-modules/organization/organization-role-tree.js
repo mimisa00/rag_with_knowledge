@@ -184,6 +184,9 @@ const OrganizationRoleTreeModule = (function() {
                     <button class="btn-icon" onclick="event.stopPropagation(); OrganizationRolesModule.viewRoleDetails(${role.id})" title="檢視詳情">
                         <i class="fas fa-eye"></i>
                     </button>
+                    <button class="btn-icon" onclick="event.stopPropagation(); OrganizationRolesModule.editRolePermissions(${role.id})" title="編輯權限">
+                        <i class="fas fa-shield-alt"></i>
+                    </button>
                     <button class="btn-icon" onclick="event.stopPropagation(); OrganizationRolesModule.editDepartmentRole(${role.id})" title="編輯">
                         <i class="fas fa-edit"></i>
                     </button>
@@ -193,7 +196,7 @@ const OrganizationRoleTreeModule = (function() {
                         <i class="fas fa-trash"></i>
                     </button>
                 </span>
-                <span class="node-count" data-role-id="${role.id}" onclick="event.stopPropagation(); OrganizationRolesModule.showRoleUsersHoverCard(${role.id})" title="點擊查看使用此角色的用戶">(${role.user_count || 0}人)</span>
+                <span class="node-count" data-role-id="${role.id}" onclick="event.stopPropagation(); OrganizationRolesModule.showRoleUsers(${role.id}, '${role.name}')" title="點擊查看使用此角色的用戶">(${role.user_count || 0}人)</span>
                 ${!role.is_active ? '<span class="badge badge-secondary">停用</span>' : ''}
             </div>
             `;

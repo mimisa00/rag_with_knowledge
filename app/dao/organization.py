@@ -306,16 +306,14 @@ class PermissionGroupDAO(BaseDAO):
         try:
             query = """
                 INSERT INTO permission_groups (
-                    code, name, description, permission_type, permissions,
+                    code, name, description, permission_type,
                     is_active, created_by
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+                ) VALUES (%s, %s, %s, %s, %s, %s)
             """
-            
-            permissions_json = json.dumps(permission_group.permissions) if permission_group.permissions else None
             
             group_id = self.execute_insert(query, (
                 permission_group.code, permission_group.name, permission_group.description, permission_group.permission_type,
-                permissions_json, permission_group.is_active, permission_group.created_by
+                permission_group.is_active, permission_group.created_by
             ))
             
             if group_id > 0:
@@ -336,8 +334,17 @@ class PermissionGroupDAO(BaseDAO):
             results = self.execute_query(query, (group_id,))
             if results:
                 group = results[0]
-                if group.get('permissions'):
-                    group['permissions'] = json.loads(group['permissions'])
+                # 不再處理 permissions JSON 欄位
+                # 改為從關聯表取得權限
+                perm_query = """
+                    SELECT pm.permission_key
+                    FROM permission_groups_matrix pgm
+                    JOIN permission_matrix pm ON pgm.permission_matrix_id = pm.id
+                    WHERE pgm.permission_group_id = %s
+                    AND pm.is_active = 1
+                """
+                perms = self.execute_query(perm_query, [group_id])
+                group['permission_list'] = [p['permission_key'] for p in perms] if perms else []
                 return group
             return None
         except Exception as e:
@@ -351,8 +358,17 @@ class PermissionGroupDAO(BaseDAO):
             results = self.execute_query(query, (code,))
             if results:
                 group = results[0]
-                if group.get('permissions'):
-                    group['permissions'] = json.loads(group['permissions'])
+                # 不再處理 permissions JSON 欄位
+                # 改為從關聯表取得權限
+                perm_query = """
+                    SELECT pm.permission_key
+                    FROM permission_groups_matrix pgm
+                    JOIN permission_matrix pm ON pgm.permission_matrix_id = pm.id
+                    WHERE pgm.permission_group_id = %s
+                    AND pm.is_active = 1
+                """
+                perms = self.execute_query(perm_query, [group['id']])
+                group['permission_list'] = [p['permission_key'] for p in perms] if perms else []
                 return group
             return None
         except Exception as e:
@@ -383,10 +399,17 @@ class PermissionGroupDAO(BaseDAO):
             
             groups = self.execute_query(query, tuple(params) if params else None)
             
-            # 解析 JSON permissions
+            # 為每個群組取得權限列表
             for group in groups:
-                if group.get('permissions'):
-                    group['permissions'] = json.loads(group['permissions'])
+                perm_query = """
+                    SELECT pm.permission_key
+                    FROM permission_groups_matrix pgm
+                    JOIN permission_matrix pm ON pgm.permission_matrix_id = pm.id
+                    WHERE pgm.permission_group_id = %s
+                    AND pm.is_active = 1
+                """
+                perms = self.execute_query(perm_query, [group['id']])
+                group['permission_list'] = [p['permission_key'] for p in perms] if perms else []
             
             return groups
             
@@ -397,9 +420,8 @@ class PermissionGroupDAO(BaseDAO):
     def update_permission_group(self, group_id: int, updates: Dict[str, Any]) -> bool:
         """更新權限群組"""
         try:
-            # 處理 permissions
-            if 'permissions' in updates and updates['permissions'] is not None:
-                updates['permissions'] = json.dumps(updates['permissions'])
+            # 移除 permissions 欄位（不再使用）
+            updates.pop('permissions', None)
             
             set_clauses = []
             values = []
@@ -435,7 +457,7 @@ class PermissionGroupDAO(BaseDAO):
                 return False
             
             # 檢查是否有使用者使用
-            query = "SELECT COUNT(*) as count FROM user_permission_groups WHERE permission_group_id = %s"
+            query = "SELECT COUNT(*) as count FROM permission_groups_user WHERE permission_group_id = %s"
             results = self.execute_query(query, (group_id,))
             if results and results[0]['count'] > 0:
                 logger.warning(f"無法刪除權限群組 {group_id}：有使用者使用")
@@ -529,15 +551,19 @@ class UserOrganizationDAO(BaseDAO):
     def update_user_extension(self, user_id: int, updates: Dict[str, Any]) -> bool:
         """更新使用者擴充資訊"""
         try:
+            logger.info(f"DEBUG: update_user_extension 開始 - user_id={user_id}, updates={updates}, updates_types={[(k, type(v).__name__) for k, v in updates.items()]}")
+            
             # 處理 metadata
             if 'metadata' in updates and updates['metadata'] is not None:
                 updates['metadata'] = json.dumps(updates['metadata'])
+                logger.info(f"DEBUG: metadata 處理完成 - user_id={user_id}")
             
             set_clauses = []
             values = []
             for key, value in updates.items():
                 set_clauses.append(f"{key} = %s")
                 values.append(value)
+                logger.info(f"DEBUG: 處理欄位 - user_id={user_id}, key={key}, value={value}, value_type={type(value).__name__}")
             
             values.append(user_id)
             
@@ -547,7 +573,10 @@ class UserOrganizationDAO(BaseDAO):
                 WHERE user_id = %s
             """
             
+            logger.info(f"DEBUG: 準備執行 SQL - user_id={user_id}, query={query}, values={values}")
             success = self.execute_update(query, tuple(values))
+            logger.info(f"DEBUG: SQL 執行結果 - user_id={user_id}, success={success}")
+            
             if success:
                 logger.info(f"使用者擴充資訊 {user_id} 更新成功")
             return success
@@ -560,7 +589,7 @@ class UserOrganizationDAO(BaseDAO):
         """分配使用者權限群組"""
         try:
             query = """
-                INSERT INTO user_permission_groups (
+                INSERT INTO permission_groups_user (
                     user_id, permission_group_id, department_id, assigned_by, expires_at
                 ) VALUES (%s, %s, %s, %s, %s)
                 ON DUPLICATE KEY UPDATE
@@ -588,13 +617,13 @@ class UserOrganizationDAO(BaseDAO):
         try:
             if department_id is not None:
                 query = """
-                    DELETE FROM user_permission_groups 
+                    DELETE FROM permission_groups_user 
                     WHERE user_id = %s AND permission_group_id = %s AND department_id = %s
                 """
                 params = (user_id, permission_group_id, department_id)
             else:
                 query = """
-                    DELETE FROM user_permission_groups 
+                    DELETE FROM permission_groups_user 
                     WHERE user_id = %s AND permission_group_id = %s AND department_id IS NULL
                 """
                 params = (user_id, permission_group_id)
@@ -608,13 +637,13 @@ class UserOrganizationDAO(BaseDAO):
             logger.error(f"撤銷使用者權限群組失敗: {e}")
             return False
     
-    def get_user_permission_groups(self, user_id: int) -> List[Dict[str, Any]]:
+    def get_permission_groups_user(self, user_id: int) -> List[Dict[str, Any]]:
         """取得使用者權限群組"""
         try:
             query = """
-                SELECT upg.*, pg.code, pg.name, pg.permissions, pg.permission_type,
+                SELECT upg.*, pg.code, pg.name, pg.permission_type,
                        d.name as department_name
-                FROM user_permission_groups upg
+                FROM permission_groups_user upg
                 JOIN permission_groups pg ON upg.permission_group_id = pg.id
                 LEFT JOIN departments d ON upg.department_id = d.id
                 WHERE upg.user_id = %s
@@ -624,10 +653,7 @@ class UserOrganizationDAO(BaseDAO):
             
             groups = self.execute_query(query, (user_id,))
             
-            # 解析 JSON permissions
-            for group in groups:
-                if group.get('permissions'):
-                    group['permissions'] = json.loads(group['permissions'])
+            # 不再處理 permissions JSON 欄位
             
             return groups
             
@@ -652,15 +678,17 @@ class UserOrganizationDAO(BaseDAO):
             return []
     
     def list_users_with_permission_group(self, permission_group_id: int) -> List[Dict[str, Any]]:
-        """列出擁有特定權限群組的使用者"""
+        """列出擁有特定權限群組的使用者（包含完整資訊）"""
         try:
             query = """
-                SELECT u.id, u.username, u.email, u.is_active,
-                       upg.department_id, upg.assigned_at, upg.expires_at,
-                       d.name as department_name
+                SELECT u.id, u.loginid, u.username, u.email, u.is_active,
+                       ue.employee_no, ue.title, ue.auth_source, ue.department_id,
+                       upg.assigned_at, upg.expires_at,
+                       d.name as department_name, d.code as department_code
                 FROM users u
-                JOIN user_permission_groups upg ON u.id = upg.user_id
-                LEFT JOIN departments d ON upg.department_id = d.id
+                JOIN permission_groups_user upg ON u.id = upg.user_id
+                LEFT JOIN user_extensions ue ON u.id = ue.user_id
+                LEFT JOIN departments d ON ue.department_id = d.id
                 WHERE upg.permission_group_id = %s
                 AND (upg.expires_at IS NULL OR upg.expires_at > NOW())
                 ORDER BY u.username
@@ -830,83 +858,8 @@ class SystemModeDAO(BaseDAO):
             return False
 
 
-class AuditLogDAO(BaseDAO):
-    """審計日誌資料存取物件"""
-    
-    def __init__(self, db_manager_instance=None):
-        super().__init__(db_manager_instance or db_manager)
-    
-    def create_audit_log(self, audit_log: AuditLog) -> bool:
-        """建立審計日誌"""
-        try:
-            query = """
-                INSERT INTO audit_logs (
-                    user_id, action, target_type, target_id,
-                    changes, ip_address, user_agent
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s)
-            """
-            
-            changes_json = json.dumps(audit_log.changes, default=str) if audit_log.changes else None
-            
-            result = self.execute_insert(query, (
-                audit_log.user_id, audit_log.action, audit_log.target_type,
-                audit_log.target_id, changes_json,
-                audit_log.ip_address, audit_log.user_agent
-            ))
-            
-            return result >= 0
-            
-        except Exception as e:
-            logger.error(f"建立審計日誌失敗: {e}")
-            return False
-    
-    def list_audit_logs(self, user_id: Optional[int] = None,
-                       action: Optional[str] = None,
-                       target_type: Optional[str] = None,
-                       limit: int = 100) -> List[Dict[str, Any]]:
-        """列出審計日誌"""
-        try:
-            conditions = []
-            params = []
-            
-            if user_id:
-                conditions.append("user_id = %s")
-                params.append(user_id)
-            
-            if action:
-                conditions.append("action = %s")
-                params.append(action)
-            
-            if target_type:
-                conditions.append("target_type = %s")
-                params.append(target_type)
-            
-            where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
-            params.append(limit)
-            
-            query = f"""
-                SELECT * FROM audit_logs {where_clause}
-                ORDER BY created_at DESC
-                LIMIT %s
-            """
-            
-            logs = self.execute_query(query, tuple(params))
-            
-            # 解析 JSON changes
-            for log in logs:
-                if log.get('changes'):
-                    log['changes'] = json.loads(log['changes'])
-            
-            return logs
-            
-        except Exception as e:
-            logger.error(f"列出審計日誌失敗: {e}")
-            return []
-
-
 # 建立 DAO 實例
 department_dao = DepartmentDAO()
 permission_group_dao = PermissionGroupDAO()
 user_org_dao = UserOrganizationDAO()
 system_mode_dao = SystemModeDAO()
-audit_log_dao = AuditLogDAO()

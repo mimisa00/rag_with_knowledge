@@ -408,16 +408,13 @@ class DepartmentRoleDAO(BaseDAO):
             query = """
                 INSERT INTO department_roles (
                     department_id, template_id, parent_id, code, name, role_type,
-                    level, permissions, is_active, created_by
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    level, is_active, created_by
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
             """
-            
-            permissions_json = json.dumps(role.permissions) if role.permissions else template.get('default_permissions')
             
             params = (
                 department_id, role.template_id, parent_id, role_code, role_name,
-                template['role_type'], calculated_level, permissions_json,
-                True, created_by
+                template['role_type'], calculated_level, True, created_by
             )
             
             return self.execute_insert(query, params)
@@ -463,9 +460,6 @@ class DepartmentRoleDAO(BaseDAO):
             """
             
             results = self.execute_query(query, (department_id,))
-            for role in results:
-                if role.get('permissions'):
-                    role['permissions'] = json.loads(role['permissions'])
             return results
             
         except Exception as e:
@@ -506,9 +500,6 @@ class DepartmentRoleDAO(BaseDAO):
             # 按部門 ID 分組結果
             roles_by_dept = {}
             for role in results:
-                if role.get('permissions'):
-                    role['permissions'] = json.loads(role['permissions'])
-                    
                 dept_id = role['department_id']
                 if dept_id not in roles_by_dept:
                     roles_by_dept[dept_id] = []
@@ -545,8 +536,6 @@ class DepartmentRoleDAO(BaseDAO):
             results = self.execute_query(query, (role_id,))
             if results:
                 role = results[0]
-                if role.get('permissions'):
-                    role['permissions'] = json.loads(role['permissions'])
                 return role
             return None
             
@@ -649,9 +638,6 @@ class DepartmentRoleDAO(BaseDAO):
                 updates.append("level = %s")
                 params.append(level)
             
-            if 'permissions' in update_dict:
-                updates.append("permissions = %s")
-                params.append(json.dumps(update_data.permissions))
             
             if 'is_active' in update_dict:
                 updates.append("is_active = %s")
@@ -671,7 +657,17 @@ class DepartmentRoleDAO(BaseDAO):
                 WHERE id = %s
             """
             
-            success = self.execute_update(query, params) > 0
+            # Execute update
+            affected_rows = self.execute_update(query, params)
+            
+            # Check if role exists (update might return 0 if no changes)
+            check_query = "SELECT id FROM department_roles WHERE id = %s"
+            role_exists = self.execute_query(check_query, (role_id,))
+            
+            # Success if rows were updated OR role exists (no changes needed)
+            success = affected_rows > 0 or bool(role_exists)
+            
+            logger.info(f"Role update result: affected_rows={affected_rows}, role_exists={bool(role_exists)}, success={success}")
             
             # 獲取更新後的角色資料進行驗證
             result = {
@@ -772,9 +768,6 @@ class DepartmentRoleDAO(BaseDAO):
             """
             
             results = self.execute_query(query, params)
-            for role in results:
-                if role.get('permissions'):
-                    role['permissions'] = json.loads(role['permissions'])
             return results
             
         except Exception as e:
@@ -1491,14 +1484,19 @@ class UserDepartmentRoleDAO(BaseDAO):
             raise
     
     def get_role_users(self, role_id: int) -> List[Dict[str, Any]]:
-        """取得角色的所有用戶"""
+        """取得角色的所有用戶（包含完整的角色和權限資訊）"""
         try:
-            query = """
+            # 首先獲取基本用戶資訊
+            base_query = """
                 SELECT 
-                    udr.*,
+                    udr.user_id,
+                    udr.is_primary,
+                    udr.assigned_at,
                     u.username,
                     u.email,
                     u.loginid,
+                    ue.title,
+                    ue.employee_no,
                     dr.name as role_name,
                     dr.role_type,
                     d.name as department_name,
@@ -1507,16 +1505,149 @@ class UserDepartmentRoleDAO(BaseDAO):
                 INNER JOIN users u ON udr.user_id = u.id
                 INNER JOIN department_roles dr ON udr.department_role_id = dr.id
                 INNER JOIN departments d ON dr.department_id = d.id
+                LEFT JOIN user_extensions ue ON u.id = ue.user_id
                 LEFT JOIN users au ON udr.assigned_by = au.id
                 WHERE udr.department_role_id = %s
                 ORDER BY udr.is_primary DESC, u.username
             """
             
-            return self.execute_query(query, (role_id,))
+            base_users = self.execute_query(base_query, (role_id,))
+            
+            # 為每個用戶補充完整的角色和權限資訊
+            result = []
+            for user in base_users:
+                user_id = user['user_id']
+                
+                # 獲取該用戶的所有角色
+                roles_query = """
+                    SELECT 
+                        dr.name as role_name,
+                        dr.role_type,
+                        dr.level as role_level,
+                        udr.is_primary,
+                        d.name as department_name
+                    FROM user_department_roles udr
+                    INNER JOIN department_roles dr ON udr.department_role_id = dr.id
+                    INNER JOIN departments d ON dr.department_id = d.id
+                    WHERE udr.user_id = %s
+                    AND (udr.expiry_date IS NULL OR udr.expiry_date >= CURDATE())
+                    ORDER BY udr.is_primary DESC, dr.level
+                """
+                department_roles = self.execute_query(roles_query, (user_id,))
+                
+                # 獲取該用戶的直接權限群組
+                direct_permissions_query = """
+                    SELECT 
+                        pg.id as permission_group_id,
+                        pg.name,
+                        pg.permission_type,
+                        pg.level,
+                        upg.assigned_at
+                    FROM permission_groups_user upg
+                    INNER JOIN permission_groups pg ON upg.permission_group_id = pg.id
+                    WHERE upg.user_id = %s
+                    AND upg.is_active = TRUE
+                    AND pg.is_active = TRUE
+                    ORDER BY pg.level DESC, pg.name
+                """
+                direct_permissions = self.execute_query(direct_permissions_query, (user_id,))
+                
+                # 獲取該用戶通過角色繼承的權限群組
+                role_permissions_query = """
+                    SELECT 
+                        pg.id as permission_group_id,
+                        pg.name,
+                        pg.permission_type,
+                        pg.level,
+                        drp.assigned_at
+                    FROM user_department_roles udr
+                    INNER JOIN department_role_permissions drp ON udr.department_role_id = drp.department_role_id
+                    INNER JOIN permission_groups pg ON drp.permission_group_id = pg.id
+                    WHERE udr.user_id = %s
+                    AND (udr.expiry_date IS NULL OR udr.expiry_date >= CURDATE())
+                    AND drp.is_active = TRUE
+                    AND pg.is_active = TRUE
+                    ORDER BY pg.level DESC, pg.name
+                """
+                role_permissions = self.execute_query(role_permissions_query, (user_id,))
+                
+                # 合併權限並去重（使用和部門員工 API 相同的邏輯）
+                merged_permissions = self._merge_permissions(direct_permissions, role_permissions)
+                
+                # 組合完整的用戶資料
+                enhanced_user = {
+                    'user_id': user['user_id'],
+                    'username': user['username'],
+                    'email': user['email'],
+                    'loginid': user['loginid'],
+                    'department_name': user['department_name'],
+                    'assigned_at': user['assigned_at'],
+                    'assigned_by_name': user['assigned_by_name'],
+                    'user_extension': {
+                        'title': user.get('title'),
+                        'employee_no': user.get('employee_no')
+                    },
+                    'department_roles': department_roles,
+                    'permission_groups': direct_permissions,
+                    'role_permission_groups': role_permissions,
+                    'all_permissions': merged_permissions
+                }
+                
+                result.append(enhanced_user)
+            
+            return result
             
         except Exception as e:
-            logger.error(f"Error getting role users: {e}")
+            logger.error(f"Error getting role users with full permissions: {e}")
             raise
+    
+    def _merge_permissions(self, direct_permissions: List[Dict], role_permissions: List[Dict]) -> Dict[str, Any]:
+        """合併直接權限和角色權限，並去重"""
+        try:
+            # 使用權限群組ID作為唯一標識進行去重
+            permission_map = {}
+            
+            # 添加直接權限
+            for perm in direct_permissions:
+                perm_id = perm.get('permission_group_id') or perm.get('id')
+                if perm_id:
+                    permission_map[perm_id] = {
+                        **perm,
+                        'source': 'direct'
+                    }
+            
+            # 添加角色權限（如果沒有直接權限則添加，如果有則標記為both）
+            for perm in role_permissions:
+                perm_id = perm.get('permission_group_id') or perm.get('id')
+                if perm_id:
+                    if perm_id in permission_map:
+                        permission_map[perm_id]['source'] = 'both'
+                    else:
+                        permission_map[perm_id] = {
+                            **perm,
+                            'source': 'role'
+                        }
+            
+            # 分類權限
+            direct = [p for p in permission_map.values() if p['source'] in ['direct', 'both']]
+            inherited = [p for p in permission_map.values() if p['source'] in ['role', 'both']]
+            combined = list(permission_map.values())
+            
+            return {
+                'direct': direct,
+                'inherited': inherited,
+                'combined': combined,
+                'total_count': len(combined)
+            }
+            
+        except Exception as e:
+            logger.error(f"Error merging permissions: {e}")
+            return {
+                'direct': direct_permissions,
+                'inherited': role_permissions,
+                'combined': direct_permissions + role_permissions,
+                'total_count': len(direct_permissions) + len(role_permissions)
+            }
     
     def get_user_roles(self, user_id: int) -> List[Dict[str, Any]]:
         """取得用戶的所有角色"""

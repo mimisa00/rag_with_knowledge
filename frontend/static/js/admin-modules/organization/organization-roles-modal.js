@@ -444,8 +444,26 @@ const __OrganizationRolesModalModule = (function() {
                 // 部門沒有變更，檢查父角色是否變更
                 const parentRoleId = document.getElementById('editParentRoleSelect').value || null;
                 const originalParentRoleId = document.getElementById('editRoleId').getAttribute('data-original-parent-id');
-                const originalParentId = originalParentRoleId === 'null' ? null : originalParentRoleId;    
-                const hasParentChanged = String(parentRoleId) !== String(originalParentId);
+                
+                // 處理空值和字串轉換
+                let originalParentId = null;
+                if (originalParentRoleId && originalParentRoleId !== 'null' && originalParentRoleId !== '') {
+                    originalParentId = originalParentRoleId;
+                }
+                
+                // 標準化比較值
+                const currentParentId = (parentRoleId && parentRoleId !== '') ? String(parentRoleId) : null;
+                const originalId = originalParentId ? String(originalParentId) : null;
+                const hasParentChanged = currentParentId !== originalId;
+                
+                // Debug logging
+                console.log('Parent role comparison:', {
+                    currentParentId,
+                    originalId,
+                    hasParentChanged,
+                    parentRoleIdRaw: parentRoleId,
+                    originalParentRoleIdRaw: originalParentRoleId
+                });
                 
                 if (hasParentChanged) {
                     // 父角色有變更，需要預覽影響並請用戶確認
@@ -464,7 +482,7 @@ const __OrganizationRolesModalModule = (function() {
                             roleName,
                             roleLevel,
                             isActive,
-                            parentRoleId
+                            parentRoleId: currentParentId ? parseInt(currentParentId) : null
                         });
                         return; // 等待用戶確認
                         
@@ -477,13 +495,18 @@ const __OrganizationRolesModalModule = (function() {
                     }
                 }
                 
-                // 直接執行更新
-                await updateDepartmentRole(roleId, {
+                // 準備更新資料
+                const updateData = {
                     name: roleName,
                     level: roleLevel,
                     is_active: isActive,
-                    parent_id: parentRoleId
-                });
+                    parent_id: currentParentId ? parseInt(currentParentId) : null
+                };
+                
+                console.log('Sending update data:', updateData);
+                
+                // 直接執行更新
+                await updateDepartmentRole(roleId, updateData);
                 
                 if (window.Dialog) {
                     Dialog.success('角色更新成功');
@@ -504,10 +527,19 @@ const __OrganizationRolesModalModule = (function() {
             
         } catch (error) {
             console.error('更新角色失敗:', error);
+            console.error('Error details:', {
+                message: error.message,
+                stack: error.stack,
+                roleId: roleId,
+                roleName: roleName,
+                roleLevel: roleLevel,
+                isActive: isActive
+            });
+            
             if (window.Dialog) {
-                Dialog.error(error.message || '更新角色失敗');
+                Dialog.error(`更新角色失敗: ${error.message || '未知錯誤'}`);
             } else {
-                alert('更新角色失敗');
+                alert(`更新角色失敗: ${error.message || '未知錯誤'}`);
             }
         }
     }
@@ -948,6 +980,165 @@ const __OrganizationRolesModalModule = (function() {
         });
     }
     
+    // ==== 角色權限管理功能 ====
+    
+    // 現在編輯的角色資料
+    let currentEditingRole = null;
+    let currentRolePermissions = [];
+    
+    /**
+     * 切換編輯模態框的 Tab
+     */
+    function switchEditTab(tabName) {
+        const tabs = document.querySelectorAll('.role-edit-tabs .tab-nav-item');
+        const panes = document.querySelectorAll('.tab-content .tab-pane');
+        
+        // 更新標籤狀態
+        tabs.forEach(tab => {
+            if (tab.dataset.tab === tabName) {
+                tab.classList.add('active');
+            } else {
+                tab.classList.remove('active');
+            }
+        });
+        
+        // 更新內容版面
+        panes.forEach(pane => {
+            if (pane.dataset.tab === tabName) {
+                pane.classList.add('active');
+            } else {
+                pane.classList.remove('active');
+            }
+        });
+        
+        // 如果切換到權限 Tab，載入權限資料
+        if (tabName === 'permissions' && currentEditingRole) {
+            loadRolePermissions(currentEditingRole.id);
+        }
+    }
+    
+    /**
+     * 顯示角色權限選擇模態框
+     */
+    async function showRolePermissionsModal() {
+        if (!currentEditingRole) {
+            console.error('未找到目前編輯的角色資料');
+            return;
+        }
+        
+        // 先載入角色現有權限
+        let existingPermissionIds = [];
+        try {
+            if (window.OrganizationEmployeePermissionsModule) {
+                const existingPermissions = await window.OrganizationEmployeePermissionsModule.loadExistingPermissions(
+                    'role', 
+                    currentEditingRole.id
+                );
+                existingPermissionIds = existingPermissions.map(p => p.id);
+                currentRolePermissions = existingPermissions; // 更新當前權限資料
+                console.log('載入角色現有權限:', existingPermissions.length, '個');
+            }
+        } catch (error) {
+            console.error('載入角色權限失敗:', error);
+            currentRolePermissions = [];
+        }
+        
+        // 顯示權限設定模態框，傳入現有權限
+        if (window.OrganizationEmployeePermissionsModule) {
+            await window.OrganizationEmployeePermissionsModule.showPermissionsModal(
+                'role', 
+                currentEditingRole.id, 
+                existingPermissionIds  // 傳入現有權限ID陣列
+            );
+        }
+    }
+    
+    /**
+     * 載入角色權限
+     */
+    async function loadRolePermissions(roleId) {
+        if (!roleId) return;
+        
+        try {
+            if (window.OrganizationEmployeePermissionsModule) {
+                const permissions = await window.OrganizationEmployeePermissionsModule.loadExistingPermissions('role', roleId);
+                currentRolePermissions = permissions || [];
+                updateRolePermissionsDisplay();
+            }
+        } catch (error) {
+            console.error('載入角色權限失敗:', error);
+            currentRolePermissions = [];
+        }
+    }
+    
+    /**
+     * 更新角色權限顯示
+     */
+    function updateRolePermissionsDisplay() {
+        const countEl = document.getElementById('rolePermissionsCount');
+        const previewEl = document.getElementById('rolePermissionsPreview');
+        
+        if (countEl) {
+            countEl.textContent = currentRolePermissions.length;
+        }
+        
+        if (previewEl) {
+            if (currentRolePermissions.length === 0) {
+                previewEl.innerHTML = `
+                    <div class="empty-state text-muted">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>尚未選擇任何權限群組</span>
+                    </div>
+                `;
+            } else {
+                let html = '';
+                currentRolePermissions.forEach(permission => {
+                    html += `
+                        <span class="permission-badge">
+                            <i class="fas fa-shield-alt"></i>
+                            ${permission.name}
+                            <span class="permission-code">(${permission.code})</span>
+                        </span>
+                    `;
+                });
+                previewEl.innerHTML = html;
+            }
+        }
+    }
+    
+    /**
+     * 清除角色權限
+     */
+    function clearRolePermissions() {
+        if (window.Dialog) {
+            window.Dialog.confirm('確定要清除所有權限嗎？', () => {
+                currentRolePermissions = [];
+                updateRolePermissionsDisplay();
+            });
+        } else {
+            currentRolePermissions = [];
+            updateRolePermissionsDisplay();
+        }
+    }
+    
+    /**
+     * 刷新角色權限（由權限選擇元件呼叫）
+     */
+    function refreshRolePermissions(roleId) {
+        if (currentEditingRole && currentEditingRole.id === roleId) {
+            loadRolePermissions(roleId);
+        }
+    }
+    
+    /**
+     * 設定目前編輯的角色資料
+     */
+    function setCurrentEditingRole(role) {
+        currentEditingRole = role;
+        currentRolePermissions = [];
+        console.log('設定當前編輯角色:', role);
+    }
+    
     // 公開 API
     return {
         // 基本 Modal 關閉功能
@@ -985,7 +1176,14 @@ const __OrganizationRolesModalModule = (function() {
         executeRecalculate,
         
         // 移除用戶角色
-        removeUserFromRoleConfirm
+        removeUserFromRoleConfirm,
+        
+        // 權限管理
+        switchEditTab,
+        showRolePermissionsModal,
+        clearRolePermissions,
+        refreshRolePermissions,
+        setCurrentEditingRole
     };
 })();
 

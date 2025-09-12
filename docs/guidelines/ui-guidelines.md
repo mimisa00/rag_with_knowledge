@@ -40,6 +40,7 @@
   - 間距：`.me-2`、`.me-3`（右邊距）
 - **模態框**：`.modal` + `.modal-content`，使用 `.show` 顯示
 - **表單**：`.form-control`（輸入框）、`.form-label`（標籤）
+- **icon**: '統一使用  font awesome'
 
 ### CSS/JS 編碼規則
 

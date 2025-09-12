@@ -45,7 +45,6 @@ CREATE TABLE IF NOT EXISTS department_roles (
     name VARCHAR(100) NOT NULL COMMENT '角色名稱（格式：部門名稱-角色名稱）',
     role_type VARCHAR(20) NOT NULL COMMENT '角色類型：manager/staff',
     level INT DEFAULT 0 COMMENT '角色層級',
-    permissions JSON DEFAULT NULL COMMENT '自訂權限（覆寫模板）',
     is_active BOOLEAN DEFAULT TRUE COMMENT '是否啟用',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

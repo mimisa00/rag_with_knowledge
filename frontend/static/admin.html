@@ -122,7 +122,7 @@
                 <!-- 功能卡片區 -->
                 <div class="function-grid" id="functionGrid">
                     <!-- 知識庫管理 -->
-                    <div class="function-card" data-function="knowledge-base" data-roles="admin,org_admin">
+                    <div class="function-card" data-function="knowledge-base" data-roles="admin,org_admin" data-permission="KB.LIST_VIEW">
                         <div class="card-icon">
                             <i class="fas fa-database"></i>
                         </div>
@@ -139,7 +139,7 @@
                     </div>
 
                     <!-- 系統參數 -->
-                    <div class="function-card" data-function="system-params" data-roles="admin">
+                    <div class="function-card" data-function="system-params" data-roles="admin" data-permission="SYSTEM.PARAM_VIEW">
                         <div class="card-icon">
                             <i class="fas fa-sliders-h"></i>
                         </div>
@@ -156,7 +156,7 @@
                     </div>
 
                     <!-- 帳號管理 -->
-                    <div class="function-card" data-function="user-management" data-roles="admin">
+                    <div class="function-card" data-function="user-management" data-roles="admin" data-permission="ADMIN.ACCESS">
                         <div class="card-icon">
                             <i class="fas fa-users"></i>
                         </div>
@@ -173,7 +173,7 @@
                     </div>
 
                     <!-- 組織管理 -->
-                    <div class="function-card" data-function="organization" data-roles="admin">
+                    <div class="function-card" data-function="organization" data-roles="admin" data-permission="ORG.DEPT_VIEW">
                         <div class="card-icon">
                             <i class="fas fa-sitemap"></i>
                         </div>
@@ -190,7 +190,7 @@
                     </div>
 
                     <!-- 權限管理 -->
-                    <div class="function-card" data-function="permission-management" data-roles="admin">
+                    <div class="function-card" data-function="permission-management" data-roles="admin" data-permission="PERM.MATRIX_VIEW">
                         <div class="card-icon">
                             <i class="fas fa-users-cog"></i>
                         </div>
@@ -285,6 +285,7 @@
                     '/css/core/components.css',
                     '/css/core/layouts.css',
                     '/css/core/utilities.css',
+                    '/css/components/dialog.css',
                     '/css/themes/theme-variables.css',
                     '/css/pages/dashboard.css',
                     '/css/pages/admin.css'
@@ -296,7 +297,9 @@
 
                 // 載入公共模組
                 await ResourceLoader.loadModulesInOrder([
+                    '/js/components/dialog.js',
                     '/js/modules/common-ui.js',
+                    '/js/modules/permission-checker.js',
                     '/js/modules/user-menu-module.js'
                 ]);
 

@@ -17,24 +17,6 @@
     font-size: 1.2em;
 }
 
-/* 使用者資訊強化 hover 效果 */
-.admin-navbar .user-info {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-    background: var(--bg-light);
-    border-radius: 20px;
-    cursor: pointer;
-    transition: all var(--transition-normal);
-}
-
-.admin-navbar .user-info:hover {
-    background: var(--bg-hover);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
-}
-
 /* 歡迎區塊 */
 .welcome-section {
     text-align: center;
@@ -162,9 +144,7 @@
         display: none;
     }
     
-    .user-info span:not(.user-role) {
-        display: none;
-    }
+    
     
     .welcome-section h1 {
         font-size: 1.3em;

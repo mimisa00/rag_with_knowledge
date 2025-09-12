@@ -259,6 +259,128 @@ window.OrganizationEmployeeRolesModule = (function () {
     }
 
     /**
+     * 初始化密碼策略選擇器
+     */
+    function initPasswordStrategySelector() {
+        const select = document.getElementById('passwordStrategy');
+        if (!select) return;
+
+        // 如果已經初始化過，重新載入
+        if (select.searchableSelectInstance) {
+            select.searchableSelectInstance.reload();
+            // 覆蓋渲染方法以加入圖標
+            customizePasswordStrategyRender(select.searchableSelectInstance);
+            select.searchableSelectInstance.updateDisplay();
+        } else if (window.SearchableSelect) {
+            // 創建新的 SearchableSelect 實例
+            const instance = new SearchableSelect(select, {
+                placeholder: '請選擇密碼策略',
+                searchPlaceholder: '搜尋策略...',
+                noResultsText: '找不到符合的策略',
+                maxHeight: '150px'
+            });
+            select.searchableSelectInstance = instance;
+
+            // 覆蓋渲染方法以加入圖標
+            customizePasswordStrategyRender(instance);
+            
+            // 檢查原始 select 是否已有值，如果有則更新顯示
+            if (select.value) {
+                // 延遲一點以確保 DOM 已完全更新
+                setTimeout(() => {
+                    instance.updateDisplay();
+                }, 10);
+            } else {
+                instance.updateDisplay();
+            }
+        }
+    }
+
+    /**
+     * 自定義密碼策略渲染，加入 Font Awesome 圖標
+     */
+    function customizePasswordStrategyRender(instance) {
+        const originalRenderOptions = instance.renderOptions.bind(instance);
+        const originalUpdateDisplay = instance.updateDisplay.bind(instance);
+
+        // 覆蓋 renderOptions 方法以在下拉選項中加入圖標
+        instance.renderOptions = function () {
+            originalRenderOptions();
+
+            // 獲取所有選項元素並加入圖標
+            const optionElements = instance.optionsContainer.querySelectorAll('.searchable-select-option');
+            optionElements.forEach((optionEl, index) => {
+                const filteredOption = instance.filteredOptions[index];
+                if (filteredOption && filteredOption.value) {
+                    const option = instance.originalSelect.querySelector(`option[value="${filteredOption.value}"]`);
+                    if (option && option.dataset.strategyType) {
+                        const strategyType = option.dataset.strategyType;
+                        let iconClass, colorClass;
+
+                        switch (strategyType) {
+                            case 'activation':
+                                iconClass = 'fa-envelope';
+                                colorClass = 'text-info';
+                                break;
+                            case 'temp':
+                                iconClass = 'fa-key';
+                                colorClass = 'text-warning';
+                                break;
+                            case 'manual':
+                                iconClass = 'fa-edit';
+                                colorClass = 'text-success';
+                                break;
+                        }
+
+                        if (iconClass) {
+                            // 檢查是否已選中
+                            const isSelected = filteredOption.value === instance.originalSelect.value;
+                            if (isSelected) {
+                                optionEl.innerHTML = `<i class="fas fa-check text-primary" style="margin-right: 8px;"></i><i class="fas ${iconClass} ${colorClass}" style="margin-right: 8px;"></i>${filteredOption.text}`;
+                            } else {
+                                optionEl.innerHTML = `<i class="fas ${iconClass} ${colorClass}" style="margin-right: 8px;"></i>${filteredOption.text}`;
+                            }
+                        }
+                    }
+                }
+            });
+        };
+
+        // 覆蓋 updateDisplay 方法以在顯示欄位中加入圖標
+        instance.updateDisplay = function () {
+            originalUpdateDisplay();
+
+            const selectedOption = instance.originalSelect.options[instance.originalSelect.selectedIndex];
+
+            if (selectedOption && selectedOption.value && selectedOption.dataset.strategyType) {
+                const strategyType = selectedOption.dataset.strategyType;
+                let iconClass, colorClass;
+
+                switch (strategyType) {
+                    case 'activation':
+                        iconClass = 'fa-envelope';
+                        colorClass = 'text-info';
+                        break;
+                    case 'temp':
+                        iconClass = 'fa-key';
+                        colorClass = 'text-warning';
+                        break;
+                    case 'manual':
+                        iconClass = 'fa-edit';
+                        colorClass = 'text-success';
+                        break;
+                }
+
+                if (iconClass) {
+                    // 更新顯示文字，加入圖標
+                    instance.displayText.innerHTML = `<i class="fas ${iconClass} ${colorClass}" style="margin-right: 8px;"></i>${selectedOption.textContent}`;
+                    instance.displayText.style.color = 'var(--text-primary)';
+                }
+            }
+        };
+    }
+
+    /**
      * 當主要角色變更時
      */
     function onPrimaryRoleChange(roleId) {
@@ -970,6 +1092,7 @@ window.OrganizationEmployeeRolesModule = (function () {
         init,
         onDepartmentChange,
         onPrimaryRoleChange,
+        initPasswordStrategySelector,
         showRolesModal,
         closeRolesModal,
         confirmRolesSelection,

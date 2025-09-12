@@ -217,7 +217,7 @@
                     <!-- 部門管理區塊 -->
                     <section id="departments-section" class="content-section active">
                         <div class="section-header">
-                            <button class="btn btn-success" id="addDepartmentBtn">
+                            <button class="btn btn-success" id="addDepartmentBtn" data-permission="ORG.DEPT_CREATE">
                                 <i class="fa-solid fa-plus"></i> 新增部門
                             </button>
                         </div>
@@ -294,10 +294,10 @@
                     <section id="roles-section" class="content-section">
                         <div class="section-header">
                             <div class="header-left">
-                                <button class="btn btn-success" id="addRoleBtn" disabled>
+                                <button class="btn btn-success" id="addRoleBtn" disabled data-permission="ORG.ROLE_CREATE">
                                     <i class="fa-solid fa-plus"></i> 新增角色
                                 </button>
-                                <button class="btn btn-ai-analysis" id="roleAnalysisBtn" onclick="OrganizationRoleAnalysisModule.showRoleRelationshipAnalysis()" title="AI 智能分析角色關係並提供優化建議">
+                                <button class="btn btn-ai-analysis" id="roleAnalysisBtn" onclick="OrganizationRoleAnalysisModule.showRoleRelationshipAnalysis()" title="AI 智能分析角色關係並提供優化建議" data-permission="ORG.ROLE_ANALYSIS">
                                     <i class="fas fa-magic"></i>
                                     <span>AI 角色優化</span>
                                 </button>
@@ -390,7 +390,7 @@
                     <section id="employees-section" class="content-section">
                         <div class="section-header">
                             <div class="header-left">
-                                <button class="btn btn-success" id="addEmployeeBtn" disabled>
+                                <button class="btn btn-success" id="addEmployeeBtn" disabled data-permission="ORG.EMP_CREATE">
                                     <i class="fa-solid fa-plus"></i> 新增員工
                                 </button>
                                 <!-- 待處理帳號提醒橫幅 -->
@@ -659,7 +659,7 @@
                             <!-- 個人權限設定 -->
                             <div class="form-group">
                                 <label class="form-label">個人權限</label>
-                                <button type="button" class="btn btn-outline-primary w-100" id="setPersonalPermissionsBtn" onclick="OrganizationEmployeePermissionsModule.showPermissionsModal()">
+                                <button type="button" class="btn btn-outline-primary w-100" id="setPersonalPermissionsBtn" onclick="OrganizationEmployeePermissionsModule.showUserPermissionsModal()">
                                     <i class="fas fa-shield-alt"></i> 設定個人權限
                                     <span class="badge badge-info ms-2" id="personalPermissionsCount" style="display:none;">0</span>
                                 </button>
@@ -672,16 +672,32 @@
                             <legend>密碼設定</legend>
                             <div class="form-group">
                                 <label class="form-label">密碼策略</label>
-                                <select class="form-control" name="password_strategy" id="passwordStrategy" onchange="togglePasswordField()">
-                                    <option value="ACTIVATION_LINK">傳送啟用連結</option>
-                                    <option value="TEMP_PASSWORD">產生臨時密碼</option>
-                                    <option value="MANUAL">手動設定密碼</option>
+                                <select class="form-control searchable-select-strategy" name="password_strategy" id="passwordStrategy" 
+                                    data-placeholder="請選擇密碼策略..." 
+                                    data-search-placeholder="搜尋策略..." 
+                                    data-no-results="找不到符合的策略"
+                                    onchange="OrganizationEmployeeModule.togglePasswordField()" disabled>
+                                    <option value="">請選擇密碼策略</option>
+                                    <option value="ACTIVATION_LINK" data-strategy-type="activation">傳送啟用連結</option>
+                                    <option value="TEMP_PASSWORD" data-strategy-type="temp">產生臨時密碼</option>
+                                    <option value="MANUAL" data-strategy-type="manual">手動設定密碼</option>
                                 </select>
+                                <div id="passwordStrategyInfo" class="password-strategy-info mt-2"></div>
                             </div>
+                            
                             <div class="form-group" id="manualPasswordGroup" style="display:none;">
                                 <label class="form-label">密碼 <span class="required">*</span></label>
-                                <input type="password" class="form-control" name="password" id="userPassword" required minlength="6">
-                                <small class="form-text text-muted">至少6個字元，須包含數字和字母</small>
+                                <input type="password" class="form-control" name="password" id="userPassword" minlength="8" oninput="OrganizationEmployeeModule.checkPasswordRequirements()">
+                                <div class="password-requirements mt-2">
+                                    <small class="form-text text-muted mb-1">密碼要求：</small>
+                                    <div class="requirements-list">
+                                        <span class="requirement" id="req-length">✗ 至少 8 個字元</span>
+                                        <span class="requirement" id="req-uppercase">✗ 包含大寫字母</span>
+                                        <span class="requirement" id="req-lowercase">✗ 包含小寫字母</span>
+                                        <span class="requirement" id="req-number">✗ 包含數字</span>
+                                        <span class="requirement" id="req-special">✗ 包含特殊字元</span>
+                                    </div>
+                                </div>
                             </div>
                         </fieldset>
 
@@ -689,10 +705,26 @@
                         <fieldset>
                             <legend>帳號狀態</legend>
                             <div class="form-group">
-                                <label class="form-label">
-                                    <input type="checkbox" name="is_active" id="userActive" checked>
-                                    啟用此帳號
-                                </label>
+                                <div class="account-status-selector" id="accountStatusSelector">
+                                    <!-- 狀態選擇選項會根據帳號狀況動態生成 -->
+                                    <div class="status-option-group" id="statusOptionGroup">
+                                        <!-- 選項內容將由 JavaScript 動態生成 -->
+                                    </div>
+
+                                    <!-- 預約時間設定 -->
+                                    <div class="form-group" id="scheduledStatusGroup" style="display: none;">
+                                        <label class="form-label">預約時間 <span class="required">*</span></label>
+                                        <div class="datetime-input-group">
+                                            <input type="datetime-local" class="form-control" id="scheduledStatusDateTime" name="scheduled_status_time">
+                                            <small class="form-text text-muted">
+                                                <i class="fas fa-info-circle"></i>
+                                                <span id="scheduledStatusHint">系統將在指定時間執行帳號狀態變更</span>
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- 保留原有的隱藏欄位以維持表單相容性 -->
+                                <input type="hidden" name="is_active" id="userActive" value="true">
                             </div>
                         </fieldset>
                     </form>
@@ -849,18 +881,18 @@
                     </button>
                 </div>
                 <div class="modal-body scrollable-fade">
-                    <form id="editDepartmentRoleForm">
-                        <input type="hidden" id="editRoleId">
-                        <div class="form-group">
-                            <label class="form-label">角色代碼</label>
-                            <input type="text" class="form-control" id="editRoleCode" readonly>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">角色名稱 <span class="required">*</span></label>
-                            <input type="text" class="form-control" id="editRoleName" required>
-                        </div>
+                            <form id="editDepartmentRoleForm">
+                                <input type="hidden" id="editRoleId">
+                                <div class="form-group">
+                                    <label class="form-label">角色代碼</label>
+                                    <input type="text" class="form-control" id="editRoleCode" readonly>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">角色名稱 <span class="required">*</span></label>
+                                    <input type="text" class="form-control" id="editRoleName" required>
+                                </div>
 
-                        <!-- 所屬部門選擇 -->
+                                <!-- 所屬部門選擇 -->
                         <div class="form-group">
                             <label class="form-label">所屬部門</label>
                             <div class="input-group">
@@ -911,13 +943,13 @@
                                 層級範圍：1-100（每層+10）。修改層級不會自動影響子角色，需手動觸發重算
                             </small>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label">
-                                <input type="checkbox" id="editRoleActive">
-                                啟用此角色
-                            </label>
-                        </div>
-                    </form>
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <input type="checkbox" id="editRoleActive">
+                                        啟用此角色
+                                    </label>
+                                </div>
+                            </form>
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" onclick="OrganizationRolesModule.closeEditDepartmentRoleModal()">取消</button>
@@ -1413,7 +1445,7 @@
                                     <span class="radio-label">
                                         <i class="fas fa-check text-success"></i>
                                         <strong>立即啟用</strong>
-                                        <small>帳號將立即啟用，員工可以登入系統</small>
+                                        <small>帳號立即啟用，員工將收到登入系統的啟用郵件</small>
                                     </span>
                                 </label>
                                 <label class="radio-option">
@@ -1458,16 +1490,6 @@
             window.location.href = '/admin';
         };
 
-        // 密碼策略切換
-        window.togglePasswordField = function () {
-            const strategy = document.getElementById('passwordStrategy').value;
-            const passwordGroup = document.getElementById('manualPasswordGroup');
-            if (strategy === 'MANUAL') {
-                passwordGroup.style.display = 'block';
-            } else {
-                passwordGroup.style.display = 'none';
-            }
-        };
 
         // 員工停用對話框相關函數
         window.closeEmployeeDeactivateModal = function () {
@@ -1516,6 +1538,8 @@
                     '/css/pages/organization-dep.css',
                     '/css/pages/organization-role.css',
                     '/css/pages/organization-emp.css',
+                    '/css/components/employee-hover-card.css',
+                    '/css/pages/organization-emp-drag.css',
                     '/css/pages/organization-permissions.css'
                 ]);
 
@@ -1531,8 +1555,10 @@
                     '/js/modules/user-menu-module.js'
                 ]);
 
+
                 // 載入受保護的管理員模組
                 await ResourceLoader.loadProtectedAdminScriptsInOrder([
+                    'components/employee-hover-card.js',               // 統一員工懸浮卡片元件
                     'organization/organization.js',                    // 組織管理主模組（協調其他模組）
                     'organization/organization-drawer-manager.js',     // 抽屜管理器
                     'organization/organization-dep.js',                // 部門管理模組
@@ -1541,7 +1567,6 @@
                     'organization/organization-roles-crud.js',         // 角色 CRUD 子模組
                     'organization/organization-roles-drag.js',         // 角色拖曳功能子模組
                     'organization/organization-roles-modal.js',        // 角色 Modal 與 Dialog 子模組
-                    'organization/organization-roles-hover-card.js',   // 角色懸浮卡片子模組
                     'organization/organization-roles-search.js',       // 角色搜尋子模組
                     'organization/organization-roles-department.js',   // 角色部門管理子模組
                     'organization/organization-roles-state.js',        // 角色狀態管理子模組
@@ -1552,11 +1577,11 @@
                     'organization/organization-roles.js',              // 角色管理主模組
                     'organization/organization-role-analysis.js',      // 角色分析管理模組
                     'organization/organization-emp-tree.js',           // 員工樹狀結構子模組
+                    'organization/organization-emp-drag.js',           // 員工拖放功能子模組
                     'organization/organization-emp-card.js',           // 員工卡片顯示子模組
                     'organization/organization-emp-roles.js',          // 員工角色選擇子模組
                     'organization/organization-emp-permissions.js',    // 員工權限選擇子模組
                     'organization/organization-emp-crud.js',           // 員工 CRUD 操作模組
-                    'organization/organization-emp-hover-card.js',     // 員工懸浮卡片子模組
                     'organization/organization-emp-modal.js',          // 員工模態框子模組
                     'organization/organization-emp.js',                // 員工管理主模組
                 ]);
@@ -1574,6 +1599,11 @@
                 // 初始化抽屜管理器（最後初始化，以便正確處理保存的狀態）
                 if (window.OrgDrawerManager) {
                     await OrgDrawerManager.init();
+                }
+
+                // 初始化密碼策略選擇器
+                if (window.OrganizationEmployeeRolesModule) {
+                    window.OrganizationEmployeeRolesModule.initPasswordStrategySelector();
                 }
 
                 // 隱藏載入動畫（如果有的話）

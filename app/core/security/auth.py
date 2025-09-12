@@ -122,9 +122,9 @@ class AuthManager:
         """檢查帳號是否已過期"""
         try:
             from datetime import timezone
-            from app.dao.organization import OrganizationDAO
+            from app.dao.organization import UserOrganizationDAO
             
-            user_org_dao = OrganizationDAO()
+            user_org_dao = UserOrganizationDAO()
             current_time = datetime.now(timezone.utc)
             
             # 查詢用戶擴充資訊

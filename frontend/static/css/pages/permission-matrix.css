@@ -1,0 +1,397 @@
+/* ========================================
+   權限矩陣管理相關樣式
+   ======================================== */
+
+/* 權限矩陣卡片堆疊容器 */
+.matrix-card-stack {
+    margin-top: 10px;
+    position: relative;
+    height: calc(100vh - 450px);
+    min-height: 100px;
+    perspective: 1500px;  /* 增加透視深度 */
+    perspective-origin: left top;  /* 透視原點設在左上 */
+    padding: 20px;  /* 添加內邊距避免陰影被裁切 */
+    overflow: visible;  /* 允許陰影顯示 */
+}
+
+.matrix-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.matrix-container .data-table th {
+    padding: 1rem;
+    text-align: left;
+    font-weight: 500;
+    color:black; /* 改為 white 以配合漸層背景 */
+    white-space: nowrap; /* 防止文字換行 */
+}
+
+/* 權限矩陣工具列 */
+.matrix-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    gap: 15px;
+}
+
+.matrix-search-box {
+    display: flex;
+    flex: 1;
+    max-width: 400px;
+}
+
+.matrix-card-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.card-indicator {
+    padding: 5px 15px;
+    background: var(--bg-secondary);
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--primary);
+    min-width: 80px;
+    text-align: center;
+}
+
+/* 權限矩陣統計 */
+.matrix-stats {
+    display: flex;
+    gap: 20px;
+    padding-left: 15px;
+    background: var(--bg-secondary);
+    border-radius: 6px;
+    align-items: center;
+}
+
+.matrix-stats .stat-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 14px;
+}
+
+/* 卡片樣式 */
+.matrix-card {
+    position: absolute;
+    width: calc(100% - 80px);  /* 留出偏移空間 */
+    max-width: 98%;  /* 限制最大寬度 */
+    height: calc(100% - 40px);
+    background: white;
+    border-radius: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.08);  /* 添加邊框增加層次 */
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    transform-origin: top left;  /* 改為左上角為基準點 */
+    transform-style: preserve-3d;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: grab;
+    will-change: transform, opacity;
+    display: flex;
+    flex-direction: column;
+}
+
+.matrix-card:active {
+    cursor: grabbing;
+}
+
+/* 卡片堆疊狀態 - 向右下堆疊效果（增強層次感） */
+.matrix-card[data-card-state="active"] {
+    z-index: 100;
+    transform: translate(0, 0);
+    opacity: 1;
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.35);  /* 加強陰影 */
+    border-color: var(--primary);
+    border-width: 2px;
+}
+
+.matrix-card[data-card-state="next1"] {
+    z-index: 90;
+    transform: translate(50px, 15px);  /* 主要向右偏移 */
+    opacity: 0.95;
+    pointer-events: none;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+    filter: brightness(0.97);  /* 輕微變暗 */
+}
+
+.matrix-card[data-card-state="next2"] {
+    z-index: 80;
+    transform: translate(100px, 30px);  /* 更多向右偏移 */
+    opacity: 0.85;
+    pointer-events: none;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    filter: brightness(0.94);  /* 更暗一些 */
+}
+
+.matrix-card[data-card-state="hidden"] {
+    z-index: 70;
+    transform: translate(150px, 45px);
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* 卡片頭部 */
+.matrix-card-header {
+    padding: 20px 25px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: white;
+    border-radius: 8px 8px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+    z-index: 10;
+    cursor: grab;
+    user-select: none;
+    position: relative;
+}
+
+.matrix-card-header h4 {
+    color: white;
+}
+
+.matrix-card-header:active {
+    cursor: grabbing;
+}
+
+/* 頭部提示 */
+.matrix-card-header::after {
+    content: '滾動滑鼠滾輪切換權限';
+    position: absolute;
+    right: 50%;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 16px;
+    opacity: 0;
+    transition: opacity 1.0s;
+    background: rgba(0, 0, 0, 0.0);
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+
+.matrix-card-header:hover::after {
+    opacity: 0.7;
+}
+
+.matrix-card-header h4 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 18px;
+}
+
+/* 卡片內容 - 使用統一的 scrollable-fade 特效 */
+.matrix-card-content {
+    padding: 0;
+    height: calc(100% - 70px);
+    overflow-y: auto;
+    overflow-x: auto;
+    position: relative;
+    /* 套用統一的淡出淡入滾動條特效 */
+    scrollbar-width: thin; /* Firefox */
+    scrollbar-color: transparent transparent; /* Firefox 預設透明 */
+    transition: scrollbar-color 1.5s ease-out;
+}
+
+/* Firefox 支援 */
+.matrix-card-content:hover {
+    scrollbar-color: var(--border-color) var(--bg-light);
+}
+
+.matrix-card-content.scrolling {
+    scrollbar-color: var(--primary) var(--bg-light);
+}
+
+/* 邊界指示效果 */
+.matrix-card-content {
+    position: relative;
+}
+
+.matrix-card-content::before,
+.matrix-card-content::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 30px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 5;
+}
+
+.matrix-card-content::before {
+    top: 0;
+    background: linear-gradient(to bottom, rgba(102, 126, 234, 0.1), transparent);
+}
+
+.matrix-card-content::after {
+    bottom: 0;
+    background: linear-gradient(to top, rgba(102, 126, 234, 0.1), transparent);
+}
+
+/* 到達邊界時顯示提示 */
+.matrix-card-content.at-top::before,
+.matrix-card-content.at-bottom::after {
+    opacity: 1;
+}
+
+/* 原有的模組群組樣式（用於卡片內部） */
+.matrix-module-group {
+    margin: 0;
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
+    overflow: visible;
+}
+
+.matrix-module-group .module-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: white;
+}
+
+.matrix-module-group .module-header h4 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.matrix-table-wrapper {
+    padding: 0;
+}
+
+/* 權限鍵值預覽 */
+.permission-key-preview {
+    padding: 10px;
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--secondary) 100%);
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+}
+
+.permission-key-preview code {
+    font-size: 14px;
+    color: var(--primary);
+}
+
+
+
+/* 切換按鈕樣式 */
+.toggle-inactive-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 2px 6px;
+    margin-left: 5px;
+}
+
+.toggle-inactive-btn:hover {
+    color: var(--primary);
+}
+
+
+.matrix-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.matrix-search-box {
+    display: flex;
+    flex: 1;
+    max-width: 400px;
+    position: relative;
+}
+
+.matrix-search-box input {
+    flex: 1;
+    padding-right: 40px;
+    border-radius: 20px;
+}
+
+.matrix-search-box .btn-search {
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--primary);
+    cursor: pointer;
+    padding: 5px 10px;
+}
+
+.matrix-search-box .btn-search:hover {
+    color: var(--primary-dark);
+}
+
+@keyframes fadeInOut {
+    0% { opacity: 0; transform: translateX(-50%) translateY(10px); }
+    20% { opacity: 0.8; transform: translateX(-50%) translateY(0); }
+    80% { opacity: 0.8; transform: translateX(-50%) translateY(0); }
+    100% { opacity: 0.6; transform: translateX(-50%) translateY(0); }
+}
+
+/* 空狀態樣式 */
+.matrix-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 40px;
+    text-align: center;
+}
+
+.matrix-empty-state i {
+    font-size: 64px;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+}
+
+/* 卡片切換動畫 */
+@keyframes cardSlideIn {
+    from {
+        transform: translateY(100px) scale(0.8);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes cardSlideOut {
+    from {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+    to {
+        transform: translateY(-100px) scale(0.8);
+        opacity: 0;
+    }
+}
+
+.matrix-card.animating-in {
+    animation: cardSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.matrix-card.animating-out {
+    animation: cardSlideOut 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}

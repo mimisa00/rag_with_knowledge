@@ -474,23 +474,6 @@
     background-color: var(--bg-light);
 }
 
-/* ==================== 使用者資訊 ==================== */
-.user-info {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-    background: var(--bg-light);
-    border-radius: 20px;
-    cursor: pointer;
-    transition: all var(--transition-normal);
-}
-
-.user-info:hover {
-    background: var(--bg-hover);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
-}
 
 /* ==================== 個人功能抽屜 ==================== */
 .user-menu-drawer {

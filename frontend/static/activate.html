@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>帳號啟用 - E-Helper</title>
+    
+    <!-- 基本 CSS 樣式 (參照註冊頁面) -->
+    <link rel="stylesheet" href="/css/core/all.min.css">
+    <link rel="stylesheet" href="/css/core/base.css">
+    <link rel="stylesheet" href="/css/core/components.css">
+    <link rel="stylesheet" href="/css/core/layouts.css">
+    <link rel="stylesheet" href="/css/core/utilities.css">
+    <link rel="stylesheet" href="/css/themes/theme-variables.css">
+    
+    <!-- 帳號啟用頁面專用樣式 -->
+    <link rel="stylesheet" href="/css/pages/activate.css">
+    
+    <!-- Dialog 元件樣式 -->
+    <link rel="stylesheet" href="/css/components/dialog.css">
+</head>
+<body class="auth-layout">
+    <div class="auth-container">
+        <div class="activate-card">
+            <!-- Logo Section -->
+            <div class="auth-header">
+                <h1><i class="fas fa-key"></i> 帳號啟用</h1>
+                <p>設定您的帳號密碼以完成啟用</p>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loadingState" class="loading-state">
+                <div class="loading-spinner">
+                    <i class="fas fa-spinner fa-spin"></i>
+                </div>
+                <p>正在驗證啟用連結...</p>
+            </div>
+
+            <!-- Error State -->
+            <div id="errorState" class="error-state d-none">
+                <div class="error-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <h3 id="errorTitle">連結已失效</h3>
+                <p id="errorMessage">此啟用連結已過期或已使用過，請聯繫系統管理員重新發送啟用郵件。</p>
+                <div class="error-actions">
+                    <!--
+                    <button id="sendAgain" class="btn btn-primary" onclick="requestNewActivation()">
+                        <i class="fas fa-envelope"></i>
+                        重新發送啟用郵件
+                    </button>
+                    -->
+                    <button class="btn btn-secondary" onclick="goToLogin()">
+                        <i class="fas fa-sign-in-alt"></i>
+                        返回登入
+                    </button>
+                </div>
+            </div>
+
+            <!-- Success State -->
+            <div id="successState" class="success-state d-none">
+                <div class="success-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h3>啟用成功！</h3>
+                <p>您的帳號已成功啟用，密碼設定完成。</p>
+                <div class="success-actions">
+                    <button class="btn btn-primary" onclick="goToLogin()">
+                        <i class="fas fa-sign-in-alt"></i>
+                        立即登入
+                    </button>
+                </div>
+            </div>
+
+            <!-- Activation Form -->
+            <div id="activationForm" class="activation-form d-none">
+                <form id="setPasswordForm">
+                    <!-- User Info Display -->
+                    <div class="user-avatar-info">
+                        <div class="user-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="user-details">
+                            <h3 id="userName">載入中...</h3>
+                            <p id="userEmail">載入中...</p>
+                        </div>
+                    </div>
+
+                    <!-- Password Fields -->
+                    <div class="form-group">
+                        <label for="newPassword" class="form-label">
+                            <i class="fas fa-lock"></i>
+                            設定密碼
+                        </label>
+                        <div class="password-input-wrapper">
+                            <input 
+                                type="password" 
+                                id="newPassword" 
+                                name="newPassword" 
+                                class="form-control" 
+                                placeholder="請輸入新密碼"
+                                required
+                            >
+                            <button type="button" class="password-toggle" onclick="togglePasswordVisibility('newPassword')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="password-strength" id="passwordStrength">
+                            <div class="strength-bar">
+                                <div class="strength-fill"></div>
+                            </div>
+                            <span class="strength-text">密碼強度：請輸入密碼</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="confirmPassword" class="form-label">
+                            <i class="fas fa-lock"></i>
+                            確認密碼
+                        </label>
+                        <div class="password-input-wrapper">
+                            <input 
+                                type="password" 
+                                id="confirmPassword" 
+                                name="confirmPassword" 
+                                class="form-control" 
+                                placeholder="請再次輸入密碼"
+                                required
+                            >
+                            <button type="button" class="password-toggle" onclick="togglePasswordVisibility('confirmPassword')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="password-match" id="passwordMatch"></div>
+                    </div>
+
+                    <!-- Password Requirements -->
+                    <div class="password-requirements" id="passwordRequirements">
+                        <h4>密碼要求：</h4>
+                        <ul>
+                            <li id="req-length"><i class="fas fa-times"></i> 至少 8 個字元</li>
+                            <li id="req-uppercase"><i class="fas fa-times"></i> 包含大寫字母</li>
+                            <li id="req-lowercase"><i class="fas fa-times"></i> 包含小寫字母</li>
+                            <li id="req-number"><i class="fas fa-times"></i> 包含數字</li>
+                            <li id="req-special"><i class="fas fa-times"></i> 包含特殊字元</li>
+                        </ul>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary w-100" id="submitBtn">
+                            <i class="fas fa-check"></i>
+                            完成啟用
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- 登入連結 -->
+            <div class="login-link">
+                <p>啟用完成後 <a href="/login">立即登入</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/components/dialog.js"></script>
+    <script src="js/pages/activate.js"></script>
+</body>
+</html>

@@ -305,7 +305,7 @@
                         <div class="timeline-user-icon">
                             ${this.getUserIcon(user)}
                         </div>
-                        <div class="timeline-user-info">
+                        <div class="timeline-user-role-info">
                             <span class="timeline-user-name">${user.loginid}</span>
                             <span class="timeline-user-time">${user.time}</span>
                         </div>

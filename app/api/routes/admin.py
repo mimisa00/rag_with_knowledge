@@ -10,6 +10,7 @@ from app.dao.user import user_dao
 from app.core.security.auth import auth_manager
 from app.api.dependencies import get_admin_user
 from app.utils.logging import get_logger
+from app.core.security.permissions import permission_required
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -140,6 +141,7 @@ def api_admin_edit_user(
 
 
 @router.get("/admin/login-stats")
+@permission_required("ADMIN.STATS_VIEW")
 def api_get_login_stats(current_user: Dict[str, Any] = Depends(get_admin_user)):
     """獲取登入統計資料（管理員功能）"""
     try:
@@ -151,6 +153,7 @@ def api_get_login_stats(current_user: Dict[str, Any] = Depends(get_admin_user)):
 
 
 @router.get("/admin/anomaly-monitor")
+@permission_required("ADMIN.LOG_VIEW")
 def api_get_security_anomalies(current_user: Dict[str, Any] = Depends(get_admin_user)):
     """獲取安全異常監控資料（管理員功能）"""
     try:

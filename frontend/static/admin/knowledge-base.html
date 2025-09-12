@@ -146,7 +146,7 @@
                         <!-- Panel 1: 知識庫列表 -->
                         <div id="kbListPanel" class="drawer-panel active">
                             <h4>知識庫列表</h4>
-                            <button id="drawerCreateKBBtn" class="btn btn-success mb-md w-100" onclick="window.KnowledgeBaseModule.showKBForm('create', true)">
+                            <button id="drawerCreateKBBtn" class="btn btn-success mb-md w-100" data-permission="KB.CREATE" onclick="window.KnowledgeBaseModule.showKBForm('create', true)">
                                 <i class="fas fa-plus"></i> 創建新知識庫
                             </button>
                             <div class="kb-list-container">
@@ -248,8 +248,8 @@
                                 <div class="kb-info-section scrollable-fade">
                                     <!-- 操作按鈕區 -->
                                     <div id="kbPreviewButtons" class="kb-button-group d-none">
-                                        <button type="button" id="editKBModeBtn" class="btn btn-primary me-2">編輯</button>
-                                        <button type="button" id="deleteKBBtn" class="btn btn-danger">刪除</button>
+                                        <button type="button" id="editKBModeBtn" class="btn btn-primary me-2" data-permission="KB.UPDATE">編輯</button>
+                                        <button type="button" id="deleteKBBtn" class="btn btn-danger" data-permission="KB.DELETE">刪除</button>
                                     </div>
 
                                     <!-- 表單操作按鈕區 -->
@@ -328,10 +328,10 @@
                                 </div>
 
                                 <div class="action-bar mb-md">
-                                    <button type="button" id="uploadBtn" class="btn btn-primary me-2">
+                                    <button type="button" id="uploadBtn" class="btn btn-primary me-2" data-permission="KB.FILE_UPLOAD">
                                         <i class="fas fa-upload"></i> 上傳檔案
                                     </button>
-                                    <button type="button" id="removeFilesBtn" onclick="removeSelectedFiles()" class="btn btn-danger">
+                                    <button type="button" id="removeFilesBtn" onclick="removeSelectedFiles()" class="btn btn-danger" data-permission="KB.FILE_DELETE">
                                         <i class="fas fa-trash"></i> 移除選中檔案
                                     </button>
                                 </div>
@@ -353,13 +353,13 @@
 
                                 <div class="action-bar mb-md">
                                     <!-- 建立索引按鈕會由 JS 包裝成 index-button-container -->
-                                    <button type="button" id="prepareSelectedBtn" class="btn btn-primary me-2">
+                                    <button type="button" id="prepareSelectedBtn" class="btn btn-primary me-2" data-permission="KB.INDEX_CREATE">
                                         <i class="fas fa-cogs"></i> 建立索引
                                     </button>
                                     <button type="button" id="goToQABtn" onclick="IndexModule.goToQAPage()" class="btn btn-primary me-2" disabled title="需要先建立索引">
                                         <i class="fas fa-comments"></i> 前往問答
                                     </button>
-                                    <button type="button" onclick="IndexModule.deleteIndex()" class="btn btn-danger me-2">
+                                    <button type="button" onclick="IndexModule.deleteIndex()" class="btn btn-danger me-2" data-permission="KB.INDEX_DELETE">
                                         <i class="fas fa-trash"></i> 刪除索引
                                     </button>
                                     <button type="button" onclick="IndexModule.showIndexSummary100()" class="btn btn-info me-2">

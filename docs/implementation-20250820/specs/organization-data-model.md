@@ -85,10 +85,10 @@ CREATE TABLE user_extensions (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
-### 2.4 user_permission_groups（使用者權限群組關聯表）
+### 2.4 permission_groups_user（使用者權限群組關聯表）
 
 ```sql
-CREATE TABLE user_permission_groups (
+CREATE TABLE permission_groups_user (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id VARCHAR(100) NOT NULL,                -- 使用者 ID
     role_id BIGINT NOT NULL,                      -- 權限群組 ID
@@ -227,25 +227,25 @@ WHERE NOT EXISTS (
 );
 
 -- 為既有使用者分配預設角色
-INSERT INTO user_permission_groups (user_id, permission_group_id, assigned_by)
+INSERT INTO permission_groups_user (user_id, permission_group_id, assigned_by)
 SELECT u.id, r.id, NULL
 FROM users u
 CROSS JOIN permission_groups r
 WHERE u.role = 'admin'
   AND r.code = 'SYSTEM_ADMIN'
   AND NOT EXISTS (
-    SELECT 1 FROM user_permission_groups upg 
+    SELECT 1 FROM permission_groups_user upg 
     WHERE upg.user_id = u.id AND upg.permission_group_id = r.id
 );
 
-INSERT INTO user_permission_groups (user_id, permission_group_id, assigned_by)
+INSERT INTO permission_groups_user (user_id, permission_group_id, assigned_by)
 SELECT u.id, r.id, NULL
 FROM users u
 CROSS JOIN permission_groups r
 WHERE u.role = 'user'
   AND r.code = 'USER'
   AND NOT EXISTS (
-    SELECT 1 FROM user_permission_groups upg 
+    SELECT 1 FROM permission_groups_user upg 
     WHERE upg.user_id = u.id AND upg.permission_group_id = r.id
 );
 ```

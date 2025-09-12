@@ -35,6 +35,37 @@ const UserMenu = (() => {
     }
     
     /**
+     * 根據優先順序獲取角色顯示文字
+     * 優先順序：職稱 > 主要角色名稱 > 系統管理者 > 一般使用者
+     * @param {Object} userData - 用戶資料
+     * @returns {string} 角色顯示文字
+     */
+    function getRoleDisplayText(userData) {
+        // 1. 職稱（最高優先）
+        if (userData.title && userData.title.trim()) {
+            return userData.title.trim();
+        }
+        
+        // 2. 主要角色名稱
+        if (userData.primary_role_name && userData.primary_role_name.trim()) {
+            return userData.primary_role_name.trim();
+        }
+        
+        // 3. 系統管理者（基於 role 欄位）
+        if (userData.role === 'admin') {
+            return '系統管理者';
+        }
+        
+        // 4. 組織管理員
+        if (userData.role === 'org_admin') {
+            return '組織管理員';
+        }
+        
+        // 5. 一般使用者（預設）
+        return '一般使用者';
+    }
+
+    /**
      * 載入用戶資訊
      * @returns {Promise<Object>} 返回用戶資料物件
      */
@@ -65,17 +96,8 @@ const UserMenu = (() => {
                 }
                 
                 if (navUserRole) {
-                    let roleText = '';
-                    switch (userData.role) {
-                        case 'admin':
-                            roleText = '系統管理員';
-                            break;
-                        case 'org_admin':
-                            roleText = '組織管理員';
-                            break;
-                        default:
-                            roleText = '一般用戶';
-                    }
+                    // 實作優先順序顯示邏輯：職稱 > 主要角色名稱 > 系統管理者 > 一般使用者
+                    let roleText = getRoleDisplayText(userData);
                     navUserRole.textContent = roleText;
                     navUserRole.style.display = 'inline-block';
                 }
@@ -83,8 +105,9 @@ const UserMenu = (() => {
                 // 儲存用戶角色資訊（保持向後相容）
                 window.currentUserRole = userData.role;
                 
-                // 如果是管理員，添加系統管理按鈕
-                if (userData.role === 'admin') {
+                // 檢查是否應該顯示系統管理按鈕（透過 role 或權限群組）
+                const shouldShowAdmin = await checkAdminAccess(userData);
+                if (shouldShowAdmin) {
                     addAdminMenuButton();
                 }
                 
@@ -95,6 +118,39 @@ const UserMenu = (() => {
             console.error('Error loading user info:', error);
             return null;
         }
+    }
+    
+    /**
+     * 檢查用戶是否有管理員權限
+     * @param {Object} userData - 用戶資料
+     * @returns {Promise<boolean>} 是否有管理員權限
+     */
+    async function checkAdminAccess(userData) {
+        // 方式1: 檢查 role 是否為 admin（向後相容）
+        if (userData && userData.role === 'admin') {
+            return true;
+        }
+        
+        // 方式2: 檢查是否有 ADMIN.ACCESS 權限（透過權限群組）
+        // 優先使用已載入的 PermissionChecker
+        if (window.hasPermission && window.hasPermission('ADMIN.ACCESS')) {
+            return true;
+        }
+        
+        // 方式3: 如果 PermissionChecker 尚未載入，直接呼叫 API 檢查
+        try {
+            const response = await fetch('/api/user/permissions');
+            if (response.ok) {
+                const data = await response.json();
+                if (data.permissions && data.permissions.includes('ADMIN.ACCESS')) {
+                    return true;
+                }
+            }
+        } catch (error) {
+            console.error('Error checking admin access:', error);
+        }
+        
+        return false;
     }
     
     /**
@@ -169,12 +225,12 @@ const UserMenu = (() => {
             changePasswordBtn.addEventListener('click', showChangePasswordModal);
         }
         
-        // 登出按鈕
-        const logoutBtn = document.querySelector('button[onclick*="logout"]');
-        if (logoutBtn) {
-            logoutBtn.onclick = null;
-            logoutBtn.addEventListener('click', logout);
-        }
+        // 登出按鈕 - 不重新綁定，讓 HTML onclick 直接工作
+        // const logoutBtn = document.querySelector('button[onclick*="logout"]');
+        // if (logoutBtn) {
+        //     logoutBtn.onclick = null;
+        //     logoutBtn.addEventListener('click', logout);
+        // }
         
         // 變更密碼Modal按鈕
         const confirmChangeBtn = document.querySelector('button[onclick*="changePassword"]');
@@ -295,23 +351,55 @@ const UserMenu = (() => {
      * 登出
      */
     function logout() {
-        const confirmed = window.confirm("確定要登出嗎？");
-        if (confirmed) {
-            // 清除本地存儲的用戶信息
-            localStorage.removeItem('auth_token');
-            localStorage.removeItem('user_info');
-            sessionStorage.clear();
-            
-            fetch('/api/user/logout', {
-                method: 'GET',
-                credentials: 'same-origin'
-            }).then(response => {
-                if (response.redirected) {
-                    // 使用 replace 而不是 href，避免返回按鈕問題
-                    window.location.replace(response.url);
-                }
+        console.log('logout 函數被呼叫');
+        console.log('Dialog 類型:', typeof window.Dialog);
+        
+        // 檢查 Dialog 是否可用
+        if (typeof window.Dialog === 'undefined') {
+            console.error('Dialog 元件尚未載入，使用原生確認對話框');
+            // 回到原生確認對話框作為後備方案
+            const confirmed = window.confirm("確定要登出嗎？");
+            if (!confirmed) {
+                console.log('用戶取消登出');
+                return;
+            }
+        } else {
+            console.log('使用 Dialog.confirm');
+            // 使用通用 Dialog
+            Dialog.confirm("確定要登出嗎？", () => {
+                console.log('用戶確認登出');
+                performLogout();
+            }, {
+                title: '確認登出',
+                confirmText: '登出',
+                cancelText: '取消'
             });
+            return;
         }
+        
+        // 執行登出邏輯
+        console.log('執行登出邏輯');
+        performLogout();
+    }
+    
+    /**
+     * 執行登出邏輯
+     */
+    function performLogout() {
+        // 清除本地存儲的用戶信息
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('user_info');
+        sessionStorage.clear();
+        
+        fetch('/api/user/logout', {
+            method: 'GET',
+            credentials: 'same-origin'
+        }).then(response => {
+            if (response.redirected) {
+                // 使用 replace 而不是 href，避免返回按鈕問題
+                window.location.replace(response.url);
+            }
+        });
     }
     
     /**
@@ -478,6 +566,21 @@ window.showChangePasswordModal = UserMenu.showChangePasswordModal;
 window.closeChangePasswordModal = UserMenu.closeChangePasswordModal;
 window.changePassword = UserMenu.changePassword;
 window.logout = UserMenu.logout;
+
+// 確保 logout 函數立即可用
+console.log('UserMenu logout 函數已綁定到全域:', typeof window.logout);
+console.log('Dialog 物件狀態:', typeof window.Dialog);
+
+// 測試函數
+window.testLogout = function() {
+    console.log('測試 logout 函數...');
+    if (typeof window.logout === 'function') {
+        console.log('呼叫 logout()');
+        window.logout();
+    } else {
+        console.error('logout 函數不存在');
+    }
+};
 
 // 如果支援ES6模組，則導出
 if (typeof module !== 'undefined' && module.exports) {

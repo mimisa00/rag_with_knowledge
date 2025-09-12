@@ -172,6 +172,7 @@
 
                 // 動態載入所有 CSS
                 await ResourceLoader.loadStyles([
+                    '/css/components/dialog.css',
                     '/css/core/all.min.css',
                     '/css/core/base.css',
                     '/css/core/components.css',
@@ -187,7 +188,9 @@
 
                 // 使用 ResourceLoader 載入其他模組
                 await ResourceLoader.loadModulesInOrder([
+                    '/js/components/dialog.js',
                     '/js/modules/common-ui.js',
+                    '/js/modules/permission-checker.js',
                     '/js/modules/qa-module.js',
                     '/js/modules/style-manager.js',
                     '/js/modules/theme-manager.js',
@@ -197,6 +200,12 @@
 
                 // 初始化模組
                 CommonUI.hideSpinner();
+                
+                // 先初始化權限檢查器
+                if (window.PermissionChecker) {
+                    await PermissionChecker.init();
+                }
+                
                 UserMenu.init();
                 QAModule.init();
 

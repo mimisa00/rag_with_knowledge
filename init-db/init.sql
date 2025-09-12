@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS conversations (
     INDEX idx_conv_id (conv_id),
     INDEX idx_user_id (user_id),
     INDEX idx_created_at (created_at),
-    INDEX idx_sources ON conversations(sources(100))
+    INDEX idx_sources (sources)
 );
 
 -- =====================================================
@@ -140,7 +140,8 @@ INSERT INTO configs (`key`, value) VALUES
 ('permission_matrix', '{"modules":[{"key":"knowledge_base","name":"知識庫管理","description":"管理知識庫的建立、編輯、刪除等操作","actions":[{"key":"create","name":"建立","description":"建立新知識庫"},{"key":"read","name":"檢視","description":"檢視知識庫內容"},{"key":"update","name":"編輯","description":"編輯知識庫設定"},{"key":"delete","name":"刪除","description":"刪除知識庫"},{"key":"index","name":"建立索引","description":"建立或重建索引"}]},{"key":"documents","name":"文件管理","description":"管理文件的上傳、編輯、刪除等操作","actions":[{"key":"upload","name":"上傳","description":"上傳新文件"},{"key":"read","name":"檢視","description":"檢視文件內容"},{"key":"update","name":"編輯","description":"編輯文件內容"},{"key":"delete","name":"刪除","description":"刪除文件"},{"key":"download","name":"下載","description":"下載文件"}]},{"key":"users","name":"使用者管理","description":"管理使用者帳號和權限","actions":[{"key":"create","name":"建立","description":"建立新使用者"},{"key":"read","name":"檢視","description":"檢視使用者資訊"},{"key":"update","name":"編輯","description":"編輯使用者資訊"},{"key":"delete","name":"刪除","description":"刪除使用者"},{"key":"reset_password","name":"重設密碼","description":"重設使用者密碼"}]},{"key":"organization","name":"組織管理","description":"管理部門、角色和組織架構","actions":[{"key":"manage_dept","name":"管理部門","description":"建立、編輯、刪除部門"},{"key":"manage_role","name":"管理角色","description":"建立、編輯、刪除角色"},{"key":"assign_role","name":"分配角色","description":"分配角色給使用者"},{"key":"view_structure","name":"檢視架構","description":"檢視組織架構"}]},{"key":"system","name":"系統設定","description":"系統層級的設定和管理","actions":[{"key":"config","name":"系統設定","description":"修改系統設定"},{"key":"audit","name":"審計日誌","description":"檢視審計日誌"},{"key":"backup","name":"備份還原","description":"執行備份和還原"},{"key":"maintenance","name":"系統維護","description":"執行系統維護"}]},{"key":"chat","name":"對話管理","description":"管理 AI 對話相關功能","actions":[{"key":"use","name":"使用對話","description":"使用 AI 對話功能"},{"key":"view_history","name":"檢視歷史","description":"檢視對話歷史"},{"key":"export","name":"匯出對話","description":"匯出對話記錄"},{"key":"manage_prompt","name":"管理提示詞","description":"管理系統提示詞"}]}]}'),
 ('token_idle_timeout', '3600'),
 ('token_max_lifetime', '28800'),
-('token_refresh_threshold', '300')
+('token_refresh_threshold', '300'),
+('activation_token_expire_hours', '168')
 ON DUPLICATE KEY UPDATE 
     value = VALUES(value),
     updated_at = CURRENT_TIMESTAMP; 

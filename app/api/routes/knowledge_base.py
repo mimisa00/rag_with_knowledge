@@ -7,6 +7,7 @@ from typing import Dict, Any, List
 from app.models.request import KnowledgeBaseCreateRequest, KnowledgeBaseUpdateRequest
 from app.dao.knowledge_base import knowledge_base_dao
 from app.api.dependencies import get_admin_user, get_current_user
+from app.core.security.permissions import permission_required
 from app.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -22,6 +23,7 @@ def validate_system_prompt(prompt: str) -> bool:
 
 
 @router.get("/knowledge-bases")
+@permission_required("KB.LIST_VIEW")
 def get_available_knowledge_bases(
     current_user: Dict[str, Any] = Depends(get_current_user),
 ):
@@ -55,6 +57,7 @@ def get_available_knowledge_bases(
 
 
 @router.get("/admin/knowledge-bases")
+@permission_required("KB.LIST_VIEW")
 def get_all_knowledge_bases(current_user: Dict[str, Any] = Depends(get_admin_user)):
     """獲取所有知識庫列表（管理員專用，包含停用的）"""
     try:
@@ -66,6 +69,7 @@ def get_all_knowledge_bases(current_user: Dict[str, Any] = Depends(get_admin_use
 
 
 @router.post("/knowledge-bases")
+@permission_required("KB.CREATE")
 def create_knowledge_base(
     kb_data: KnowledgeBaseCreateRequest,
     current_user: Dict[str, Any] = Depends(get_admin_user),
@@ -148,6 +152,7 @@ def create_knowledge_base(
 
 
 @router.get("/knowledge-bases/{kb_id}")
+@permission_required("KB.VIEW")
 def get_knowledge_base(
     kb_id: str, 
     current_user: Dict[str, Any] = Depends(get_admin_user)
@@ -160,6 +165,7 @@ def get_knowledge_base(
 
 
 @router.put("/knowledge-bases/{kb_id}")
+@permission_required("KB.UPDATE")
 def update_knowledge_base(
     kb_id: str,
     kb_data: KnowledgeBaseUpdateRequest,
@@ -203,6 +209,7 @@ def update_knowledge_base(
 
 
 @router.delete("/knowledge-bases/{kb_id}")
+@permission_required("KB.DELETE")
 def delete_knowledge_base(
     kb_id: str,
     delete_files: bool = False,

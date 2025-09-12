@@ -590,7 +590,7 @@
     padding: 8px;
 }
 
-.timeline-user-info {
+.timeline-user-role-info {
     flex: 1;
 }
 
@@ -749,7 +749,8 @@
     background: white;
     border-radius: var(--radius-lg);
     padding: var(--spacing-lg);
-    min-height: 400px;
+    height: calc(100vh - 300px);
+    overflow-y: auto;
 }
 
 /* ========================================

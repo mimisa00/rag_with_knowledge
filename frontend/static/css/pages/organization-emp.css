@@ -923,6 +923,7 @@
     width: 10px;
     height: 10px;
     border-radius: 50%;
+    position: relative;
 }
 
 .status-indicator.active {
@@ -933,6 +934,189 @@
 .status-indicator.inactive {
     background: #dc3545;
     box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.2);
+}
+
+/* 排程啟用狀態 - 藍色脈衝 */
+.status-indicator.scheduled-active {
+    background: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
+    animation: scheduled-active-pulse 2s infinite;
+}
+
+/* 排程停用狀態 - 橙色脈衝 */
+.status-indicator.scheduled-inactive {
+    background: #fd7e14;
+    box-shadow: 0 0 0 3px rgba(253, 126, 20, 0.2);
+    animation: scheduled-inactive-pulse 2s infinite;
+}
+
+/* 等待啟用狀態 - 紫色脈衝 */
+.status-indicator.pending-activation {
+    background: #6f42c1;
+    box-shadow: 0 0 0 3px rgba(111, 66, 193, 0.2);
+    animation: pending-activation-pulse 2s infinite;
+}
+
+/* 排程狀態的時鐘圖標 */
+.status-indicator.scheduled-active::after,
+.status-indicator.scheduled-inactive::after {
+    content: '\f017'; /* fa-clock */
+    font-family: 'Font Awesome 5 Free', 'Font Awesome 6 Free';
+    font-weight: 900;
+    position: absolute;
+    top: -2px;
+    right: -8px;
+    font-size: 8px;
+    background: white;
+    border-radius: 50%;
+    width: 12px;
+    height: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    color: #666;
+}
+
+/* 等待啟用狀態的郵件圖標 */
+.status-indicator.pending-activation::after {
+    content: '\f0e0'; /* fa-envelope */
+    font-family: 'Font Awesome 5 Free', 'Font Awesome 6 Free';
+    font-weight: 900;
+    position: absolute;
+    top: -2px;
+    right: -8px;
+    font-size: 8px;
+    background: white;
+    border-radius: 50%;
+    width: 12px;
+    height: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6f42c1;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ===== 密碼策略選擇器樣式 ===== */
+
+/* 密碼策略選擇器圖示顯示 */
+.password-strategy-icon {
+    color: var(--primary, #007bff);
+}
+
+.password-strategy-icon i {
+    font-size: 1rem;
+}
+
+.password-strategy-info {
+    transition: all 0.3s ease;
+}
+
+.password-strategy-info .alert {
+    padding: 0.75rem;
+    border-radius: 0.375rem;
+    border: 1px solid;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+
+.password-strategy-info .alert-info {
+    background-color: #e7f3ff;
+    border-color: #b3d4fc;
+    color: #0c5aa6;
+}
+
+.password-strategy-info .alert-warning {
+    background-color: #fff8e1;
+    border-color: #ffcc80;
+    color: #e65100;
+}
+
+.password-strategy-info .alert-success {
+    background-color: #e8f5e8;
+    border-color: #a5d6a7;
+    color: #2e7d32;
+}
+
+.password-strategy-info .alert i {
+    margin-top: 0.125rem;
+    font-size: 1rem;
+}
+
+/* 密碼要求樣式 */
+.password-requirements {
+    background: #f8f9fa;
+    border-radius: 0.375rem;
+    padding: 0.75rem;
+    border-left: 4px solid #dee2e6;
+}
+
+.requirements-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
+}
+
+.requirement {
+    font-size: 0.8rem;
+    color: #dc3545;
+    transition: color 0.3s ease;
+}
+
+.requirement.valid {
+    color: #28a745;
+}
+
+.requirement::before {
+    margin-right: 0.25rem;
+}
+
+/* 響應式調整 */
+@media (max-width: 768px) {
+    .requirements-list {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* 排程啟用脈衝動畫 */
+@keyframes scheduled-active-pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 8px rgba(0, 123, 255, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(0, 123, 255, 0);
+    }
+}
+
+/* 排程停用脈衝動畫 */
+@keyframes scheduled-inactive-pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(253, 126, 20, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 8px rgba(253, 126, 20, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(253, 126, 20, 0);
+    }
+}
+
+@keyframes pending-activation-pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(111, 66, 193, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 8px rgba(111, 66, 193, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(111, 66, 193, 0);
+    }
 }
 
 .employee-card .card-body {
@@ -1124,16 +1308,120 @@
     border: 1px solid;
     transition: all var(--transition-fast);
     white-space: nowrap;
+    position: relative;
 }
 
 .employee-card .employee-permission-badge i {
     font-size: 7px;
 }
 
+/* 員工卡片中的部門權限樣式（來自角色繼承） */
+.employee-card .employee-permission-badge.from-role {
+    border-style: dashed;
+    opacity: 0.9;
+    background: linear-gradient(135deg, #9ca3af 0%, #d1d5db 100%);
+    color: #374151;
+    border-color: rgba(156, 163, 175, 0.6);
+}
+
+.employee-card .employee-permission-badge.from-role::before {
+    content: '\f0c0'; /* fa-users 群組圖標 */
+    font-family: 'Font Awesome 5 Free', 'Font Awesome 6 Free';
+    font-weight: 900;
+    margin-right: 2px;
+    font-size: 7px;
+    opacity: 0.7;
+}
+
+/* 員工卡片中的個人權限樣式（直接指派） */
+.employee-card .employee-permission-badge.from-direct {
+    border-style: solid;
+    border-width: 1.5px;
+    font-weight: 600;
+    background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+    color: white;
+    border-color: rgba(59, 130, 246, 0.8);
+    box-shadow: 0 1px 4px rgba(59, 130, 246, 0.3);
+}
+
+.employee-card .employee-permission-badge.from-direct::before {
+    content: '\f007'; /* fa-user 個人圖標 */
+    font-family: 'Font Awesome 5 Free', 'Font Awesome 6 Free';
+    font-weight: 900;
+    margin-right: 2px;
+    font-size: 7px;
+}
+
+/* 員工卡片中的重疊權限樣式（部門+個人） */
+.employee-card .employee-permission-badge.from-both {
+    border-style: solid;
+    border-width: 1.5px;
+    font-weight: 600;
+    background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+    color: white;
+    border-color: rgba(59, 130, 246, 0.8);
+    box-shadow: 0 1px 6px rgba(59, 130, 246, 0.4);
+}
+
+.employee-card .employee-permission-badge.from-both::before {
+    content: '\f007'; /* fa-user 個人圖標 */
+    font-family: 'Font Awesome 5 Free', 'Font Awesome 6 Free';
+    font-weight: 900;
+    margin-right: 2px;
+    font-size: 7px;
+}
+
+.employee-card .employee-permission-badge.from-both::after {
+    content: '\f0c0'; /* fa-users 群組圖標 */
+    font-family: 'Font Awesome 5 Free', 'Font Awesome 6 Free';
+    font-weight: 900;
+    position: absolute;
+    bottom: -2px;
+    left: -2px;
+    font-size: 5px;
+    background: white;
+    border-radius: 50%;
+    padding: 1px;
+    color: #6b7280;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
 .employee-card .card-meta {
     margin-top: 10px;
     padding-top: 10px;
     border-top: 1px solid #e0e0e0;
+}
+
+/* 排程資訊顯示區域 */
+.employee-card .card-schedule {
+    margin: 8px 0;
+    padding: 6px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.employee-card .card-schedule.scheduled-active {
+    background: rgba(0, 123, 255, 0.1);
+    border: 1px solid rgba(0, 123, 255, 0.3);
+    color: #0056b3;
+}
+
+.employee-card .card-schedule.scheduled-inactive {
+    background: rgba(253, 126, 20, 0.1);
+    border: 1px solid rgba(253, 126, 20, 0.3);
+    color: #d63384;
+}
+
+.employee-card .card-schedule i {
+    font-size: 0.75rem;
+}
+
+.employee-card .card-schedule .schedule-time {
+    font-weight: 500;
 }
 
 .employee-card .card-footer {
@@ -1430,21 +1718,6 @@
     }
 }
 
-/* ========================================
-   員工資訊管理主容器
-   ======================================== */
-.user-info-block {
-    background: white;
-    border-radius: 8px;
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
-    display: flex;
-    flex-direction: column;
-    height: calc(100vh - 375px);
-    min-height: 500px;
-    /* 添加最小高度確保可用性 */
-    overflow: hidden;
-}
 
 /* ========================================
    搜尋與篩選工具列
@@ -1617,316 +1890,6 @@
     background: #e7e8ea;
     color: #383d41;
 }
-
-/* ========================================
-   員工懸浮卡片樣式
-   ======================================== */
-
-/* 背景模糊遮罩層 */
-.employee-hover-backdrop {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.15);
-    backdrop-filter: blur(3px);
-    z-index: 1000;
-    display: none;
-    align-items: flex-start;
-    justify-content: center;
-    opacity: 0;
-    padding: 2rem;
-    overflow-y: auto;
-    transition: all var(--transition-normal);
-}
-
-.employee-hover-backdrop.show {
-    display: flex;
-    opacity: 1;
-}
-
-/* 懸浮卡片主容器 */
-.employee-hover-card {
-    background: transparent;
-    width: 100%;
-    max-width: 800px;
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-sm);
-    transform: translateY(20px);
-    transition: all var(--transition-normal);
-    position: relative;
-}
-
-.employee-hover-backdrop.show .employee-hover-card {
-    transform: translateY(0);
-}
-
-/* 卡片標題和搜尋框區域 */
-.employee-hover-card-header {
-    background: var(--bg-main);
-    border-radius: var(--radius-lg);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-    padding: var(--spacing-lg);
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.employee-hover-card-title {
-    font-size: var(--font-size-lg);
-    font-weight: var(--font-weight-semibold);
-    margin: 0 0 var(--spacing-sm) 0;
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    color: var(--text-primary);
-}
-
-.employee-hover-card-subtitle {
-    font-size: var(--font-size-sm);
-    color: var(--text-muted);
-    margin: 0 0 var(--spacing-md) 0;
-}
-
-/* 關閉按鈕 */
-.employee-hover-card-close {
-    position: absolute;
-    top: var(--spacing-lg);
-    right: var(--spacing-lg);
-    width: 36px;
-    height: 36px;
-    background: var(--bg-light);
-    border: 1px solid var(--border-color);
-    border-radius: 50%;
-    color: var(--text-muted);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all var(--transition-fast);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.employee-hover-card-close:hover {
-    background: var(--danger);
-    color: white;
-    border-color: var(--danger);
-    transform: scale(1.05);
-}
-
-/* 搜尋框區域 - Ultra Thin 風格 */
-.employee-hover-search {
-    margin-top: var(--spacing-sm);
-}
-
-.employee-hover-search-input {
-    width: 100%;
-    padding: 8px 16px;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 20px;
-    font-size: var(--font-size-sm);
-    transition: all var(--transition-fast);
-    background: rgba(255, 255, 255, 0.9);
-    backdrop-filter: blur(10px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-.employee-hover-search-input:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.1), 0 2px 8px rgba(0, 0, 0, 0.1);
-    outline: none;
-    background: white;
-}
-
-.employee-hover-search-input::placeholder {
-    color: var(--text-muted);
-    font-size: var(--font-size-sm);
-}
-
-/* 員工列表區域 */
-.employee-hover-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: var(--spacing-md);
-    margin-top: var(--spacing-sm);
-}
-
-/* 員工項目卡片 */
-.employee-hover-item {
-    background: var(--bg-main);
-    border-radius: var(--radius-lg);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    padding: var(--spacing-lg);
-    display: flex;
-    align-items: center;
-    transition: all var(--transition-fast);
-    backdrop-filter: blur(10px);
-    position: relative;
-    overflow: hidden;
-    animation: slideInUp 0.4s ease-out;
-}
-
-.employee-hover-item:nth-child(even) {
-    animation-delay: 0.1s;
-}
-
-.employee-hover-item::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, var(--primary), var(--secondary));
-    transform: translateX(-100%);
-    transition: transform var(--transition-normal);
-}
-
-.employee-hover-item:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-    border-color: rgba(var(--primary-rgb), 0.2);
-}
-
-.employee-hover-item:hover::before {
-    transform: translateX(0);
-}
-
-.employee-hover-item-icon {
-    width: 48px;
-    height: 48px;
-    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: var(--font-weight-bold);
-    margin-right: var(--spacing-md);
-    flex-shrink: 0;
-    font-size: var(--font-size-lg);
-    box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3);
-}
-
-.employee-hover-item-info {
-    flex: 1;
-    min-width: 0;
-}
-
-.employee-hover-item-name {
-    font-weight: var(--font-weight-semibold);
-    color: var(--text-primary);
-    margin: 0 0 var(--spacing-xs) 0;
-    font-size: var(--font-size-base);
-}
-
-.employee-hover-item-details {
-    font-size: var(--font-size-sm);
-    color: var(--text-muted);
-    margin: 0;
-    line-height: 1.5;
-}
-
-.employee-hover-item-details i {
-    margin-right: 6px;
-    opacity: 0.7;
-    width: 12px;
-    text-align: center;
-}
-
-/* 角色和權限 badge 容器 */
-.employee-badges-container {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    margin: var(--spacing-xs) 0 var(--spacing-sm) 0;
-    flex-wrap: wrap;
-}
-
-.employee-roles-section,
-.employee-permissions-section {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-xs);
-    position: relative;
-}
-
-/* 可展開的 badge 容器 */
-.employee-badge-expandable {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    position: relative;
-    cursor: pointer;
-}
-
-.employee-badge-more {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 24px;
-    height: 20px;
-    background: rgba(0, 0, 0, 0.1);
-    color: var(--text-muted);
-    border-radius: 10px;
-    font-size: var(--font-size-xs);
-    font-weight: var(--font-weight-medium);
-    padding: 2px 6px;
-    transition: all var(--transition-fast);
-}
-
-.employee-badge-expandable:hover .employee-badge-more {
-    background: var(--primary);
-    color: white;
-    transform: scale(1.1);
-}
-
-/* 展開內容容器 - Ultra Thin 風格 */
-.employee-badge-expanded {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    z-index: 1000;
-    background: transparent;
-    border: none;
-    border-radius: 0;
-    box-shadow: none;
-    padding: 2px;
-    margin-top: 2px;
-    min-width: auto;
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(-10px);
-    transition: all var(--transition-normal);
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    max-height: 200px;
-    overflow-y: auto;
-}
-
-.employee-badge-expanded.show {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
-    background: transparent;
-    box-shadow: none;
-    border: none;
-}
-
-/* 權限區塊的展開內容位置調整 */
-.employee-permissions-section .employee-badge-expanded {
-    right: 0;
-    left: auto;
-    background: transparent;
-    box-shadow: none;
-    border: none;
-}
-
 /* 員工角色區域（保留向後相容性） */
 .employee-roles {
     display: flex;
@@ -1935,225 +1898,6 @@
     margin: var(--spacing-xs) 0 var(--spacing-sm) 0;
 }
 
-/* 員工角色標籤 */
-.employee-role-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 8px;
-    border-radius: 10px;
-    font-size: var(--font-size-xs);
-    font-weight: var(--font-weight-medium);
-    border: 1px solid;
-    transition: all var(--transition-fast);
-    white-space: nowrap;
-}
-
-.employee-role-badge i {
-    font-size: 10px;
-}
-
-/* 管理角色樣式 */
-.employee-role-badge.role-manager {
-    background: #ffd700;
-    color: #8b6914;
-    border-color: rgba(255, 215, 0, 0.4);
-    box-shadow: 0 2px 6px rgba(255, 215, 0, 0.3);
-}
-
-/* 主要角色樣式加強 */
-.employee-role-badge.primary-role {
-    border-width: 2px;
-    font-weight: 600;
-    position: relative;
-    padding-left: 8px;
-    background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
-}
-
-.employee-role-badge.role-staff.primary-role {
-    background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
-}
-
-.employee-role-badge.primary-role .fa-star {
-    color: rgba(255, 255, 255, 0.9);
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-}
-
-.employee-role-badge.role-manager:hover {
-    transform: translateY(-1px);
-    background: #ffed4e;
-    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
-}
-
-/* 員工角色樣式 */
-.employee-role-badge.role-staff {
-    background: #10b981;
-    color: white;
-    border-color: rgba(16, 185, 129, 0.4);
-    box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
-}
-
-.employee-role-badge.role-staff:hover {
-    transform: translateY(-1px);
-    background: #34d399;
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
-}
-
-/* 實習生角色樣式 */
-.employee-role-badge.role-intern {
-    background: #6366f1;
-    color: white;
-    border-color: rgba(99, 102, 241, 0.4);
-    box-shadow: 0 2px 6px rgba(99, 102, 241, 0.3);
-}
-
-.employee-role-badge.role-intern:hover {
-    transform: translateY(-1px);
-    background: #818cf8;
-    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
-}
-
-/* 承包商角色樣式 */
-.employee-role-badge.role-contractor {
-    background: #f59e0b;
-    color: white;
-    border-color: rgba(245, 158, 11, 0.4);
-    box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3);
-}
-
-.employee-role-badge.role-contractor:hover {
-    transform: translateY(-1px);
-    background: #fbbf24;
-    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
-}
-
-/* 權限標籤樣式 */
-.employee-permission-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 8px;
-    border-radius: 10px;
-    font-size: var(--font-size-xs);
-    font-weight: var(--font-weight-medium);
-    border: 1px solid;
-    transition: all var(--transition-fast);
-    white-space: nowrap;
-    /* 預設背景顏色，防止透明問題 */
-    background: #6b7280;
-    color: white;
-    border-color: rgba(107, 114, 128, 0.5);
-}
-
-.employee-permission-badge i {
-    font-size: 9px;
-}
-
-/* 管理員權限 */
-.employee-permission-badge.permission-admin {
-    background: #dc2626;
-    color: white;
-    border-color: rgba(220, 38, 38, 0.4);
-    box-shadow: 0 2px 6px rgba(220, 38, 38, 0.3);
-}
-
-.employee-permission-badge.permission-admin:hover {
-    transform: translateY(-1px);
-    background: #ef4444;
-    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
-}
-
-/* 主管權限 */
-.employee-permission-badge.permission-manager {
-    background: #f59e0b;
-    color: white;
-    border-color: rgba(245, 158, 11, 0.4);
-    box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3);
-}
-
-.employee-permission-badge.permission-manager:hover {
-    transform: translateY(-1px);
-    background: #fbbf24;
-    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
-}
-
-/* 一般權限樣式 */
-.employee-permission-badge.permission-user {
-    background: #3b82f6;
-    color: white;
-    border-color: rgba(59, 130, 246, 0.4);
-    box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
-}
-
-.employee-permission-badge.permission-user:hover {
-    transform: translateY(-1px);
-    background: #60a5fa;
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
-}
-
-/* 權限樣式 */
-.employee-permission-badge.permission-default {
-    background: linear-gradient(135deg, #6b7280 0%, #9ca3af 100%);
-    color: white;
-    border-color: rgba(107, 114, 128, 0.5);
-    box-shadow: 0 2px 4px rgba(107, 114, 128, 0.3);
-}
-
-.employee-permission-badge.permission-default:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(107, 114, 128, 0.4);
-}
-
-.employee-permission-badge.permission-read {
-    background: rgba(34, 197, 94, 0.1);
-    color: #22c55e;
-    border-color: rgba(34, 197, 94, 0.2);
-}
-
-.employee-permission-badge.permission-read:hover {
-    background: rgba(34, 197, 94, 0.2);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 6px rgba(34, 197, 94, 0.3);
-}
-
-/* 寫入權限 */
-.employee-permission-badge.permission-write {
-    background: rgba(99, 102, 241, 0.1);
-    color: #6366f1;
-    border-color: rgba(99, 102, 241, 0.2);
-}
-
-.employee-permission-badge.permission-write:hover {
-    background: rgba(99, 102, 241, 0.2);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 6px rgba(99, 102, 241, 0.3);
-}
-
-/* 刪除權限 */
-.employee-permission-badge.permission-delete {
-    background: rgba(239, 68, 68, 0.1);
-    color: #ef4444;
-    border-color: rgba(239, 68, 68, 0.2);
-}
-
-.employee-permission-badge.permission-delete:hover {
-    background: rgba(239, 68, 68, 0.2);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);
-}
-
-/* 動畫定義 */
-@keyframes slideInUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
 
 /* ========================================
    員工權限資訊面板
@@ -2308,11 +2052,7 @@
    員工頁面響應式設計
    ======================================== */
 @media (max-width: 768px) {
-    .user-info-block {
-        padding-left: 0.25rem;
-        padding-right: 0.25rem;
-    }
-
+    
     .section-toolbar {
         flex-direction: column;
     }
@@ -2336,11 +2076,7 @@
 }
 
 @media (max-height: 800px) {
-    .user-info-block {
-        height: calc(100vh - 350px);
-        min-height: 400px;
-    }
-
+    
     .user-table-wrapper .data-table tbody {
         min-height: 250px;
     }
@@ -2355,11 +2091,7 @@
 }
 
 @media (max-height: 600px) {
-    .user-info-block {
-        height: calc(100vh - 300px);
-        min-height: 300px;
-    }
-
+    
     .user-table-wrapper .data-table tbody {
         min-height: 200px;
     }
@@ -2495,5 +2227,291 @@
     .cards-filters select {
         min-width: 120px;
         font-size: 0.8rem;
+    }
+}
+
+/* ========================================
+   帳號狀態選擇器樣式
+   ======================================== */
+
+/* 狀態選擇器容器 */
+.account-status-selector {
+    background: var(--bg-main);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    border: 1px solid var(--border-color);
+}
+
+/* 狀態選項組 */
+.status-option-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+/* 狀態選項樣式 */
+.status-option {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    border: 2px solid transparent;
+    border-radius: var(--radius-md);
+    background: var(--bg-light);
+    transition: all var(--transition-normal);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.status-option::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.status-option:hover {
+    border-color: rgba(var(--primary-rgb), 0.3);
+    background: rgba(var(--primary-rgb), 0.05);
+    transform: translateX(4px);
+    box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.1);
+}
+
+.status-option:hover::before {
+    left: 100%;
+}
+
+/* 選中狀態 */
+.status-option:has(input:checked) {
+    border-color: var(--primary);
+    background: rgba(var(--primary-rgb), 0.1);
+    box-shadow: 0 4px 16px rgba(var(--primary-rgb), 0.2);
+    transform: translateX(8px) scale(1.02);
+}
+
+/* 狀態圖標 */
+.status-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.8);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    flex-shrink: 0;
+    transition: all var(--transition-normal);
+}
+
+.status-option:has(input:checked) .status-icon {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.status-icon i {
+    font-size: 1.2rem;
+    transition: all var(--transition-fast);
+}
+
+/* 狀態標籤區域 */
+.status-label {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.status-label strong {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    transition: color var(--transition-fast);
+}
+
+.status-label small {
+    font-size: var(--font-size-sm);
+    color: var(--text-muted);
+    line-height: 1.4;
+    transition: color var(--transition-fast);
+}
+
+/* 選中狀態的文字增強 */
+.status-option:has(input:checked) .status-label strong {
+    color: var(--primary);
+}
+
+.status-option:has(input:checked) .status-label small {
+    color: var(--text-secondary);
+}
+
+/* 隱藏原始 radio 按鈕 */
+.status-option input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* 預約時間設定區域 */
+#scheduledStatusGroup {
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-md);
+    border: 1px dashed var(--border-color);
+    border-radius: var(--radius-md);
+    background: rgba(var(--primary-rgb), 0.02);
+    transition: all var(--transition-normal);
+}
+
+#scheduledStatusGroup.show {
+    border-style: solid;
+    border-color: var(--primary);
+    background: rgba(var(--primary-rgb), 0.05);
+    animation: expand-in 0.3s ease-out;
+}
+
+/* 日期時間輸入框增強 */
+.datetime-input-group {
+    position: relative;
+}
+
+.datetime-input-group input[type="datetime-local"] {
+    width: 100%;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-base);
+    transition: all var(--transition-fast);
+    background: var(--bg-main);
+}
+
+.datetime-input-group input[type="datetime-local"]:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.1);
+    outline: none;
+    transform: translateY(-1px);
+}
+
+/* 提示文字樣式 */
+#scheduledStatusHint {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    margin-top: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    background: rgba(var(--info-rgb), 0.1);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--info);
+    animation: slide-in-hint 0.3s ease-out;
+}
+
+/* 不同狀態模式的圖標顏色 */
+.status-option[data-mode="active"] .status-icon {
+    background: linear-gradient(135deg, rgba(40, 167, 69, 0.1), rgba(40, 167, 69, 0.2));
+}
+
+.status-option[data-mode="inactive"] .status-icon {
+    background: linear-gradient(135deg, rgba(220, 53, 69, 0.1), rgba(220, 53, 69, 0.2));
+}
+
+.status-option[data-mode="scheduled"] .status-icon {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(102, 126, 234, 0.2));
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    .status-option {
+        flex-direction: column;
+        text-align: center;
+        gap: var(--spacing-sm);
+    }
+    
+    .status-option:hover {
+        transform: translateY(-2px) scale(1.02);
+    }
+    
+    .status-option:has(input:checked) {
+        transform: translateY(-4px) scale(1.05);
+    }
+    
+    .status-icon {
+        width: 48px;
+        height: 48px;
+    }
+    
+    #scheduledStatusGroup {
+        margin-top: var(--spacing-lg);
+    }
+}
+
+/* 動畫定義 */
+@keyframes expand-in {
+    from {
+        opacity: 0;
+        transform: scaleY(0.8);
+        transform-origin: top;
+    }
+    to {
+        opacity: 1;
+        transform: scaleY(1);
+        transform-origin: top;
+    }
+}
+
+@keyframes slide-in-hint {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 狀態選擇器的特殊動畫效果 */
+.status-option {
+    animation: status-option-enter 0.4s ease-out;
+}
+
+.status-option:nth-child(1) { animation-delay: 0s; }
+.status-option:nth-child(2) { animation-delay: 0.1s; }
+.status-option:nth-child(3) { animation-delay: 0.2s; }
+.status-option:nth-child(4) { animation-delay: 0.3s; }
+
+@keyframes status-option-enter {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* 深色模式支援 */
+@media (prefers-color-scheme: dark) {
+    .account-status-selector {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .status-option {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: transparent;
+    }
+    
+    .status-option:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(var(--primary-rgb), 0.5);
+    }
+    
+    .status-icon {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
     }
 }

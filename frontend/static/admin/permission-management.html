@@ -146,7 +146,15 @@
                     <div id="permDrawerContent">
                         <h4>權限管理</h4>
                         <nav class="perm-menu">
-                            <a href="#" class="perm-menu-item active" data-section="groups">
+                            <a href="#" class="perm-menu-item active" data-section="matrix">
+                                <i class="fas fa-th"></i>
+                                <span>權限矩陣</span>
+                            </a>
+                            <a href="#" class="perm-menu-item" data-section="access">
+                                <i class="fas fa-lock"></i>
+                                <span>存取控制</span>
+                            </a>
+                            <a href="#" class="perm-menu-item" data-section="groups">
                                 <i class="fas fa-users-cog"></i>
                                 <span>群組權限</span>
                             </a>
@@ -174,8 +182,8 @@
                     <!-- 狀態列 -->
                     <div class="perm-status-bar">
                         <div class="current-perm-info">
-                            <i id="sectionIcon" class="fas fa-users-cog"></i>
-                            <span id="sectionTitle">群組權限</span>
+                            <i id="sectionIcon" class="fas fa-th"></i>
+                            <span id="sectionTitle">權限矩陣</span>
                         </div>
                         <div class="section-stats">
                             <span class="stat-item" id="groupCount">
@@ -193,8 +201,73 @@
                         </div>
                     </div>
 
+                    <!-- 權限矩陣區塊 -->
+                    <section id="matrix-section" class="content-section active">
+                        <div class="section-header">
+                            <button class="btn btn-success" id="addMatrixBtn">
+                                <i class="fa-solid fa-plus"></i> 新增權限項目
+                            </button>
+                        </div>
+
+                        <div class="section-content">
+                            <div class="matrix-info-block">
+                                <div class="matrix-toolbar">
+                                    <div class="matrix-search-box">
+                                        <input type="text" class="form-control" id="matrixSearchInput" placeholder="搜尋模組、動作或權限鍵值...">
+                                        <button class="btn btn-search" onclick="PermissionMatrixModule.searchMatrix()">
+                                            <i class="fa-solid fa-search"></i>
+                                        </button>
+                                    </div>
+                                    <!-- 卡片控制按鈕 -->
+                                    <div class="matrix-card-controls">
+                                        <button class="btn btn-outline" onclick="PermissionMatrixModule.prevCard()" title="上一個模組">
+                                            <i class="fas fa-chevron-up"></i>
+                                        </button>
+                                        <span class="card-indicator" id="cardIndicator">1 / 1</span>
+                                        <button class="btn btn-outline" onclick="PermissionMatrixModule.nextCard()" title="下一個模組">
+                                            <i class="fas fa-chevron-down"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- 權限統計 -->
+                                <div class="matrix-stats">
+                                    <span class="stat-item">
+                                        <i class="fas fa-th"></i>
+                                        總共 <strong id="totalMatrixCount">0</strong> 項權限
+                                    </span>
+                                    <span class="stat-item" id="activeMatrixCount">
+                                        <i class="fas fa-check-circle" style="color: #28a745;"></i>
+                                        啟用 <strong>0</strong> 項
+                                    </span>
+                                    <span class="stat-item" id="inactiveMatrixCount">
+                                        <i class="fas fa-times-circle" style="color: #dc3545;"></i>
+                                        停用 <strong>0</strong> 項
+                                        <button class="toggle-inactive-btn" onclick="PermissionMatrixModule.toggleInactiveMatrix()" title="顯示停用" id="toggleInactiveMatrixBtn">
+                                            <i class="fas fa-eye-slash"></i>
+                                        </button>
+                                    </span>
+                                    <span class="stat-item" id="moduleCount">
+                                        <i class="fas fa-cube"></i>
+                                        <span>0</span> 個模組
+                                    </span>
+                                </div>
+
+                                <!-- 權限矩陣卡片堆疊容器 -->
+                                <div id="matrixCardStack" class="matrix-card-stack">
+                                    <div id="matrixContainer" class="matrix-container">
+                                        <div class="loading-spinner">
+                                            <div class="spinner"></div>
+                                            <p>載入權限矩陣中...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
                     <!-- 群組權限區塊 -->
-                    <section id="groups-section" class="content-section active">
+                    <section id="groups-section" class="content-section">
                         <div class="section-header">
                             <button class="btn btn-success" id="addGroupBtn">
                                 <i class="fa-solid fa-plus"></i> 新增群組
@@ -241,13 +314,15 @@
                                                     <th>群組名稱</th>
                                                     <th>類型</th>
                                                     <th>使用人數</th>
+                                                    <th>使用部門</th>
+                                                    <th>使用角色</th>
                                                     <th>狀態</th>
                                                     <th>操作</th>
                                                 </tr>
                                             </thead>
                                             <tbody id="groupTableBody" class="scrollable-fade">
                                                 <tr>
-                                                    <td colspan="6" class="text-center">
+                                                    <td colspan="8" class="text-center">
                                                         <div class="loading-spinner">
                                                             <div class="spinner"></div>
                                                             <p>載入群組資料中...</p>
@@ -266,6 +341,284 @@
                                     <h3>權限資訊</h3>
                                     <div class="details-content">
                                         <p class="text-muted">請選擇一個群組查看詳情</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- 權限存取區塊 -->
+                    <section id="access-section" class="content-section">
+                        <div class="access-management">
+                            <!-- 標籤頁導航 -->
+                            <div class="access-tabs">
+                                <button class="access-tab active" data-tab="urls">
+                                    <i class="fas fa-link"></i> URL 權限
+                                </button>
+                                <button class="access-tab" data-tab="apis">
+                                    <i class="fas fa-plug"></i> API 權限
+                                </button>
+                                <button class="access-tab" data-tab="actions">
+                                    <i class="fas fa-cogs"></i> 動作權限
+                                </button>
+                                <button class="access-tab" data-tab="cache">
+                                    <i class="fas fa-database"></i> 快取管理
+                                </button>
+                            </div>
+
+                            <!-- URL 權限管理 -->
+                            <div id="urls-section" class="access-tab-content active">
+                                <div class="section-header">
+                                    <button class="btn btn-success" id="addUrlBtn">
+                                        <i class="fa-solid fa-plus"></i> 新增 URL 權限
+                                    </button>
+                                </div>
+
+                                <div class="access-info-block">
+                                    <div class="access-toolbar">
+                                        <div class="access-search-box">
+                                            <input type="text" class="form-control" id="urlSearchInput" placeholder="搜尋 URL 模式、模組或說明...">
+                                            <button class="btn-search">
+                                                <i class="fa-solid fa-search"></i>
+                                            </button>
+                                        </div>
+                                        <!-- URL 測試工具 -->
+                                        <div class="test-tool">
+                                            <div class="test-form">
+                                                <div class="test-tool-header">
+                                                    <i class="fas fa-flask"></i> URL 存取測試
+                                                </div>
+                                                <input type="text" class="form-control" id="testUrlInput" placeholder="輸入要測試的 URL...">
+                                                <select class="form-control" id="testUrlMethod">
+                                                    <option value="GET">GET</option>
+                                                    <option value="POST">POST</option>
+                                                    <option value="PUT">PUT</option>
+                                                    <option value="DELETE">DELETE</option>
+                                                </select>
+                                                <button class="btn btn-primary" id="testUrlBtn">測試</button>
+                                            </div>
+                                            <div id="testUrlResult" class="test-result" style="display: none;"></div>
+                                        </div>
+                                    </div>
+
+                                    <div class="access-stats">
+                                        <span class="stat-item">
+                                            <i class="fas fa-link"></i>
+                                            總共 <strong id="totalUrlCount">0</strong> 個 URL 規則
+                                        </span>
+                                        <span class="stat-item">
+                                            <i class="fas fa-check-circle" style="color: #28a745;"></i>
+                                            啟用 <strong id="activeUrlCount">0</strong> 個
+                                        </span>
+                                        <span class="stat-item">
+                                            <i class="fas fa-globe" style="color: #17a2b8;"></i>
+                                            公開 <strong id="publicUrlCount">0</strong> 個
+                                        </span>
+                                    </div>
+
+                                    <div class="access-table-wrapper scrollable-fade">
+                                        <table class="access-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>URL 模式</th>
+                                                    <th>方法</th>
+                                                    <th>權限需求</th>
+                                                    <th>存取類型</th>
+                                                    <th>優先級</th>
+                                                    <th>狀態</th>
+                                                    <th>操作</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="urlTableBody">
+                                                <tr>
+                                                    <td colspan="7" class="text-center">
+                                                        <div class="loading-spinner">
+                                                            <div class="spinner"></div>
+                                                            <p>載入 URL 權限資料中...</p>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- API 權限管理 -->
+                            <div id="apis-section" class="access-tab-content">
+                                <div class="section-header">
+                                    <button class="btn btn-success" id="addApiBtn">
+                                        <i class="fa-solid fa-plus"></i> 新增 API 權限
+                                    </button>
+                                </div>
+
+                                <div class="access-info-block">
+                                    <div class="access-toolbar">
+                                        <div class="access-search-box">
+                                            <input type="text" class="form-control" id="apiSearchInput" placeholder="搜尋 API 路徑、模組或說明...">
+                                            <button class="btn-search">
+                                                <i class="fa-solid fa-search"></i>
+                                            </button>
+                                        </div>
+                                        <!-- API 測試工具 -->
+                                        <div class="test-tool">
+                                            <div class="test-form">
+                                                <div class="test-tool-header">
+                                                    <i class="fas fa-flask"></i> API 存取測試
+                                                </div>
+                                                <input type="text" class="form-control" id="testApiInput" placeholder="輸入要測試的 API 路徑...">
+                                                <select class="form-control" id="testApiMethod">
+                                                    <option value="GET">GET</option>
+                                                    <option value="POST">POST</option>
+                                                    <option value="PUT">PUT</option>
+                                                    <option value="DELETE">DELETE</option>
+                                                    <option value="PATCH">PATCH</option>
+                                                </select>
+                                                <button class="btn btn-primary" id="testApiBtn">測試</button>
+                                            </div>
+                                            <div id="testApiResult" class="test-result" style="display: none;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="access-stats">
+                                    <span class="stat-item">
+                                        <i class="fas fa-plug"></i>
+                                        總共 <strong id="totalApiCount">0</strong> 個 API 規則
+                                    </span>
+                                    <span class="stat-item">
+                                        <i class="fas fa-check-circle" style="color: #28a745;"></i>
+                                        啟用 <strong id="activeApiCount">0</strong> 個
+                                    </span>
+                                    <span class="stat-item">
+                                        <i class="fas fa-unlock" style="color: #17a2b8;"></i>
+                                        公開 <strong id="publicApiCount">0</strong> 個
+                                    </span>
+                                </div>
+
+                                <div class="access-table-wrapper scrollable-fade">
+                                    <table class="access-table">
+                                        <thead>
+                                            <tr>
+                                                <th>API 路徑</th>
+                                                <th>方法</th>
+                                                <th>權限需求</th>
+                                                <th>認證需求</th>
+                                                <th>優先級</th>
+                                                <th>狀態</th>
+                                                <th>操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="apiTableBody">
+                                            <tr>
+                                                <td colspan="7" class="text-center">
+                                                    <div class="loading-spinner">
+                                                        <div class="spinner"></div>
+                                                        <p>載入 API 權限資料中...</p>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+
+
+                            <!-- 動作權限管理 -->
+                            <div id="actions-section" class="access-tab-content">
+                                <div class="section-header">
+                                    <button class="btn btn-success" id="addActionBtn">
+                                        <i class="fa-solid fa-plus"></i> 新增動作權限
+                                    </button>
+                                </div>
+
+                                <div class="access-info-block">
+                                    <div class="access-toolbar">
+                                        <div class="access-search-box">
+                                            <input type="text" class="form-control" id="actionSearchInput" placeholder="搜尋動作名稱、模組或說明...">
+                                            <button class="btn-search">
+                                                <i class="fa-solid fa-search"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="access-stats">
+                                        <span class="stat-item">
+                                            <i class="fas fa-cogs"></i>
+                                            總共 <strong id="totalActionCount">0</strong> 個動作權限
+                                        </span>
+                                        <span class="stat-item">
+                                            <i class="fas fa-check-circle" style="color: #28a745;"></i>
+                                            啟用 <strong id="activeActionCount">0</strong> 個
+                                        </span>
+                                    </div>
+
+                                    <div class="action-cards" id="actionCardsContainer">
+                                        <div class="loading-spinner">
+                                            <div class="spinner"></div>
+                                            <p>載入動作權限資料中...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 快取管理 -->
+                            <div id="cache-section" class="access-tab-content">
+                                <div class="cache-management">
+                                    <h3>權限快取管理</h3>
+
+                                    <div class="cache-overview">
+                                        <div class="cache-metric">
+                                            <div class="cache-metric-value" id="totalCacheCount">0</div>
+                                            <div class="cache-metric-label">總快取數</div>
+                                        </div>
+                                        <div class="cache-metric">
+                                            <div class="cache-metric-value" id="activeCacheCount">0</div>
+                                            <div class="cache-metric-label">有效快取</div>
+                                        </div>
+                                        <div class="cache-metric">
+                                            <div class="cache-metric-value" id="expiredCacheCount">0</div>
+                                            <div class="cache-metric-label">過期快取</div>
+                                        </div>
+                                        <div class="cache-metric">
+                                            <div class="cache-metric-value" id="cacheHitRate">0%</div>
+                                            <div class="cache-metric-label">命中率</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="cache-actions">
+                                        <button class="btn btn-primary" id="refreshCacheBtn">
+                                            <i class="fas fa-sync"></i> 重新整理快取
+                                        </button>
+                                        <button class="btn btn-danger" id="clearCacheBtn">
+                                            <i class="fas fa-trash"></i> 清除所有快取
+                                        </button>
+                                    </div>
+
+                                    <div class="cache-details">
+                                        <h4>快取詳細資訊</h4>
+                                        <div class="access-table-wrapper scrollable-fade">
+                                            <table class="access-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>使用者</th>
+                                                        <th>群組</th>
+                                                        <th>權限數</th>
+                                                        <th>快取時間</th>
+                                                        <th>過期時間</th>
+                                                        <th>操作</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="cacheTableBody">
+                                                    <tr>
+                                                        <td colspan="6" class="text-center">
+                                                            <span class="text-muted">暫無快取資料</span>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -418,103 +771,325 @@
             </div>
         </div>
 
-    </div> <!-- 結束 pageContent -->
+        <!-- 查看部門詳情模態框 -->
+        <div id="viewDepartmentModal" class="modal">
+            <div class="modal-content modal-lg">
+                <div class="modal-header">
+                    <h3 id="viewDepartmentModalTitle">部門權限設定詳情</h3>
+                    <button class="modal-close" onclick="PermissionModule.closeViewDepartmentModal()">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- 群組資訊顯示 -->
+                    <div class="view-dept-info mb-3">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            <span>正在檢視權限群組 <strong id="viewDeptGroupName">載入中...</strong> 的部門權限設定</span>
+                        </div>
+                    </div>
 
-    <!-- 載入腳本 -->
-    <script>
-        // 臨時的全域函數，等待模組載入
-        window.returnToAdmin = function () {
-            window.location.href = '/admin';
-        };
+                    <!-- 搜尋工具列 -->
+                    <div class="tree-toolbar" style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+                        <div class="tree-search-box" style="flex: 1;">
+                            <input type="text" class="form-control" id="viewDeptTreeSearch" placeholder="搜尋部門或角色名稱...">
+                            <button class="btn btn-search" onclick="PermissionModule.searchViewDeptTree()">
+                                <i class="fa-solid fa-search"></i>
+                            </button>
+                        </div>
+                        <!-- 操作按鈕 -->
+                        <div class="tree-actions" style="display: flex; gap: 5px;">
+                            <button class="btn btn-sm btn-outline" onclick="PermissionModule.expandAllViewDept()" title="展開全部">
+                                <i class="fas fa-expand-alt"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline" onclick="PermissionModule.collapseAllViewDept()" title="收合全部">
+                                <i class="fas fa-compress-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 統計資訊 -->
+                    <div class="tree-stats">
+                        <span class="stat-item">
+                            <i class="fas fa-shield-alt text-success"></i>
+                            已授權 <strong id="authorizedViewDeptRolesCount">0</strong> 個角色
+                        </span>
+                        <span class="stat-item">
+                            <i class="fas fa-sitemap"></i>
+                            分佈於 <strong id="authorizedViewDeptCount">0</strong> 個部門
+                        </span>
+                    </div>
+
+                    <!-- 部門樹容器 -->
+                    <div class="org-tree-container scrollable-fade" id="viewDeptTreeContainer">
+                        <div class="loading-spinner">
+                            <div class="spinner"></div>
+                            <p>載入部門資料中...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="PermissionModule.closeViewDepartmentModal()">關閉</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 權限矩陣模態框 -->
+        <div id="matrixModal" class="modal">
+            <div class="modal-content modal-lg">
+                <div class="modal-header">
+                    <h3 id="matrixModalTitle">新增權限項目</h3>
+                    <button class="modal-close" onclick="PermissionMatrixModule.closeMatrixModal()">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="matrixForm">
+                        <input type="hidden" name="id" id="matrixId">
+
+                        <div class="form-row">
+                            <div class="form-group col-6">
+                                <label class="form-label">模組代碼 <span class="required">*</span></label>
+                                <input type="text" class="form-control" name="module_code" id="matrixModuleCode" required placeholder="例如: user" onkeyup="PermissionMatrixModule.updatePermissionKeyPreview()">
+                            </div>
+                            <div class="form-group col-6">
+                                <label class="form-label">模組名稱 <span class="required">*</span></label>
+                                <input type="text" class="form-control" name="module_name" id="matrixModuleName" required placeholder="例如: 使用者管理">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group col-6">
+                                <label class="form-label">動作代碼 <span class="required">*</span></label>
+                                <input type="text" class="form-control" name="action_code" id="matrixActionCode" required placeholder="例如: create" onkeyup="PermissionMatrixModule.updatePermissionKeyPreview()">
+                            </div>
+                            <div class="form-group col-6">
+                                <label class="form-label">動作名稱 <span class="required">*</span></label>
+                                <input type="text" class="form-control" name="action_name" id="matrixActionName" required placeholder="例如: 新增">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">權限鍵值預覽</label>
+                            <div class="permission-key-preview">
+                                <code id="permissionKeyPreview">請輸入模組代碼和動作代碼</code>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">權限描述</label>
+                            <textarea class="form-control" name="description" id="matrixDescription" rows="3" placeholder="描述此權限的用途和範圍"></textarea>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group col-4">
+                                <label class="form-label">權限類型</label>
+                                <select class="form-control" name="permission_type" id="matrixType">
+                                    <option value="custom">自訂</option>
+                                    <option value="system">系統</option>
+                                </select>
+                            </div>
+                            <div class="form-group col-4">
+                                <label class="form-label">排序順序</label>
+                                <input type="number" class="form-control" name="sort_order" id="matrixSortOrder" value="0" min="0">
+                            </div>
+                            <div class="form-group col-4">
+                                <label class="form-label">狀態</label>
+                                <select class="form-control" name="is_active" id="matrixActive">
+                                    <option value="1">啟用</option>
+                                    <option value="0">停用</option>
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="PermissionMatrixModule.closeMatrixModal()">取消</button>
+                    <button class="btn btn-primary" onclick="PermissionMatrixModule.saveMatrix()">儲存</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 批次組織設定模態框 -->
+        <div id="batchOrgModal" class="modal">
+            <div class="modal-content modal-lg">
+                <div class="modal-header">
+                    <h3 id="batchOrgModalTitle">批次組織權限設定</h3>
+                    <button class="modal-close" onclick="PermissionBatchOrgModule.closeBatchOrgModal()">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body scrollable-fade">
+                    <!-- 群組資訊顯示 -->
+                    <div class="batch-org-info mb-3">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            <span>正在為權限群組 <strong id="batchOrgGroupName">載入中...</strong> 設定組織權限</span>
+                        </div>
+                    </div>
+
+                    <!-- 搜尋和工具列 -->
+                    <div class="tree-toolbar" style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+                        <div class="tree-search-box" style="flex: 1;">
+                            <input type="text" class="form-control" id="batchOrgTreeSearch" placeholder="搜尋部門或角色名稱...">
+                            <button class="btn btn-search" onclick="PermissionBatchOrgModule.searchOrgTree()">
+                                <i class="fa-solid fa-search"></i>
+                            </button>
+                        </div>
+                        <!-- 操作按鈕 -->
+                        <div class="tree-actions" style="display: flex; gap: 5px;">
+                            <button class="btn btn-sm btn-outline" onclick="PermissionBatchOrgModule.expandAll()" title="展開全部">
+                                <i class="fas fa-expand-alt"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline" onclick="PermissionBatchOrgModule.collapseAll()" title="收合全部">
+                                <i class="fas fa-compress-alt"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline" onclick="PermissionBatchOrgModule.selectAll()" title="全選">
+                                <i class="fas fa-check-square"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline" onclick="PermissionBatchOrgModule.clearSelection()" title="全取消">
+                                <i class="fas fa-square"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 統計資訊 -->
+                    <div class="tree-stats">
+                        <span class="stat-item">
+                            <i class="fas fa-sitemap"></i>
+                            共 <strong id="totalOrgRolesCount">0</strong> 個可選角色
+                        </span>
+                        <span class="stat-item">
+                            <i class="fas fa-check-circle text-success"></i>
+                            已選擇 <strong id="selectedOrgRolesCount">0</strong> 個
+                        </span>
+                        <span class="stat-item">
+                            <i class="fas fa-shield-alt text-primary"></i>
+                            已設定權限 <strong id="existingOrgRolesCount">0</strong> 個
+                        </span>
+                    </div>
+
+                    <!-- 組織樹容器 -->
+                    <div class="org-tree-container scrollable-fade" id="batchOrgTreeContainer" style="max-height: 450px;">
+                        <div class="loading-spinner">
+                            <div class="spinner"></div>
+                            <p>載入組織資料中...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="PermissionBatchOrgModule.closeBatchOrgModal()">取消</button>
+                    <button class="btn btn-primary" onclick="PermissionBatchOrgModule.confirmBatchOrgSettings()">
+                        確認設定
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 載入腳本 -->
+        <script>
+            // 臨時的全域函數，等待模組載入
+            window.returnToAdmin = function () {
+                window.location.href = '/admin';
+            };
 
 
-        // 內嵌簡單的載入函數（避免快取問題）
-        function loadWithTimestamp(src) {
-            const script = document.createElement('script');
-            script.src = `${src}?_t=${Date.now()}`;
-            return new Promise((resolve, reject) => {
-                script.onload = resolve;
-                script.onerror = reject;
-                document.head.appendChild(script);
-            });
-        }
-
-        // 依序載入模組
-        (async function () {
-            try {
-                // 基礎模組
-                await loadWithTimestamp('/js/modules/resource-loader.js');
-
-                // 動態載入所有 CSS
-                await ResourceLoader.loadStyles([
-                    '/css/core/all.min.css',
-                    '/css/core/base.css',
-                    '/css/core/components.css',
-                    '/css/core/layouts.css',
-                    '/css/core/utilities.css',
-                    '/css/components/dialog.css',
-                    '/css/components/searchable-select.css',
-                    '/css/themes/theme-variables.css',
-                    '/css/pages/admin.css',
-                    '/css/pages/dashboard.css',
-                    '/css/pages/permission-management.css'
-                ]);
-
-                // 隱藏頁面載入器，顯示內容
-                document.getElementById('pageLoader').classList.add('hidden');
-                document.getElementById('pageContent').classList.add('visible');
-
-                // 載入公共模組
-                await ResourceLoader.loadModulesInOrder([
-                    '/js/components/dialog.js',
-                    '/js/components/searchable-select.js',
-                    '/js/modules/common-ui.js',
-                    '/js/modules/user-menu-module.js',
-                ]);
-
-                // 載入受保護的管理員模組
-                await ResourceLoader.loadProtectedAdminScriptsInOrder([
-                    'permission-management.js',          // 權限管理模組
-                    'permission-drawer-manager.js'       // 抽屜管理器
-                ]);
-
-                // 初始化 UserMenu（載入用戶資訊）
-                if (window.UserMenu) {
-                    await UserMenu.init();
-                }
-
-                // 初始化抽屜管理器
-                if (window.PermDrawerManager) {
-                    PermDrawerManager.init();
-                }
-
-                // 初始化權限管理模組
-                if (window.PermissionModule) {
-                    await PermissionModule.init();
-                }
-
-                // 隱藏載入動畫（如果有的話）
-                if (window.CommonUI) {
-                    CommonUI.hideSpinner();
-                }
-
-                console.log('權限管理模組載入完成');
-            } catch (error) {
-                console.error('模組載入失敗:', error);
-                // 如果是權限問題，可能需要重新登入
-                if (error.message && error.message.includes('無權限')) {
-                    if (window.Dialog) {
-                        Dialog.error('您沒有權限存取管理員功能，請重新登入');
-                    } else {
-                        alert('您沒有權限存取管理員功能，請重新登入');
-                    }
-                    setTimeout(() => {
-                        window.location.href = '/login';
-                    }, 2000);
-                }
+            // 內嵌簡單的載入函數（避免快取問題）
+            function loadWithTimestamp(src) {
+                const script = document.createElement('script');
+                script.src = `${src}?_t=${Date.now()}`;
+                return new Promise((resolve, reject) => {
+                    script.onload = resolve;
+                    script.onerror = reject;
+                    document.head.appendChild(script);
+                });
             }
-        })();
-    </script>
+
+            // 依序載入模組
+            (async function () {
+                try {
+                    // 基礎模組
+                    await loadWithTimestamp('/js/modules/resource-loader.js');
+
+                    // 動態載入所有 CSS
+                    await ResourceLoader.loadStyles([
+                        '/css/core/all.min.css',
+                        '/css/core/base.css',
+                        '/css/core/components.css',
+                        '/css/core/layouts.css',
+                        '/css/core/utilities.css',
+                        '/css/components/dialog.css',
+                        '/css/components/employee-hover-card.css',
+                        '/css/components/searchable-select.css',
+                        '/css/themes/theme-variables.css',
+                        '/css/pages/admin.css',
+                        '/css/pages/dashboard.css',
+                        '/css/pages/permission-matrix.css',
+                        '/css/pages/permission-group.css',
+                        '/css/pages/permission-management.css',
+                        '/css/pages/permission-access.css'
+                    ]);
+
+                    // 隱藏頁面載入器，顯示內容
+                    document.getElementById('pageLoader').classList.add('hidden');
+                    document.getElementById('pageContent').classList.add('visible');
+
+                    // 載入公共模組
+                    await ResourceLoader.loadModulesInOrder([
+                        '/js/components/dialog.js',
+                        '/js/components/searchable-select.js',
+                        '/js/modules/common-ui.js',
+                        '/js/modules/user-menu-module.js',
+                    ]);
+
+                    // 載入受保護的管理員模組
+                    await ResourceLoader.loadProtectedAdminScriptsInOrder([
+                        'components/employee-hover-card.js',           // 統一懸浮卡片組件
+                        'permission-matrix.js',                        // 權限矩陣管理模組
+                        'permission-group.js',                         // 群組權限管理子模組
+                        'permission-access.js',                        // 權限存取管理子模組
+                        'permission-management.js',                    // 權限管理主模組
+                        'permission-management-batch-setting-org.js',  // 批次組織設定模組
+                        'permission-drawer-manager.js'                 // 抽屜管理器
+                    ]);
+
+                    // 初始化 UserMenu（載入用戶資訊）
+                    if (window.UserMenu) {
+                        await UserMenu.init();
+                    }
+
+                    // 初始化抽屜管理器
+                    if (window.PermDrawerManager) {
+                        PermDrawerManager.init();
+                    }
+
+                    // 初始化權限管理模組
+                    if (window.PermissionModule) {
+                        await PermissionModule.init();
+                    }
+
+                    // 隱藏載入動畫（如果有的話）
+                    if (window.CommonUI) {
+                        CommonUI.hideSpinner();
+                    }
+
+                    console.log('權限管理模組載入完成');
+                } catch (error) {
+                    console.error('模組載入失敗:', error);
+                    // 如果是權限問題，可能需要重新登入
+                    if (error.message && error.message.includes('無權限')) {
+                        if (window.Dialog) {
+                            Dialog.error('您沒有權限存取管理員功能，請重新登入');
+                        } else {
+                            alert('您沒有權限存取管理員功能，請重新登入');
+                        }
+                        setTimeout(() => {
+                            window.location.href = '/login';
+                        }, 2000);
+                    }
+                }
+            })();
+        </script>
 </body>
 
 </html>

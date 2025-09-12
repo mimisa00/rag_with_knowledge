@@ -196,6 +196,28 @@ class UserDAO(BaseDAO):
             logger.error(f"更新用戶最後活動時間失敗: {e}")
             return False
 
+    def get_online_users_count(self) -> int:
+        """獲取線上用戶數（最近15分鐘內有活動的用戶）"""
+        try:
+            from datetime import datetime, timedelta
+            
+            # 最近15分鐘內有活動的用戶視為線上
+            fifteen_minutes_ago = datetime.now() - timedelta(minutes=15)
+            
+            query = """
+                SELECT COUNT(*) as count
+                FROM users 
+                WHERE last_activity_at >= %s 
+                AND is_active = TRUE
+            """
+            result = self.execute_query(query, (fifteen_minutes_ago,))
+            
+            return result[0]['count'] if result else 0
+            
+        except Exception as e:
+            logger.error(f"獲取線上用戶數失敗: {e}")
+            return 0
+
     def get_login_statistics(self) -> Dict[str, Any]:
         """獲取登入統計資料"""
         try:
@@ -270,13 +292,17 @@ class UserDAO(BaseDAO):
             """
             user_status = self.execute_query(user_status_query, (today_start, week_start, month_start))
             
+            # 6. 獲取線上用戶數
+            online_count = self.get_online_users_count()
+            
             # 整理數據
             result = {
                 "summary": {
                     "today_logins": today_logins[0]['count'] if today_logins else 0,
                     "week_logins": week_logins[0]['count'] if week_logins else 0,
                     "month_logins": month_logins[0]['count'] if month_logins else 0,
-                    "active_users": active_users[0]['count'] if active_users else 0
+                    "active_users": active_users[0]['count'] if active_users else 0,
+                    "online_users": online_count
                 },
                 "daily_trends": [
                     {
@@ -300,7 +326,8 @@ class UserDAO(BaseDAO):
                     "today_logins": 0,
                     "week_logins": 0,
                     "month_logins": 0,
-                    "active_users": 0
+                    "active_users": 0,
+                    "online_users": 0
                 },
                 "daily_trends": [],
                 "user_status": {},
@@ -482,6 +509,236 @@ class UserDAO(BaseDAO):
                 "summary": {"danger": 0, "warning": 0, "info": 0},
                 "error": str(e)
             }
+
+    def create_activation_token(self, user_id: int, token: str, token_type: str = 'activation', expires_hours: int = 168) -> bool:
+        """創建啟用 token（預設7天過期）"""
+        try:
+            query = """
+                INSERT INTO user_activation_tokens 
+                (user_id, token, token_type, expires_at, used, created_at) 
+                VALUES (%s, %s, %s, NOW() + INTERVAL %s HOUR, FALSE, NOW())
+            """
+            return self.execute_insert(query, (user_id, token, token_type, expires_hours)) > 0
+        except Exception as e:
+            logger.error(f"創建啟用 token 失敗: {e}")
+            return False
+
+    def verify_activation_token(self, token: str) -> Optional[Dict[str, Any]]:
+        """驗證啟用 token"""
+        try:
+            query = """
+                SELECT t.id, t.user_id, t.token_type, t.expires_at, t.used,
+                       u.id as user_id, u.loginid, u.username, u.email, u.is_active,
+                       ue.password_strategy
+                FROM user_activation_tokens t
+                JOIN users u ON t.user_id = u.id
+                LEFT JOIN user_extensions ue ON u.id = ue.user_id
+                WHERE t.token = %s
+            """
+            results = self.execute_query(query, (token,))
+            
+            if not results:
+                return None
+                
+            token_data = results[0]
+            
+            # 檢查 token 是否已過期
+            from datetime import datetime
+            if token_data['expires_at'] < datetime.now():
+                logger.warning(f"Token 已過期: {token}")
+                return None
+            
+            # 檢查 token 是否已使用
+            if token_data['used']:
+                logger.warning(f"Token 已使用: {token}")
+                return None
+            
+            return token_data
+        except Exception as e:
+            logger.error(f"驗證啟用 token 失敗: {e}")
+            return None
+
+    def use_activation_token(self, token: str) -> bool:
+        """標記 token 為已使用"""
+        try:
+            query = """
+                UPDATE user_activation_tokens 
+                SET used = TRUE, used_at = NOW() 
+                WHERE token = %s AND used = FALSE AND expires_at > NOW()
+            """
+            affected_rows = self.execute_update(query, (token,))
+            return affected_rows > 0
+        except Exception as e:
+            logger.error(f"標記 token 為已使用失敗: {e}")
+            return False
+
+    def activate_user_account(self, user_id: int, password_hash: str) -> bool:
+        """啟用使用者帳號並設定密碼"""
+        try:
+            # 更新使用者資料
+            query = """
+                UPDATE users 
+                SET is_active = TRUE, 
+                    password_hash = %s,
+                    must_change_password = FALSE,
+                    password_set_at = NOW(),
+                    last_password_change = NOW()
+                WHERE id = %s
+            """
+            users_updated = self.execute_update(query, (password_hash, user_id))
+            
+            # 更新擴充資料
+            ext_query = """
+                UPDATE user_extensions 
+                SET activated_at = NOW(),
+                    activation_scheduled = NULL
+                WHERE user_id = %s
+            """
+            self.execute_update(ext_query, (user_id,))
+            
+            return users_updated > 0
+        except Exception as e:
+            logger.error(f"啟用使用者帳號失敗: {e}")
+            return False
+
+    def get_password_policy(self, policy_name: str = 'default_policy') -> Optional[Dict[str, Any]]:
+        """獲取密碼策略"""
+        try:
+            query = """
+                SELECT * FROM password_policies 
+                WHERE policy_name = %s AND is_active = TRUE
+            """
+            results = self.execute_query(query, (policy_name,))
+            return results[0] if results else None
+        except Exception as e:
+            logger.error(f"獲取密碼策略失敗: {e}")
+            return None
+
+    def has_active_activation_token(self, user_id: int) -> bool:
+        """檢查使用者是否有有效的啟用 token"""
+        try:
+            query = """
+                SELECT COUNT(*) as count FROM user_activation_tokens 
+                WHERE user_id = %s AND used = FALSE AND expires_at > NOW() AND token_type = 'activation'
+            """
+            results = self.execute_query(query, (user_id,))
+            return results and len(results) > 0 and results[0]['count'] > 0
+        except Exception as e:
+            logger.error(f"檢查使用者啟用 token 失敗: {e}")
+            return False
+
+    def get_users_activation_tokens_batch(self, user_ids: List[int]) -> Dict[int, bool]:
+        """批次檢查多個使用者是否有有效的啟用 token"""
+        if not user_ids:
+            return {}
+        
+        try:
+            placeholders = ','.join(['%s'] * len(user_ids))
+            query = f"""
+                SELECT user_id, COUNT(*) as count 
+                FROM user_activation_tokens 
+                WHERE user_id IN ({placeholders}) 
+                  AND used = FALSE 
+                  AND expires_at > NOW() 
+                  AND token_type = 'activation'
+                GROUP BY user_id
+            """
+            results = self.execute_query(query, tuple(user_ids))
+            
+            # 建立結果字典，預設都是 False
+            token_map = {uid: False for uid in user_ids}
+            
+            # 標記有 token 的使用者為 True
+            for row in results:
+                if row['count'] > 0:
+                    token_map[row['user_id']] = True
+            
+            return token_map
+        except Exception as e:
+            logger.error(f"批次檢查使用者啟用 token 失敗: {e}")
+            # 發生錯誤時回傳預設值（全部為 False）
+            return {uid: False for uid in user_ids}
+
+    def clean_expired_tokens(self) -> int:
+        """清理過期的 token"""
+        try:
+            query = """
+                DELETE FROM user_activation_tokens 
+                WHERE expires_at < NOW() AND used = FALSE
+            """
+            return self.execute_update(query)
+        except Exception as e:
+            logger.error(f"清理過期 token 失敗: {e}")
+            return 0
+
+    def delete_user_activation_tokens(self, user_id: int, token_type: str = 'activation') -> bool:
+        """刪除使用者的所有未使用啟用 token"""
+        try:
+            query = """
+                DELETE FROM user_activation_tokens 
+                WHERE user_id = %s AND token_type = %s AND used = FALSE
+            """
+            affected_rows = self.execute_update(query, (user_id, token_type))
+            return affected_rows >= 0  # >= 0 表示成功（可能刪除 0 筆記錄）
+        except Exception as e:
+            logger.error(f"刪除使用者 {user_id} 的啟用 token 失敗: {e}")
+            return False
+
+    def get_user_complete_info(self, user_id: int) -> Optional[Dict[str, Any]]:
+        """獲取使用者完整資訊，包含員工擴充資料、部門角色、權限群組"""
+        try:
+            query = """
+                SELECT 
+                    u.id, u.loginid, u.username, u.email, u.role, u.is_active,
+                    u.created_at, u.last_login_at,
+                    ue.title, ue.employee_no, ue.department_id,
+                    d.name as department_name,
+                    dr.name as primary_role_name,
+                    dr.role_type as primary_role_type,
+                    GROUP_CONCAT(DISTINCT pg.name) as permission_group_names,
+                    GROUP_CONCAT(DISTINCT pg.code) as permission_group_codes
+                FROM users u
+                LEFT JOIN user_extensions ue ON u.id = ue.user_id
+                LEFT JOIN departments d ON ue.department_id = d.id
+                LEFT JOIN user_department_roles udr ON u.id = udr.user_id AND udr.is_primary = 1
+                LEFT JOIN department_roles dr ON udr.department_role_id = dr.id
+                LEFT JOIN permission_groups_user pgu ON u.id = pgu.user_id 
+                    AND (pgu.expires_at IS NULL OR pgu.expires_at > NOW())
+                LEFT JOIN permission_groups pg ON pgu.permission_group_id = pg.id AND pg.is_active = 1
+                WHERE u.id = %s
+                GROUP BY u.id
+            """
+            
+            results = self.execute_query(query, (user_id,))
+            if results:
+                user_info = results[0]
+                
+                # 處理 GROUP_CONCAT 結果
+                if user_info.get('permission_group_names'):
+                    user_info['permission_groups'] = [
+                        {
+                            'name': name,
+                            'code': code
+                        }
+                        for name, code in zip(
+                            user_info['permission_group_names'].split(','),
+                            user_info['permission_group_codes'].split(',') if user_info.get('permission_group_codes') else []
+                        )
+                    ]
+                else:
+                    user_info['permission_groups'] = []
+                
+                # 清理不需要的欄位
+                user_info.pop('permission_group_names', None)
+                user_info.pop('permission_group_codes', None)
+                
+                return user_info
+                
+            return None
+            
+        except Exception as e:
+            logger.error(f"獲取使用者 {user_id} 完整資訊失敗: {e}")
+            return None
 
 
 # 建立實例

@@ -13,6 +13,7 @@ from app.core.document.converter import document_converter
 from app.dao.knowledge_base import knowledge_base_dao
 from app.dao.index_job import index_job_dao
 from app.api.dependencies import get_current_user, get_admin_user
+from app.core.security.permissions import permission_required
 from app.config.paths import path_config
 from app.utils.logging import get_logger
 
@@ -33,6 +34,7 @@ def allowed_file(filename: str) -> bool:
 
 
 @router.post("/document/upload")
+@permission_required("KB.FILE_UPLOAD")
 async def upload_file(
     files: List[UploadFile] = File(...),
     overwrite: bool = Form(False),
@@ -136,6 +138,7 @@ async def upload_file(
 
 
 @router.post("/document/list/files")
+@permission_required("KB.FILE_VIEW")
 def get_kb_files(
     kb_id: str = Form(...), current_user: Dict[str, Any] = Depends(get_admin_user)
 ):
@@ -193,6 +196,7 @@ def check_file_exists(
 
 
 @router.delete("/document/delete/files")
+@permission_required("KB.FILE_DELETE")
 def delete_kb_file(
     kb_id: str = Form(...),
     files: List[str] = Form(...),
@@ -255,6 +259,7 @@ def delete_kb_file(
 
 
 @router.get("/document/file/{filename}")
+@permission_required("KB.FILE_VIEW")
 def get_document_file(
     kb_id: str, 
     filename: str, current_user: Dict[str, Any] = Depends(get_current_user)

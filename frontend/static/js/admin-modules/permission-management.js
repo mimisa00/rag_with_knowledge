@@ -18,6 +18,7 @@ const PermissionModule = (function() {
     let permissions = [];
     let showInactiveGroups = false;  // 是否顯示停用群組
     let selectedGroupId = null;      // 當前選中的群組ID
+    let previousSelectedRow = null;  // 快取之前選中的行元素
     
     /**
      * 初始化模組
@@ -35,8 +36,30 @@ const PermissionModule = (function() {
             CommonUI.initScrollFadeEffect();
         }
         
-        // 載入初始數據
-        await loadAllData();
+        // 檢查當前顯示的區塊
+        const activeSection = document.querySelector('.content-section.active');
+        console.log('當前顯示的區塊:', activeSection ? activeSection.id : 'none');
+        
+        if (activeSection && activeSection.id === 'matrix-section') {
+            // 如果當前顯示的是權限矩陣區塊，初始化權限矩陣模組
+            console.log('準備初始化權限矩陣模組...');
+            if (window.PermissionMatrixModule) {
+                await PermissionMatrixModule.init();
+            } else {
+                console.error('PermissionMatrixModule 未載入');
+            }
+        } else if (activeSection && activeSection.id === 'groups-section') {
+            // 載入群組數據
+            await loadAllData();
+        } else if (activeSection && activeSection.id === 'access-section') {
+            // 如果當前顯示的是權限存取區塊，初始化權限存取模組
+            console.log('準備初始化權限存取模組...');
+            if (window.PermissionAccessModule) {
+                await PermissionAccessModule.init();
+            } else {
+                console.error('PermissionAccessModule 未載入');
+            }
+        }
         
         // 監聽區塊切換事件
         window.addEventListener('permSectionChange', async (e) => {
@@ -48,6 +71,14 @@ const PermissionModule = (function() {
                 }
             }, 100);
         });
+        
+        // 初始化員工懸浮卡片模組
+        if (window.EmployeeHoverCard) {
+            console.log('初始化通用員工懸浮卡片元件');
+            EmployeeHoverCard.init();
+        } else {
+            console.warn('員工懸浮卡片元件不存在，懸浮卡片功能將無法使用');
+        }
         
         console.log('PermissionModule 初始化完成');
     }
@@ -78,8 +109,23 @@ const PermissionModule = (function() {
      */
     async function loadSectionData(section) {
         switch(section) {
+            case 'matrix':
+                // 權限矩陣管理 - 由 PermissionMatrixModule 處理
+                if (window.PermissionMatrixModule) {
+                    await PermissionMatrixModule.init();
+                }
+                break;
             case 'groups':
-                await loadGroups();
+                // 載入完整資料（群組和權限）以確保資料同步
+                await loadAllData();
+                break;
+            case 'access':
+                // 權限存取管理 - 由 PermissionAccessModule 處理
+                if (window.PermissionAccessModule) {
+                    await PermissionAccessModule.init();
+                } else {
+                    console.error('PermissionAccessModule 未載入');
+                }
                 break;
             case 'data-scope':
             case 'delegation':
@@ -96,76 +142,33 @@ const PermissionModule = (function() {
      */
     async function loadGroups() {
         try {
-            const response = await fetch(ENDPOINTS.groups, {
-                credentials: 'include',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            const data = await response.json();
-            // 處理不同的回應格式
-            allGroups = Array.isArray(data) ? data : (data.data || []);
-            
+            // 使用子模組的載入功能
+            if (window.PermissionGroupModule) {
+                allGroups = await PermissionGroupModule.loadGroups();
+            }             
             // 根據顯示設定過濾群組
             filterGroups();
             renderGroupTable();
             updateGroupStatistics();
         } catch (error) {
             console.error('載入群組數據失敗:', error);
-            // 使用模擬數據作為後備
             allGroups = [];
             filterGroups();
             renderGroupTable();
             updateGroupStatistics();
         }
     }
-    
-    
     /**
      * 載入權限數據
      */
     async function loadPermissions() {
         try {
-            const response = await fetch(ENDPOINTS.permissions, {
-                credentials: 'include',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            const data = await response.json();
-            // 權限矩陣包含 modules 陣列
-            if (data.modules) {
-                // 將 modules 轉換為扁平的權限列表
-                permissions = [];
-                data.modules.forEach(module => {
-                    module.actions.forEach(action => {
-                        permissions.push({
-                            id: `${module.key}.${action.key}`,
-                            code: `${module.key}.${action.key}`,
-                            name: action.name,
-                            category: module.name,
-                            module: module.key,
-                            action: action.key,
-                            description: action.description
-                        });
-                    });
-                });
-            } else {
-                permissions = data.data || [];
-            }
+            // 使用子模組的載入功能
+            if (window.PermissionGroupModule) {
+                permissions = await PermissionGroupModule.loadPermissions();
+            } 
         } catch (error) {
             console.error('載入權限數據失敗:', error);
-            // 使用模擬權限數據
             permissions = [];
         }
     }
@@ -175,110 +178,29 @@ const PermissionModule = (function() {
      * 渲染群組表格
      */
     function renderGroupTable() {
-        const tbody = document.getElementById('groupTableBody');
-        if (!tbody) return;
-        
-        if (groups.length === 0) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="6" class="text-center">
-                        <div class="empty-state">
-                            <i class="fas fa-user-shield"></i>
-                            <h3>尚無群組資料</h3>
-                            <p>點擊「新增群組」開始建立群組</p>
-                        </div>
-                    </td>
-                </tr>
-            `;
-            return;
+        // 使用子模組的渲染功能
+        if (window.PermissionGroupModule) {
+            PermissionGroupModule.renderGroupTable(groups, 'PermissionModule');
         }
-        
-        tbody.innerHTML = groups.map(group => `
-            <tr class="${group.is_active === false ? 'inactive-row' : ''}" onclick="PermissionModule.selectGroup(${group.id})" data-group-id="${group.id}">
-                <td>${group.code || ''}</td>
-                <td>${group.name}</td>
-                <td>${group.permission_type == 'custom' ? '自訂' : '系統'}</td>
-                <td>${group.user_count || 0}</td>
-                <td>
-                    <span class="status-badge ${group.is_active !== false ? 'status-active' : 'status-disabled'}">
-                        ${group.is_active !== false ? '啟用' : '停用'}
-                    </span>
-                </td>
-                <td onclick="event.stopPropagation()">
-                    <button class="btn-icon" onclick="PermissionModule.editGroup(${group.id})">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    ${group.permission_type === 'system' ? 
-                        `<button class="btn-icon disabled" title="系統群組無法停用" disabled>
-                            <i class="fas fa-trash"></i>
-                        </button>` :
-                        `<button class="btn-icon ${!group.is_active ? 'disabled' : ''}" ${group.is_active ? `onclick="PermissionModule.deleteGroup(${group.id})"` : ''} title="${group.is_active ? '停用群組' : '已停用'}">
-                            <i class="fas fa-trash"></i>
-                        </button>`
-                    }
-                </td>
-            </tr>
-        `).join('');
     }
     
     /**
      * 渲染過濾後的群組表格
      */
     function renderGroupTableWithFiltered(filteredGroups) {
-        const tbody = document.getElementById('groupTableBody');
-        if (!tbody) return;
-        
-        if (filteredGroups.length === 0) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="6" class="text-center">
-                        <div class="empty-state">
-                            <i class="fas fa-search"></i>
-                            <h3>找不到符合的群組</h3>
-                            <p>請嘗試其他搜尋關鍵字</p>
-                        </div>
-                    </td>
-                </tr>
-            `;
-            return;
+        // 使用子模組的渲染功能
+        if (window.PermissionGroupModule) {
+            PermissionGroupModule.renderGroupTableWithFiltered(filteredGroups, 'PermissionModule');
         }
-        
-        tbody.innerHTML = filteredGroups.map(group => `
-            <tr onclick="PermissionModule.selectGroup(${group.id})" data-group-id="${group.id}">
-                <td>${group.code || ''}</td>
-                <td>${group.name}</td>
-                <td>${(group.permission_type) === 'system' ? '系統' : '自訂'}</td>
-                <td>${group.user_count || 0}</td>
-                <td>
-                    <span class="status-badge ${group.is_active ? 'status-active' : 'status-disabled'}">
-                        ${group.is_active ? '啟用' : '停用'}
-                    </span>
-                </td>
-                <td onclick="event.stopPropagation()">
-                    <button class="btn-icon" onclick="PermissionModule.editGroup(${group.id})">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    ${(group.permission_type) === 'system' ? 
-                        `<button class="btn-icon disabled" title="系統群組無法停用" disabled>
-                            <i class="fas fa-trash"></i>
-                        </button>` :
-                        `<button class="btn-icon ${!group.is_active ? 'disabled' : ''}" ${group.is_active ? `onclick="PermissionModule.deleteGroup(${group.id})"` : ''} title="${group.is_active ? '停用群組' : '已停用'}">
-                            <i class="fas fa-trash"></i>
-                        </button>`
-                    }
-                </td>
-            </tr>
-        `).join('');
     }
         
     /**
      * 過濾群組
      */
     function filterGroups() {
-        if (showInactiveGroups) {
-            groups = [...allGroups];
-        } else {
-            groups = allGroups.filter(group => group.is_active !== false);
+        // 使用子模組的過濾功能
+        if (window.PermissionGroupModule) {
+            groups = PermissionGroupModule.filterGroups(allGroups, showInactiveGroups);
         }
     }
     
@@ -312,39 +234,19 @@ const PermissionModule = (function() {
      * 更新群組統計數據
      */
     function updateGroupStatistics() {
-        const totalGroups = allGroups.length;
-        const activeGroups = allGroups.filter(g => g.is_active !== false).length;
-        const inactiveGroups = allGroups.filter(g => g.is_active === false).length;
-        
-        const totalCount = document.querySelector('#totalGroupCount');
-        const activeCount = document.querySelector('#activeGroupCount strong');
-        const inactiveCount = document.querySelector('#inactiveGroupCount strong');
-        
-        if (totalCount) totalCount.textContent = totalGroups;
-        if (activeCount) activeCount.textContent = activeGroups;
-        if (inactiveCount) inactiveCount.textContent = inactiveGroups;
+        // 使用子模組的統計功能
+        if (window.PermissionGroupModule) {
+            PermissionGroupModule.updateGroupStatistics(allGroups);
+        }
     }
         
     /**
      * 更新統計資訊
      */
     function updateStatistics() {
-        // 更新狀態列統計
-        const groupCount = document.querySelector('#groupCount span');
-        if (groupCount) {
-            groupCount.textContent = allGroups.length;
-        }
-        
-        const permissionCount = document.querySelector('#permissionCount span');
-        if (permissionCount) {
-            permissionCount.textContent = permissions.length;
-        }
-        
-        // 計算總用戶數（所有群組的用戶數總和）
-        const totalUsers = allGroups.reduce((sum, group) => sum + (group.user_count || 0), 0);
-        const userCount = document.querySelector('#userCount span');
-        if (userCount) {
-            userCount.textContent = totalUsers;
+        // 使用子模組的統計功能
+        if (window.PermissionGroupModule) {
+            PermissionGroupModule.updateStatistics(allGroups, permissions);
         }
     }
     
@@ -353,18 +255,18 @@ const PermissionModule = (function() {
      * 顯示載入狀態
      */
     function showLoadingState() {
-        document.querySelectorAll('.loading-spinner').forEach(spinner => {
-            spinner.style.display = 'flex';
-        });
+        if (window.PermissionGroupModule) {
+            PermissionGroupModule.showLoadingState();
+        }
     }
     
     /**
      * 隱藏載入狀態
      */
     function hideLoadingState() {
-        document.querySelectorAll('.loading-spinner').forEach(spinner => {
-            spinner.style.display = 'none';
-        });
+        if (window.PermissionGroupModule) {
+            PermissionGroupModule.hideLoadingState();
+        }
     }
     
     /**
@@ -481,91 +383,57 @@ const PermissionModule = (function() {
     
     /**
      * 選擇群組
+     * @param {Number} groupId - 群組ID
+     * @param {Boolean} forceRefresh - 是否強制刷新（即使是相同的群組）
      */
-    function selectGroup(groupId) {
+    function selectGroup(groupId, forceRefresh = false) {
+        // 避免重複選擇同一個群組（除非強制刷新）
+        if (!forceRefresh && selectedGroupId === groupId) return;
+        
         // 記錄當前選中的群組ID
         selectedGroupId = groupId;
         
-        // 移除所有群組行的選中狀態
-        document.querySelectorAll('#groupTableBody tr').forEach(row => {
-            row.classList.remove('selected');
+        // 使用 requestAnimationFrame 批次處理 DOM 更新
+        requestAnimationFrame(() => {
+            // 優化：使用快取的元素參考
+            if (previousSelectedRow) {
+                previousSelectedRow.classList.remove('selected');
+            }
+            
+            // 為選中的群組行添加選中狀態
+            const tbody = document.getElementById('groupTableBody');
+            if (tbody) {
+                const selectedRow = tbody.querySelector(`tr[data-group-id="${groupId}"]`);
+                if (selectedRow) {
+                    selectedRow.classList.add('selected');
+                    previousSelectedRow = selectedRow; // 快取當前選中的行
+                }
+            }
+            
+            // 使用 requestIdleCallback 處理非關鍵的詳情顯示
+            if ('requestIdleCallback' in window) {
+                requestIdleCallback(() => {
+                    showGroupDetails(groupId);
+                }, { timeout: 50 });
+            } else {
+                // 降級到 setTimeout
+                setTimeout(() => {
+                    showGroupDetails(groupId);
+                }, 0);
+            }
         });
-        
-        // 為選中的群組行添加選中狀態
-        const selectedRow = document.querySelector(`#groupTableBody tr[data-group-id="${groupId}"]`);
-        if (selectedRow) {
-            selectedRow.classList.add('selected');
-        }
-        
-        // 顯示群組詳情
-        showGroupDetails(groupId);
     }
     
     /**
      * 顯示群組詳情
      */
     function showGroupDetails(groupId) {
-        const group = allGroups.find(g => g.id == groupId);
-        if (!group) return;
-        
-        const detailsContent = document.querySelector('.group-details .details-content');
-        if (detailsContent) {
-            detailsContent.innerHTML = `
-                <div class="permission-info-content">
-                    <div class="group-description">
-                        ${group.description || '無描述'}
-                    </div>
-                    <div class="permission-tags">
-                        ${generatePermissionTagsHtml(group)}
-                    </div>
-                </div>
-            `;
+        // 使用子模組的顯示詳情功能
+        if (window.PermissionGroupModule) {
+            PermissionGroupModule.showGroupDetails(groupId, allGroups, permissions);
         }
     }
     
-    /**
-     * 生成權限標籤的HTML
-     */
-    function generatePermissionTagsHtml(group) {
-        if (!permissions || permissions.length === 0) {
-            return '<span class="text-muted">權限資料載入中...</span>';
-        }
-        
-        const groupPermissions = group.permissions || {};
-        
-        // 按類別分組權限
-        const permissionsByCategory = {};
-        permissions.forEach(perm => {
-            const category = perm.category || '其他';
-            if (!permissionsByCategory[category]) {
-                permissionsByCategory[category] = [];
-            }
-            permissionsByCategory[category].push(perm);
-        });
-        
-        // 生成分類的權限區塊
-        const categoryBlocks = Object.keys(permissionsByCategory).map(category => {
-            const categoryPermissions = permissionsByCategory[category];
-            const permissionTags = categoryPermissions.map(perm => {
-                const hasPermission = groupPermissions[perm.code] || false;
-                const iconClass = hasPermission ? 'fas fa-check-circle' : 'fas fa-times-circle';
-                const tagClass = hasPermission ? 'permission-tag' : 'permission-tag denied';
-                
-                return `<span class="${tagClass}"><i class="${iconClass}"></i> ${perm.name}</span>`;
-            }).join('');
-            
-            return `
-                <div class="permission-category-block">
-                    <div class="permission-category-title">${category}</div>
-                    <div class="permission-category-tags">
-                        ${permissionTags}
-                    </div>
-                </div>
-            `;
-        }).join('');
-        
-        return categoryBlocks || '<span class="text-muted">此群組尚無權限設定</span>';
-    }
             
     /**
      * 顯示新增群組模態框
@@ -640,197 +508,40 @@ const PermissionModule = (function() {
      * 載入權限選項
      */
     function loadPermissionOptions() {
-        const container = document.querySelector('.permission-grid');
-        if (!container) {
-            console.warn('找不到權限容器元素 .permission-grid');
-            return;
+        // 使用子模組的載入選項功能
+        if (window.PermissionGroupModule) {
+            PermissionGroupModule.loadPermissionOptions(permissions);
         }
-        
-        // 檢查權限列表是否已載入
-        if (!permissions || permissions.length === 0) {
-            console.warn('權限列表為空，顯示預設訊息');
-            container.innerHTML = `
-                <div class="text-center text-muted">
-                    <p>權限設定載入中或暫無可用權限</p>
-                </div>
-            `;
-            return;
-        }
-        
-        // 按分類分組權限
-        const grouped = {};
-        permissions.forEach(perm => {
-            if (!grouped[perm.category]) {
-                grouped[perm.category] = [];
-            }
-            grouped[perm.category].push(perm);
-        });
-        
-        container.innerHTML = Object.entries(grouped).map(([category, perms]) => `
-                <div class="permission-item">
-                    <div class="permission-header">
-                        <i class="fas fa-shield-alt"></i>
-                        ${category}
-                    </div>
-                    <div class="permission-actions">
-                        ${perms.map(perm => `
-                            <label>
-                                <input type="checkbox" name="permissions" value="${perm.id}">
-                                ${perm.name}
-                            </label>
-                        `).join('')}
-                    </div>
-                </div>
-            `).join('');
     }
             
     /**
      * 儲存群組
      */
     async function saveGroup() {
-        const form = document.getElementById('groupForm');
-        if (!form) return;
-        
-        const formData = new FormData(form);
-        const groupId = formData.get('id');
-        const isEdit = groupId && groupId !== '';
-        
-        // 前端驗證：根據新增/編輯模式檢查必填欄位
-        const name = formData.get('name');
-        
-        // 判斷是否為系統群組編輯（系統群組的某些欄位會被禁用）
-        const isSystemGroupEdit = isEdit && groups.find(g => g.id == groupId && (g.permission_type === 'system' || g.type === 'system'));
-        
-        // 只對非系統群組編輯進行名稱驗證（系統群組編輯時名稱欄位被禁用）
-        if (!isSystemGroupEdit) {
-            if (!name || name.trim() === '') {
-                showError('群組名稱為必填欄位，請輸入有效的群組名稱');
-                return;
-            }
-        }
-        
-        // 新增模式：額外檢查群組代碼
-        if (!isEdit) {
-            const code = formData.get('code');
-            if (!code || code.trim() === '') {
-                showError('群組代碼為必填欄位，請輸入有效的群組代碼');
-                return;
-            }
-        }
-        
-        const permissionsData = {};
-        
-        // 檢查權限列表是否已載入
-        if (!permissions || permissions.length === 0) {
-            console.warn('權限列表尚未載入，將嘗試不包含權限資料儲存');
-        } else {
-            // 收集權限設定 - 只收集 name="permissions" 的 checkbox
-            form.querySelectorAll('input[name="permissions"]:checked').forEach(cb => {
-                // 使用 checkbox 的 value 作為權限 ID
-                const permId = cb.value;
-                // 從權限列表中找到對應的權限（使用模組內的 permissions 變數）
-                const perm = permissions.find(p => p.id === permId || p.code === permId);
-                if (perm) {
-                    // 使用權限的 code 作為 key
-                    permissionsData[perm.code || permId] = true;
+        // 使用子模組的儲存功能
+        if (window.PermissionGroupModule) {
+            await PermissionGroupModule.saveGroup(groups, permissions, async () => {
+                // 重新載入群組和權限資料以確保同步
+                await Promise.all([
+                    loadGroups(),
+                    loadPermissions()
+                ]);
+                updateStatistics();
+                
+                // 如果有選中的群組，重新顯示其詳細資訊
+                if (selectedGroupId) {
+                    // 檢查選中的群組是否還存在（可能被刪除）
+                    const selectedGroup = allGroups.find(g => g.id == selectedGroupId);
+                    if (selectedGroup) {
+                        // 重新選擇該群組，強制刷新以更新權限資訊
+                        selectGroup(selectedGroupId, true);
+                    } else {
+                        // 如果選中的群組不存在了，清除選中狀態
+                        selectedGroupId = null;
+                    }
                 }
             });
-        }
-        
-        // 建立基本資料 - 處理禁用欄位的問題
-        let groupType = formData.get('type');  // HTML 中的 name 是 "type"
-        // 如果 groupType 為 null（因為欄位被禁用），則設定預設值
-        if (!groupType) {
-            groupType = 'custom';  // 新增時強制為 custom，編輯時從現有群組獲取
-            if (isEdit) {
-                const group = groups.find(g => g.id == groupId);
-                if (group) {
-                    groupType = group.permission_type || 'custom';
-                }
-            }
-        }
-        
-        // 根據編輯模式構建資料對象
-        let data;
-        
-        if (isSystemGroupEdit) {
-            // 系統群組編輯：只包含允許編輯的欄位，避免處理禁用欄位
-            data = {
-                description: formData.get('description') || '',
-                permissions: permissionsData
-            };
-        } else {
-            // 非系統群組編輯或新增：完整資料處理
-            data = {
-                name: name ? name.trim() : '',  // 安全處理可能為 null 的值
-                permission_type: groupType,
-                is_active: formData.get('is_active') === '1',
-                description: formData.get('description') || '',
-                permissions: permissionsData
-            };
-            
-            // 新增模式：加入群組代碼
-            if (!isEdit) {
-                const code = formData.get('code');
-                data.code = code ? code.trim() : '';  // 安全處理 code
-            }
-        }
-        
-        try {
-            // 調試資訊：顯示要發送的資料
-            console.log('保存群組 - 發送資料:', data);
-            console.log('編輯模式:', isEdit, '群組ID:', groupId);
-            
-            const url = isEdit ? `${ENDPOINTS.groups}/${groupId}` : ENDPOINTS.groups;
-            const method = isEdit ? 'PUT' : 'POST';
-            
-            const response = await fetch(url, {
-                method: method,
-                credentials: 'include',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data)
-            });
-            
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                console.error('群組儲存失敗:', response.status, errorData);
-                
-                // 處理詳細的驗證錯誤
-                let errorMessage = `儲存失敗 (${response.status})`;
-                if (errorData.detail) {
-                    errorMessage += `: ${errorData.detail}`;
-                }
-                if (errorData.errors && errorData.errors.length > 0) {
-                    const fieldErrors = errorData.errors.map(err => 
-                        `${err.loc.join('.')}: ${err.msg}`
-                    ).join(', ');
-                    errorMessage += `\n詳細錯誤: ${fieldErrors}`;
-                }
-                
-                throw new Error(errorMessage);
-            }
-            
-            showSuccess(isEdit ? '群組更新成功' : '群組新增成功');
-            closeModal('groupModal');
-            await loadGroups();
-            updateStatistics();
-            
-            // 如果有選中的群組，重新顯示其詳細資訊
-            if (selectedGroupId) {
-                // 檢查選中的群組是否還存在（可能被刪除）
-                const selectedGroup = allGroups.find(g => g.id == selectedGroupId);
-                if (selectedGroup) {
-                    // 重新選擇該群組，這會更新選中狀態和詳細資訊
-                    selectGroup(selectedGroupId);
-                } else {
-                    // 如果選中的群組不存在了，清除選中狀態
-                    selectedGroupId = null;
-                }
-            }
-        } catch (error) {
-            showError('儲存群組失敗：' + error.message);
+            return;
         }
     }
     
@@ -840,6 +551,14 @@ const PermissionModule = (function() {
     async function editGroup(id) {
         const group = groups.find(g => g.id === id);
         if (!group) return;
+        
+        // 記錄正在編輯的群組為選中狀態
+        selectedGroupId = id;
+        
+        // 確保權限資料是最新的
+        if (!permissions || permissions.length === 0) {
+            await loadPermissions();
+        }
         
         // 填充基本資料
         document.getElementById('groupId').value = group.id;
@@ -905,31 +624,41 @@ const PermissionModule = (function() {
         // 先載入權限選項
         await loadPermissionOptions();
         
-        // 填充權限設定
-        const groupPermissions = group.permissions || {};
-        
         // 先清除所有權限的勾選
         document.querySelectorAll('input[name="permissions"]').forEach(cb => {
             cb.checked = false;
         });
         
-        // 檢查權限列表是否已載入
-        if (!permissions || permissions.length === 0) {
-            console.warn('權限列表尚未載入，無法填充權限設定');
-        } else {
-            // 根據群組權限勾選對應的 checkbox
-            for (const [permCode, value] of Object.entries(groupPermissions)) {
-                if (value) {
-                    // 找到對應的權限（使用模組內的 permissions 變數）
-                    const perm = permissions.find(p => p.code === permCode || p.id === permCode);
-                    if (perm) {
-                        // 找到對應的 checkbox 並勾選
-                        const checkbox = document.querySelector(`input[name="permissions"][value="${perm.id}"]`);
-                        if (checkbox) {
-                            checkbox.checked = true;
-                        }
-                    }
+        // 從 API 載入群組的權限 ID
+        try {
+            const permResponse = await fetch(`/api/permissions/groups/${id}/permissions`, {
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json'
                 }
+            });
+            
+            if (permResponse.ok) {
+                const groupPermissions = await permResponse.json();
+                // 勾選對應的權限
+                groupPermissions.forEach(perm => {
+                    const checkbox = document.querySelector(`input[name="permissions"][value="${perm.id}"]`);
+                    if (checkbox) {
+                        checkbox.checked = true;
+                    }
+                });
+            }
+        } catch (error) {
+            console.warn('載入群組權限失敗，使用預設設定:', error);
+            
+            // 向後相容：如果有 permission_ids 欄位
+            if (group.permission_ids && Array.isArray(group.permission_ids)) {
+                group.permission_ids.forEach(permId => {
+                    const checkbox = document.querySelector(`input[name="permissions"][value="${permId}"]`);
+                    if (checkbox) {
+                        checkbox.checked = true;
+                    }
+                });
             }
         }
         
@@ -944,6 +673,29 @@ const PermissionModule = (function() {
      * 刪除群組（軟刪除：設為停用狀態）
      */
     async function deleteGroup(id) {
+        // 使用子模組的刪除功能
+        if (window.PermissionGroupModule) {
+            await PermissionGroupModule.deleteGroup(id, groups, async () => {
+                // 重新載入群組和權限資料以確保同步
+                await Promise.all([
+                    loadGroups(),
+                    loadPermissions()
+                ]);
+                updateStatistics();
+                
+                // 如果刪除的是當前選中的群組，清除選中狀態並清空詳情區塊
+                if (selectedGroupId == id) {
+                    selectedGroupId = null;
+                    const detailsContent = document.querySelector('.group-details .details-content');
+                    if (detailsContent) {
+                        detailsContent.innerHTML = '<p class="text-muted">請選擇一個群組查看詳情</p>';
+                    }
+                }
+            });
+            return;
+        }
+        
+        // 原本的備用實現
         const group = groups.find(g => g.id === id);
         
         // 雙重檢查：如果群組已經停用，直接返回不執行任何操作
@@ -971,7 +723,11 @@ const PermissionModule = (function() {
                 }
                 
                 showSuccess('群組已停用，可透過編輯功能重新啟用');
-                await loadGroups();
+                // 重新載入群組和權限資料以確保同步
+                await Promise.all([
+                    loadGroups(),
+                    loadPermissions()
+                ]);
                 updateStatistics();
                 
                 // 如果刪除的是當前選中的群組，清除選中狀態並清空詳情區塊
@@ -991,33 +747,653 @@ const PermissionModule = (function() {
     }
     
     /**
-     * 關閉模態框
+     * 顯示模態框
      */
     function showModal(modalId) {
-        const modal = document.getElementById(modalId);
-        if (modal) {
-            modal.classList.add('show');
+        if (window.PermissionGroupModule) {
+            PermissionGroupModule.showModal(modalId);
+        } else {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.add('show');
+            }
         }
     }
     
+    /**
+     * 關閉模態框
+     */
     function closeModal(modalId) {
-        const modal = document.getElementById(modalId);
+        if (window.PermissionGroupModule) {
+            PermissionGroupModule.closeModal(modalId);
+        } 
+    }
+    
+    /**
+     * 顯示群組使用者懸浮卡片
+     */
+    function showGroupUsersHoverCard(groupId) {
+        if (window.EmployeeHoverCard) {
+            EmployeeHoverCard.show({ 
+                type: 'permission', 
+                id: groupId 
+            });
+        } else {
+            console.warn('EmployeeHoverCard 模組未載入');
+        }
+    }
+
+    // ======= 查看部門詳情相關功能 =======
+    
+    // 部門詳情模態框狀態
+    let viewDeptCurrentGroupId = null;
+    let viewDeptCurrentViewMode = 'departments'; // 'departments' 或 'roles'
+    let viewDeptOrgTreeData = [];
+    let viewDeptFilteredTreeData = [];
+    let viewDeptNodeExpandedStates = new Map();
+    
+    /**
+     * 顯示查看部門詳情模態框
+     * @param {number} groupId - 群組ID
+     * @param {string} viewMode - 查看模式 ('departments' 或 'roles')
+     */
+    async function showViewDepartmentModal(groupId, viewMode = 'departments') {
+        try {
+            // 重置狀態
+            viewDeptCurrentGroupId = groupId;
+            viewDeptCurrentViewMode = viewMode;
+            viewDeptOrgTreeData = [];
+            viewDeptFilteredTreeData = [];
+            viewDeptNodeExpandedStates.clear();
+            
+            // 獲取群組資訊
+            const group = allGroups.find(g => g.id == groupId);
+            if (!group) {
+                showError('找不到指定的權限群組');
+                return;
+            }
+            
+            // 根據模式更新模態框標題
+            const modalTitle = document.getElementById('viewDepartmentModalTitle');
+            if (modalTitle) {
+                if (viewMode === 'roles') {
+                    modalTitle.textContent = '角色權限詳情';
+                } else {
+                    modalTitle.textContent = '部門分布詳情';
+                }
+            }
+            
+            // 更新群組名稱
+            document.getElementById('viewDeptGroupName').textContent = group.name;
+            
+            // 顯示模態框
+            const modal = document.getElementById('viewDepartmentModal');
+            if (modal) {
+                modal.classList.add('show');
+            }
+            
+            // 載入組織樹資料（只顯示有權限的角色）
+            await loadViewDeptTreeData();
+            
+        } catch (error) {
+            console.error('顯示部門詳情模態框失敗:', error);
+            showError('載入部門資料失敗：' + error.message);
+        }
+    }
+    
+    /**
+     * 關閉查看部門詳情模態框
+     */
+    function closeViewDepartmentModal() {
+        const modal = document.getElementById('viewDepartmentModal');
         if (modal) {
             modal.classList.remove('show');
-            // 清空表單
-            const form = modal.querySelector('form');
-            if (form) {
-                form.reset();
-                
-                // 重置 SearchableSelect 元件的顯示
-                const searchableSelects = form.querySelectorAll('.searchable-select');
-                searchableSelects.forEach(select => {
-                    if (select.searchableSelectInstance) {
-                        select.searchableSelectInstance.updateDisplay();
+        }
+        
+        // 重置狀態
+        viewDeptCurrentGroupId = null;
+        viewDeptCurrentViewMode = 'departments';
+        viewDeptOrgTreeData = [];
+        viewDeptFilteredTreeData = [];
+        viewDeptNodeExpandedStates.clear();
+        
+        // 清除搜尋欄位
+        const searchInput = document.getElementById('viewDeptTreeSearch');
+        if (searchInput) {
+            searchInput.value = '';
+        }
+    }
+    
+    /**
+     * 載入查看部門樹資料（只顯示已授權的角色）
+     */
+    async function loadViewDeptTreeData() {
+        try {
+            showViewDeptLoadingState();
+            
+            // 載入部門角色樹和已授權的角色
+            const [treeResponse, authorizedResponse] = await Promise.all([
+                fetch(`/api/organization/departments?tree=true&include_roles=true`, {
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' }
+                }),
+                fetch(`/api/permissions/groups/${viewDeptCurrentGroupId}/department-roles`, {
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' }
+                }).catch(() => ({ json: async () => [] }))
+            ]);
+            
+            if (!treeResponse.ok) {
+                throw new Error(`載入組織樹失敗: ${treeResponse.status}`);
+            }
+            
+            const allTreeData = await treeResponse.json();
+            const allOrgTreeData = Array.isArray(allTreeData) ? allTreeData : (allTreeData.data || []);
+            
+            // 獲取已授權的角色ID集合
+            let authorizedRoleIds = new Set();
+            if (authorizedResponse.ok || authorizedResponse.json) {
+                const authorizedData = await authorizedResponse.json();
+                if (Array.isArray(authorizedData)) {
+                    authorizedData.forEach(role => {
+                        authorizedRoleIds.add(parseInt(role.id)); // 確保轉為數字
+                    });
+                }
+            }
+            
+            // 過濾樹結構，只保留有授權角色的部門和角色
+            viewDeptOrgTreeData = filterTreeToAuthorizedOnly(allOrgTreeData, authorizedRoleIds);
+            
+            console.log('查看部門詳情 - 已授權角色數:', authorizedRoleIds.size);
+            
+            // 渲染組織樹（預設全展開）
+            renderViewDeptTree();
+            updateViewDeptStatistics(authorizedRoleIds.size);
+            
+        } catch (error) {
+            console.error('載入查看部門樹資料失敗:', error);
+            showError('載入部門資料失敗：' + error.message);
+        } finally {
+            hideViewDeptLoadingState();
+        }
+    }
+    
+    /**
+     * 標記樹結構中的授權狀態（不過濾節點，保持完整結構）
+     */
+    function filterTreeToAuthorizedOnly(nodes, authorizedRoleIds) {
+        return nodes.map(node => {
+            const markedNode = { ...node };
+            let hasDirectAuthorizedRoles = false;
+            
+            // 標記角色授權狀態
+            if (node.roles && Array.isArray(node.roles)) {
+                markedNode.roles = node.roles.map(role => {
+                    const roleIdNum = parseInt(role.id);
+                    const isAuthorized = authorizedRoleIds.has(roleIdNum);
+                    const isActiveCheck = role.is_active === true || 
+                                         role.is_active === 1 || 
+                                         role.is_active === '1' || 
+                                         role.is_active == null;
+                    
+                    const markedRole = { ...role };
+                    if (isAuthorized && isActiveCheck) {
+                        markedRole._isAuthorized = true;
+                        hasDirectAuthorizedRoles = true;
                     }
+                    return markedRole;
+                });
+                
+                // 對角色進行排序：管理角色優先 > 等級優先 > 名稱排序
+                markedNode.roles.sort((a, b) => {
+                    // 1. 管理角色優先
+                    if (a.role_type === 'manager' && b.role_type !== 'manager') return -1;
+                    if (a.role_type !== 'manager' && b.role_type === 'manager') return 1;
+                    
+                    // 2. 等級優先（數字越小越高）
+                    const levelA = a.level != null ? a.level : 999;
+                    const levelB = b.level != null ? b.level : 999;
+                    if (levelA !== levelB) return levelA - levelB;
+                    
+                    // 3. 名稱排序
+                    return (a.name || '').localeCompare(b.name || '', 'zh-TW');
                 });
             }
+            
+            // 標記部門是否有直接的授權角色
+            markedNode._hasAuthorizedRoles = hasDirectAuthorizedRoles;
+            
+            // 遞歸處理子部門
+            if (node.children && Array.isArray(node.children)) {
+                markedNode.children = filterTreeToAuthorizedOnly(node.children, authorizedRoleIds);
+            }
+            
+            // 預設展開所有有授權內容的節點
+            if (hasDirectAuthorizedRoles) {
+                const nodeKey = `dept_${node.id}`;
+                viewDeptNodeExpandedStates.set(nodeKey, true);
+            }
+            
+            return markedNode;
+        });
+    }
+    
+    /**
+     * 渲染查看部門樹（唯讀模式）
+     */
+    function renderViewDeptTree() {
+        const container = document.getElementById('viewDeptTreeContainer');
+        if (!container) return;
+        
+        // 決定使用哪個資料源
+        const dataToRender = viewDeptFilteredTreeData.length > 0 ? viewDeptFilteredTreeData : viewDeptOrgTreeData;
+        
+        // 檢查是否有授權角色（因為現在不過濾節點，需要深度檢查）
+        function hasAnyAuthorizedRoles(nodes) {
+            for (const node of nodes) {
+                if (node.roles && Array.isArray(node.roles)) {
+                    for (const role of node.roles) {
+                        if (role._isAuthorized) {
+                            return true;
+                        }
+                    }
+                }
+                if (node.children && hasAnyAuthorizedRoles(node.children)) {
+                    return true;
+                }
+            }
+            return false;
         }
+        
+        if (dataToRender.length === 0 || !hasAnyAuthorizedRoles(dataToRender)) {
+            const searchInput = document.getElementById('viewDeptTreeSearch');
+            const isSearching = searchInput && searchInput.value.trim();
+            
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-${isSearching ? 'search' : 'shield-alt'}"></i>
+                    <h3>${isSearching ? '無符合的搜尋結果' : '尚無授權的部門角色'}</h3>
+                    <p>${isSearching ? '請嘗試其他關鍵字' : '此群組尚未設定任何部門角色權限'}</p>
+                </div>
+            `;
+            return;
+        }
+        
+        // 建立樹狀結構 HTML（唯讀模式）
+        const treeHTML = buildViewDeptTreeHTML(dataToRender, 0);
+        container.innerHTML = `<div class="org-tree">${treeHTML}</div>`;
+        
+        // 綁定事件
+        bindViewDeptTreeEvents();
+    }
+    
+    /**
+     * 建立查看部門樹 HTML（唯讀模式，支援半透明效果和已設定 badge）
+     */
+    function buildViewDeptTreeHTML(nodes, level = 0) {
+        return nodes.map(node => {
+            const hasChildren = node.children && node.children.length > 0;
+            const hasRoles = node.roles && node.roles.length > 0;
+            
+            // 檢查節點是否應該展開（預設展開）
+            const nodeKey = `dept_${node.id}`;
+            const isNodeExpanded = viewDeptNodeExpandedStates.get(nodeKey) !== false;
+            
+            // 根據查看模式決定部門的顯示效果
+            let deptOpacity = '';
+            if (viewDeptCurrentViewMode === 'departments') {
+                // 部門模式：沒有授權角色的部門設為半透明
+                deptOpacity = node._hasAuthorizedRoles ? '' : 'opacity: 0.3;';
+            } else if (viewDeptCurrentViewMode === 'roles') {
+                // 角色模式：所有部門都半透明（只作為結構顯示）
+                deptOpacity = 'opacity: 0.5;';
+            }
+            
+            let html = `
+                <div class="tree-node dept-node" data-dept-id="${node.id}">
+                    <div class="node-content" data-level="${level}" 
+                         style="padding-left: ${level * 24}px; ${deptOpacity} ${hasChildren || hasRoles ? 'cursor: pointer;' : ''}"
+                         ${hasChildren || hasRoles ? `onclick="PermissionModule.toggleViewDeptNode(this)"` : ''}>
+                        ${hasChildren || hasRoles ? `
+                            <span class="node-toggle">
+                                <i class="fas fa-chevron-${isNodeExpanded ? 'down' : 'right'}"></i>
+                            </span>
+                        ` : '<span class="node-spacer" style="width: 16px; display: inline-block;"></span>'}
+                        <i class="fas fa-folder text-primary"></i>
+                        <span class="node-name">${node.name}</span>
+                        ${node.code ? `<span class="node-badge">${node.code}</span>` : ''}
+                    </div>
+                    <div class="node-children" id="view-dept-children-${node.id}" ${!isNodeExpanded ? 'style="display: none;"' : ''}>
+            `;
+
+            // 添加角色節點（區分已授權和未授權）
+            if (hasRoles) {
+                node.roles.forEach(role => {
+                    const roleIcon = role.role_type === 'manager' ? 'user-tie' : 'user';
+                    const roleClass = role.role_type === 'manager' ? 'text-warning' : 'text-primary';
+                    const isAuthorized = role._isAuthorized;
+                    
+                    // 根據查看模式決定角色的顯示效果
+                    let roleOpacity = '';
+                    let authorizationBadge = '';
+                    
+                    if (viewDeptCurrentViewMode === 'departments') {
+                        // 部門模式：所有角色都半透明（作為輔助資訊），不顯示 badge
+                        roleOpacity = 'opacity: 0.5;';
+                        authorizationBadge = '';
+                    } else if (viewDeptCurrentViewMode === 'roles') {
+                        // 角色模式：只有授權角色顯示正常，未授權角色半透明
+                        roleOpacity = isAuthorized ? '' : 'opacity: 0.2;';
+                        authorizationBadge = isAuthorized ? 
+                            '<span class="badge badge-success ms-1" style="background-color: #28a745; color: white; font-size: 0.75em; padding: 2px 6px; border-radius: 10px;">已授權</span>' : '';
+                    }
+
+                    html += `
+                        <div class="tree-node role-node ${isAuthorized ? 'authorized-role' : 'unauthorized-role'}" data-role-id="${role.id}">
+                            <div class="node-content" data-level="${level + 1}" 
+                                 style="padding-left: ${(level + 1) * 24}px; ${roleOpacity}">
+                                <span class="node-spacer" style="width: 16px; display: inline-block;"></span>
+                                ${isAuthorized ? '<i class="fas fa-shield-alt text-success" title="已授權"></i>' : '<i class="fas fa-shield text-muted" title="未授權"></i>'}
+                                <i class="fas fa-${roleIcon} ${roleClass}"></i>
+                                <span class="role-name">${role.name}</span>
+                                ${role.code ? `<span class="node-badge">${role.code}</span>` : ''}
+                                ${authorizationBadge}
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            // 遞歸處理子部門
+            if (hasChildren) {
+                html += buildViewDeptTreeHTML(node.children, level + 1);
+            }
+
+            html += '</div></div>';
+            return html;
+        }).join('');
+    }
+    
+    /**
+     * 切換查看部門樹節點展開/收合
+     */
+    function toggleViewDeptNode(nodeContentElement) {
+        const deptNode = nodeContentElement.closest('.tree-node.dept-node');
+        if (!deptNode) return;
+        
+        const deptId = deptNode.getAttribute('data-dept-id');
+        const nodeKey = `dept_${deptId}`;
+        
+        // 切換展開狀態
+        const isCurrentlyExpanded = viewDeptNodeExpandedStates.get(nodeKey) !== false;
+        viewDeptNodeExpandedStates.set(nodeKey, !isCurrentlyExpanded);
+        
+        // 找到子節點容器和切換圖示
+        const childrenContainer = deptNode.querySelector('.node-children');
+        const toggleIcon = nodeContentElement.querySelector('.node-toggle i');
+        
+        if (childrenContainer && toggleIcon) {
+            if (isCurrentlyExpanded) {
+                // 收合
+                childrenContainer.style.display = 'none';
+                toggleIcon.className = 'fas fa-chevron-right';
+            } else {
+                // 展開
+                childrenContainer.style.display = 'block';
+                toggleIcon.className = 'fas fa-chevron-down';
+            }
+        }
+    }
+    
+    /**
+     * 展開全部查看部門節點
+     */
+    function expandAllViewDept() {
+        function setAllExpanded(nodes) {
+            nodes.forEach(node => {
+                const nodeKey = `dept_${node.id}`;
+                viewDeptNodeExpandedStates.set(nodeKey, true);
+                
+                // 直接操作 DOM
+                const childrenContainer = document.getElementById(`view-dept-children-${node.id}`);
+                const deptNode = document.querySelector(`[data-dept-id="${node.id}"]`);
+                if (childrenContainer && deptNode) {
+                    childrenContainer.style.display = 'block';
+                    const toggleIcon = deptNode.querySelector('.node-toggle i');
+                    if (toggleIcon) {
+                        toggleIcon.className = 'fas fa-chevron-down';
+                    }
+                }
+                
+                if (node.children) {
+                    setAllExpanded(node.children);
+                }
+            });
+        }
+        setAllExpanded(viewDeptOrgTreeData);
+    }
+    
+    /**
+     * 收合全部查看部門節點
+     */
+    function collapseAllViewDept() {
+        function setAllCollapsed(nodes) {
+            nodes.forEach(node => {
+                const nodeKey = `dept_${node.id}`;
+                viewDeptNodeExpandedStates.set(nodeKey, false);
+                
+                // 直接操作 DOM
+                const childrenContainer = document.getElementById(`view-dept-children-${node.id}`);
+                const deptNode = document.querySelector(`[data-dept-id="${node.id}"]`);
+                if (childrenContainer && deptNode) {
+                    childrenContainer.style.display = 'none';
+                    const toggleIcon = deptNode.querySelector('.node-toggle i');
+                    if (toggleIcon) {
+                        toggleIcon.className = 'fas fa-chevron-right';
+                    }
+                }
+                
+                if (node.children) {
+                    setAllCollapsed(node.children);
+                }
+            });
+        }
+        setAllCollapsed(viewDeptOrgTreeData);
+    }
+    
+    /**
+     * 搜尋查看部門樹
+     */
+    function searchViewDeptTree() {
+        const searchInput = document.getElementById('viewDeptTreeSearch');
+        if (!searchInput) return;
+        
+        const keyword = searchInput.value.trim().toLowerCase();
+        
+        // 如果沒有關鍵字，顯示全部
+        if (!keyword) {
+            viewDeptFilteredTreeData = [];
+            renderViewDeptTree();
+            return;
+        }
+        
+        // 搜尋並過濾節點
+        viewDeptFilteredTreeData = filterViewDeptTreeByKeyword(viewDeptOrgTreeData, keyword);
+        renderViewDeptTree();
+    }
+    
+    /**
+     * 根據關鍵字過濾查看部門樹
+     */
+    function filterViewDeptTreeByKeyword(nodes, keyword) {
+        const filteredNodes = [];
+        
+        nodes.forEach(node => {
+            let nodeMatches = false;
+            let filteredNode = { ...node };
+            
+            // 檢查部門名稱是否符合
+            if (node.name && node.name.toLowerCase().includes(keyword)) {
+                nodeMatches = true;
+            }
+            
+            // 檢查部門代碼是否符合
+            if (node.code && node.code.toLowerCase().includes(keyword)) {
+                nodeMatches = true;
+            }
+            
+            // 過濾角色
+            let matchedRoles = [];
+            if (node.roles) {
+                matchedRoles = node.roles.filter(role => 
+                    (role.name && role.name.toLowerCase().includes(keyword)) ||
+                    (role.code && role.code.toLowerCase().includes(keyword))
+                );
+                if (matchedRoles.length > 0) {
+                    nodeMatches = true;
+                    filteredNode.roles = matchedRoles;
+                }
+            }
+            
+            // 遞歸處理子節點
+            let filteredChildren = [];
+            if (node.children) {
+                filteredChildren = filterViewDeptTreeByKeyword(node.children, keyword);
+                if (filteredChildren.length > 0) {
+                    nodeMatches = true;
+                    filteredNode.children = filteredChildren;
+                }
+            }
+            
+            // 如果節點符合條件，加入結果
+            if (nodeMatches) {
+                // 搜尋時自動展開符合的節點
+                const nodeKey = `dept_${node.id}`;
+                viewDeptNodeExpandedStates.set(nodeKey, true);
+                filteredNodes.push(filteredNode);
+            }
+        });
+        
+        return filteredNodes;
+    }
+    
+    /**
+     * 綁定查看部門樹事件
+     */
+    function bindViewDeptTreeEvents() {
+        const searchInput = document.getElementById('viewDeptTreeSearch');
+        if (searchInput) {
+            // 移除之前的事件監聽器
+            searchInput.removeEventListener('input', handleViewDeptSearchInput);
+            searchInput.removeEventListener('keyup', handleViewDeptSearchKeyup);
+            
+            // 綁定新的事件監聽器
+            searchInput.addEventListener('input', handleViewDeptSearchInput);
+            searchInput.addEventListener('keyup', handleViewDeptSearchKeyup);
+        }
+    }
+    
+    /**
+     * 處理查看部門搜尋輸入
+     */
+    function handleViewDeptSearchInput(event) {
+        clearTimeout(window.viewDeptSearchTimeout);
+        window.viewDeptSearchTimeout = setTimeout(() => {
+            searchViewDeptTree();
+        }, 300);
+    }
+    
+    /**
+     * 處理查看部門搜尋按鍵事件
+     */
+    function handleViewDeptSearchKeyup(event) {
+        if (event.key === 'Enter') {
+            clearTimeout(window.viewDeptSearchTimeout);
+            searchViewDeptTree();
+        } else if (event.key === 'Escape') {
+            event.target.value = '';
+            clearTimeout(window.viewDeptSearchTimeout);
+            searchViewDeptTree();
+        }
+    }
+    
+    /**
+     * 更新查看部門統計資訊
+     */
+    function updateViewDeptStatistics(authorizedCount) {
+        // 計算分佈的部門數
+        let deptCount = 0;
+        function countDepts(nodes) {
+            nodes.forEach(node => {
+                if (node.roles && node.roles.length > 0) {
+                    deptCount++;
+                }
+                if (node.children) {
+                    countDepts(node.children);
+                }
+            });
+        }
+        countDepts(viewDeptOrgTreeData);
+        
+        // 更新顯示
+        const authorizedCountElement = document.getElementById('authorizedViewDeptRolesCount');
+        const deptCountElement = document.getElementById('authorizedViewDeptCount');
+        
+        if (authorizedCountElement) authorizedCountElement.textContent = authorizedCount;
+        if (deptCountElement) deptCountElement.textContent = deptCount;
+    }
+    
+    /**
+     * 顯示查看部門載入狀態
+     */
+    function showViewDeptLoadingState() {
+        const container = document.getElementById('viewDeptTreeContainer');
+        if (container) {
+            container.innerHTML = `
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
+                    <p>載入部門資料中...</p>
+                </div>
+            `;
+        }
+    }
+    
+    /**
+     * 隱藏查看部門載入狀態
+     */
+    function hideViewDeptLoadingState() {
+        // 載入狀態會在渲染樹時被覆蓋
+    }
+    
+    /**
+     * 更新單一群組資料（用於批次組織設定後的即時更新）
+     */
+    async function updateSingleGroup(groupData) {
+        try {
+            // 使用子模組的更新功能
+            if (window.PermissionGroupModule) {
+                allGroups = PermissionGroupModule.updateSingleGroup(groupData, allGroups);
+            }             
+            // 重新過濾群組
+            filterGroups();
+            
+            // 更新統計資料
+            updateGroupStatistics();
+            updateStatistics();
+            
+        } catch (error) {
+            console.error('更新單一群組資料失敗:', error);
+        }
+    }
+    
+    /**
+     * 更新表格中特定群組的行
+     */
+    function updateGroupRowInTable(groupData) {
+        // 使用子模組的更新功能
+        if (window.PermissionGroupModule) {
+            PermissionGroupModule.updateGroupRowInTable(groupData);
+        } 
     }
         
     
@@ -1032,7 +1408,20 @@ const PermissionModule = (function() {
         toggleInactiveGroups: toggleInactiveGroups,
         refresh: loadAllData,
         showModal: showModal,
-        closeModal: closeModal
+        closeModal: closeModal,
+        showGroupUsersHoverCard: showGroupUsersHoverCard,
+        // 查看部門詳情相關功能
+        showViewDepartmentModal: showViewDepartmentModal,
+        closeViewDepartmentModal: closeViewDepartmentModal,
+        toggleViewDeptNode: toggleViewDeptNode,
+        expandAllViewDept: expandAllViewDept,
+        collapseAllViewDept: collapseAllViewDept,
+        searchViewDeptTree: searchViewDeptTree,
+        // 單一群組更新功能
+        updateSingleGroup: updateSingleGroup,
+        updateGroupRowInTable: updateGroupRowInTable,
+        // 暴露資料供其他模組使用
+        allGroups: allGroups
     };
 })();
 

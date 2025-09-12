@@ -30,6 +30,12 @@ class AdminPasswordChangeRequest(BaseModel):
     new_password: str
 
 
+class UserProfileUpdateRequest(BaseModel):
+    """用戶資料更新請求模型"""
+    username: Optional[str] = Field(None, min_length=1, max_length=100, description="用戶姓名")
+    email: Optional[EmailStr] = Field(None, description="電子郵件地址")
+
+
 class KnowledgeBaseCreateRequest(BaseModel):
     """知識庫創建請求模型"""
     id: str
@@ -83,3 +89,19 @@ class AdminUserEditRequest(BaseModel):
     username: Optional[str] = Field(None, min_length=1, max_length=100, description="用戶姓名")
     email: Optional[EmailStr] = Field(None, description="電子郵件地址")
     is_active: Optional[bool] = Field(None, description="帳號啟用狀態")
+
+
+class TokenVerificationRequest(BaseModel):
+    """Token 驗證請求模型"""
+    token: str = Field(..., description="啟用 token")
+
+
+class AccountActivationRequest(BaseModel):
+    """帳號啟用請求模型"""
+    token: str = Field(..., description="啟用 token")
+    password: str = Field(..., min_length=8, description="新密碼")
+
+
+class ResendActivationEmailRequest(BaseModel):
+    """重發啟用郵件請求模型"""
+    email: EmailStr = Field(..., description="電子郵件地址")

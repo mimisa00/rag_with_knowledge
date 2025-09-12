@@ -7,6 +7,7 @@ import json
 
 from app.dao.conversation import conversation_dao
 from app.api.dependencies import get_current_user
+from app.core.security.permissions import permission_required
 from app.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -44,6 +45,7 @@ def rebuild_full_answer(clean_answer: str, sources: List[Dict[str, str]] = None)
 
 
 @router.get("/conversations")
+@permission_required("USER.CONVERSATION_VIEW")
 def get_user_conversations(
     current_user: Dict[str, Any] = Depends(get_current_user)
 ):
@@ -85,6 +87,7 @@ def get_user_conversations(
 
 
 @router.delete("/conversations/{conv_id}")
+@permission_required("USER.CONVERSATION_DELETE")
 def delete_conversation(
     conv_id: str, 
     current_user: Dict[str, Any] = Depends(get_current_user)

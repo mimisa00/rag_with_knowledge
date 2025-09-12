@@ -1,17 +1,20 @@
 /**
- * 組織管理 - 員工個人權限選擇子模組
- * 處理員工的個人權限群組選擇
+ * 組織管理 - 通用權限選擇子模組
+ * 支援員工個人權限和部門角色權限的選擇
  */
 window.OrganizationEmployeePermissionsModule = (function() {
     'use strict';
     
     // API 端點
     const API_BASE = '/api/permissions';
+    const ORGANIZATION_API_BASE = '/api/organization';
     
     // 狀態管理
     let permissionGroups = [];
     let selectedPermissions = new Set();
     let isInitialized = false;
+    let currentMode = 'user'; // 'user' 或 'role'
+    let currentTargetId = null; // user_id 或 department_role_id
     
     /**
      * 初始化模組
@@ -26,13 +29,38 @@ window.OrganizationEmployeePermissionsModule = (function() {
     
     /**
      * 顯示權限選擇模態框
+     * @param {string} mode - 'user' 或 'role'
+     * @param {number} targetId - user_id 或 department_role_id
+     * @param {array} existingPermissions - 現有權限ID陣列
      */
-    async function showPermissionsModal() {
+    async function showPermissionsModal(mode = 'user', targetId = null, existingPermissions = []) {
+        currentMode = mode;
+        currentTargetId = targetId;
+        
         const modal = document.getElementById('personalPermissionsModal');
         if (!modal) {
-            console.error('找不到個人權限模態框');
+            console.error('找不到權限模態框');
             return;
         }
+        
+        // 更新模態框標題
+        const modalTitle = modal.querySelector('.modal-header h4');
+        if (modalTitle) {
+            modalTitle.innerHTML = mode === 'role' 
+                ? '<i class="fas fa-user-tag"></i> 角色權限設定'
+                : '<i class="fas fa-user-shield"></i> 個人權限設定';
+        }
+        
+        // 更新提示訊息
+        const alertInfo = modal.querySelector('.alert-info span');
+        if (alertInfo) {
+            alertInfo.textContent = mode === 'role'
+                ? '設定此角色的基本權限，所有擁有此角色的員工將自動獲得這些權限'
+                : '個人權限獨立於角色權限，可選擇多個權限群組';
+        }
+        
+        // 設定現有權限
+        setSelectedPermissions(existingPermissions);
         
         // 顯示載入中
         const container = document.getElementById('permissionsListContainer');
@@ -330,9 +358,55 @@ window.OrganizationEmployeePermissionsModule = (function() {
     /**
      * 確認權限選擇
      */
-    function confirmPermissionsSelection() {
-        updatePermissionsCount();
-        closePermissionsModal();
+    async function confirmPermissionsSelection() {
+        const selectedIds = getSelectedPermissions();
+        
+        try {
+            // 根據模式決定API端點
+            const apiUrl = currentMode === 'role'
+                ? `${ORGANIZATION_API_BASE}/department-roles/${currentTargetId}/permissions`
+                : `${ORGANIZATION_API_BASE}/users/${currentTargetId}/permissions`;
+            
+            const response = await fetch(apiUrl, {
+                method: 'PUT',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    permission_group_ids: selectedIds
+                })
+            });
+            
+            if (response.ok) {
+                updatePermissionsCount();
+                closePermissionsModal();
+                
+                // 通知父模組權限已更新
+                if (currentMode === 'role' && window.OrganizationRolesModule) {
+                    window.OrganizationRolesModule.refreshRolePermissions?.(currentTargetId);
+                } else if (currentMode === 'user' && window.OrganizationEmployeeModule) {
+                    window.OrganizationEmployeeModule.refreshUserPermissions?.(currentTargetId);
+                }
+                
+                // 顯示成功提示
+                if (window.Dialog) {
+                    const entityName = currentMode === 'role' ? '角色權限' : '個人權限';
+                    window.Dialog.success(`${entityName}設定完成`);
+                }
+            } else {
+                const error = await response.json();
+                console.error('權限設定失敗:', error);
+                if (window.Dialog) {
+                    window.Dialog.error(error.message || '權限設定失敗');
+                }
+            }
+        } catch (error) {
+            console.error('權限設定發生錯誤:', error);
+            if (window.Dialog) {
+                window.Dialog.error('權限設定發生錯誤，請稍後再試');
+            }
+        }
     }
     
     /**
@@ -462,10 +536,78 @@ window.OrganizationEmployeePermissionsModule = (function() {
         };
     }
     
+    /**
+     * 載入目標的現有權限
+     */
+    async function loadExistingPermissions(mode, targetId) {
+        if (!targetId) return [];
+        
+        try {
+            const apiUrl = mode === 'role'
+                ? `${ORGANIZATION_API_BASE}/department-roles/${targetId}/permissions`
+                : `${ORGANIZATION_API_BASE}/users/${targetId}/permissions`;
+            
+            const response = await fetch(apiUrl, {
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (Array.isArray(data)) {
+                    // 如果是用戶權限，只返回個人權限（排除角色權限）
+                    if (mode === 'user') {
+                        const personalPermissions = data.filter(p => p.permission_source === 'personal');
+                        return personalPermissions;
+                    } else {
+                        // 角色權限返回完整資料
+                        return data;
+                    }
+                }
+                return [];
+            } else {
+                console.error('載入現有權限失敗:', response.status);
+                return [];
+            }
+        } catch (error) {
+            console.error('載入現有權限發生錯誤:', error);
+            return [];
+        }
+    }
+    
+    /**
+     * 為用戶權限編輯提供的包裝函數
+     */
+    async function showUserPermissionsModal() {
+        // 從表單獲取當前編輯的用戶 ID
+        const userIdInput = document.getElementById('userId');
+        const userId = userIdInput ? userIdInput.value : null;
+        
+        if (!userId) {
+            console.error('無法獲取當前編輯的用戶 ID');
+            if (window.Dialog) {
+                window.Dialog.error('請先選擇要編輯的員工');
+            }
+            return;
+        }
+        
+        // 載入現有權限
+        const existingPermissions = await loadExistingPermissions('user', parseInt(userId));
+        
+        // 提取權限 ID
+        const permissionIds = existingPermissions.map(p => p.id);
+        
+        // 調用原本的權限模態框函數，傳入權限 ID 陣列
+        await showPermissionsModal('user', parseInt(userId), permissionIds);
+    }
+    
     // 公開 API
     return {
         init,
         showPermissionsModal,
+        showUserPermissionsModal,
         closePermissionsModal,
         confirmPermissionsSelection,
         getSelectedPermissions,
@@ -475,7 +617,8 @@ window.OrganizationEmployeePermissionsModule = (function() {
         togglePermissionByRow,
         searchPermissions,
         selectAll,
-        clearSelection
+        clearSelection,
+        loadExistingPermissions
     };
 })();
 

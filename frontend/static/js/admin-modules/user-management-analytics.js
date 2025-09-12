@@ -9,6 +9,7 @@
         // 資料儲存
         analyticsData: null,
         charts: {},
+        onlineUpdateTimer: null,
 
         // 初始化
         init: function() {
@@ -118,6 +119,13 @@
                         <div class="stat-value">${summary.active_users || 0}</div>
                         <div class="stat-label">活躍用戶</div>
                     </div>
+                    <div class="stat-card online-users">
+                        <div class="stat-value" style="color: #28a745;">${summary.online_users || 0}</div>
+                        <div class="stat-label">
+                            <i class="fas fa-circle" style="color: #28a745; font-size: 8px; margin-right: 4px;"></i>
+                            線上活動
+                        </div>
+                    </div>
                 </div>
                 <div class="chart-section">
                     <div class="chart-header">
@@ -139,6 +147,9 @@
             // 渲染趨勢圖和狀態分析
             this.renderLoginChart(stats.daily_trends || []);
             this.renderUserStatus(stats.user_status || {});
+            
+            // 啟動線上人數自動更新
+            this.startOnlineUsersAutoUpdate();
         },
 
         // 渲染登入統計錯誤狀態
@@ -646,10 +657,84 @@
         // 渲染趨勢圖表（佔位符）
         renderTrendsChart: function(months) {
             console.log('渲染趨勢圖表（需整合圖表庫）');
+        },
+
+        // 開始線上人數自動更新
+        startOnlineUsersAutoUpdate: function() {
+            // 清除現有的定時器
+            if (this.onlineUpdateTimer) {
+                clearInterval(this.onlineUpdateTimer);
+            }
+
+            // 設定每30秒更新一次線上人數
+            this.onlineUpdateTimer = setInterval(() => {
+                this.updateOnlineUsersCount();
+            }, 30000); // 30秒
+        },
+
+        // 停止線上人數自動更新
+        stopOnlineUsersAutoUpdate: function() {
+            if (this.onlineUpdateTimer) {
+                clearInterval(this.onlineUpdateTimer);
+                this.onlineUpdateTimer = null;
+            }
+        },
+
+        // 更新線上人數
+        updateOnlineUsersCount: async function() {
+            try {
+                const response = await fetch('/api/admin/login-stats');
+                if (!response.ok) return;
+                
+                const stats = await response.json();
+                const onlineCount = stats.summary?.online_users || 0;
+                
+                // 更新線上人數顯示
+                const onlineCard = document.querySelector('.stat-card.online-users .stat-value');
+                if (onlineCard) {
+                    // 添加更新動畫效果
+                    onlineCard.style.transform = 'scale(1.1)';
+                    onlineCard.textContent = onlineCount;
+                    
+                    setTimeout(() => {
+                        onlineCard.style.transform = 'scale(1)';
+                    }, 200);
+                }
+                
+                // 更新最後更新時間
+                const updateTimeElement = document.querySelector('.stats-update-time');
+                if (updateTimeElement) {
+                    updateTimeElement.textContent = `最後更新: ${new Date().toLocaleString('zh-TW')}`;
+                }
+                
+            } catch (error) {
+                console.error('更新線上人數失敗:', error);
+            }
         }
     };
 
 
     // 導出模組
     window.UserAnalytics = UserAnalytics;
+
+    // 頁面關閉時清理定時器
+    window.addEventListener('beforeunload', function() {
+        if (UserAnalytics.onlineUpdateTimer) {
+            UserAnalytics.stopOnlineUsersAutoUpdate();
+        }
+    });
+
+    // 頁面隱藏時停止更新，顯示時重新開始
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            UserAnalytics.stopOnlineUsersAutoUpdate();
+        } else {
+            // 如果登入統計頁面是活動的，重新開始更新
+            const loginStatsSection = document.getElementById('login-stats-section');
+            if (loginStatsSection && loginStatsSection.classList.contains('active')) {
+                UserAnalytics.startOnlineUsersAutoUpdate();
+            }
+        }
+    });
+
 })();

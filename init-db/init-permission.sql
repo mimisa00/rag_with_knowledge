@@ -26,7 +26,7 @@ CREATE TABLE `permission_groups` (
 
 -- 預設角色
 INSERT INTO permission_groups (code, name, description, permission_type, permissions) VALUES
-('SYSTEM_ADMIN', '系統管理員', '具有系統所有權限', 'system', '{"all": true}'),
+('ORG_ADMIN', '組織管理員', '具有組織編輯權限', 'system', '{"all": true}'),
 ('KB_MANAGER', '知識庫管理員', '管理知識庫和文件', 'system','{"knowledge_base": ["create", "read", "update", "delete"], "documents": ["all"]}'),
 ('USER', '一般使用者', '基本使用權限', 'system', '{"knowledge_base": ["read"], "documents": ["read", "upload"]}')
 ON DUPLICATE KEY UPDATE 
@@ -35,9 +35,9 @@ ON DUPLICATE KEY UPDATE
     permissions = VALUES(permissions);
 
 -- =====================================================
--- 1-7. user_permission_groups（使用者權限群組關聯表）
+-- 1-7. permission_groups_user（使用者權限群組關聯表）
 -- =====================================================
-CREATE TABLE `user_permission_groups` (
+CREATE TABLE `permission_groups_user` (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL COMMENT '使用者 ID',
     permission_group_id BIGINT NOT NULL COMMENT '權限群組 ID',
@@ -57,26 +57,26 @@ CREATE TABLE `user_permission_groups` (
 
 
 -- 為既有管理員分配系統管理員角色
-INSERT INTO user_permission_groups (user_id, permission_group_id, assigned_by)
+INSERT INTO permission_groups_user (user_id, permission_group_id, assigned_by)
 SELECT u.id, r.id, NULL
 FROM users u
 CROSS JOIN permission_groups r
 WHERE u.role = 'admin'
   AND r.code = 'SYSTEM_ADMIN'
   AND NOT EXISTS (
-    SELECT 1 FROM user_permission_groups upg 
+    SELECT 1 FROM permission_groups_user upg 
     WHERE upg.user_id = u.id AND upg.permission_group_id = r.id
 );
 
 -- 為既有一般使用者分配預設角色
-INSERT INTO user_permission_groups (user_id, permission_group_id, assigned_by)
+INSERT INTO permission_groups_user (user_id, permission_group_id, assigned_by)
 SELECT u.id, r.id, NULL
 FROM users u
 CROSS JOIN permission_groups r
 WHERE u.role = 'user'
   AND r.code = 'USER'
   AND NOT EXISTS (
-    SELECT 1 FROM user_permission_groups upg 
+    SELECT 1 FROM permission_groups_user upg 
     WHERE upg.user_id = u.id AND upg.permission_group_id = r.id
 );
 

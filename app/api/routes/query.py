@@ -21,6 +21,7 @@ from app.dao.knowledge_base import knowledge_base_dao
 from app.dao.llm_request import llm_request_dao
 from app.config.settings import app_config
 from app.api.dependencies import get_current_user
+from app.core.security.permissions import permission_required
 from app.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -48,6 +49,7 @@ def build_context_from_chunks(chunks: List[Dict[str, Any]], kb: Dict[str, Any]) 
     return "\n".join(context_parts)
 
 @router.post("/query")
+@permission_required("USER.QUERY")
 def query_knowledge_base(
     query_data: QueryRequest,
     current_user: Dict[str, Any] = Depends(get_current_user)

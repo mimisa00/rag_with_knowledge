@@ -2,8 +2,9 @@
 組織管理系統 API 路由
 """
 from typing import List, Dict, Any, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, BackgroundTasks
 from app.api.dependencies import get_admin_user
+from app.core.security.permissions import permission_required
 from app.models.organization import (
     Department, DepartmentCreate, DepartmentUpdate, DepartmentResponse,
     PermissionGroup, PermissionGroupCreate, PermissionGroupUpdate, PermissionGroupResponse,
@@ -19,8 +20,9 @@ from app.models.role_template import (
 )
 from app.dao.organization import (
     department_dao, permission_group_dao, user_org_dao, 
-    system_mode_dao, audit_log_dao
+    system_mode_dao
 )
+from app.dao.audit import audit_log_dao
 from app.dao.role_template import (
     role_template_dao, department_role_dao, user_department_role_dao,
     role_relationship_analysis_dao
@@ -32,9 +34,179 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/organization", tags=["Organization"])
 
 
+# ===== 輔助函數 =====
+
+def get_users_permission_groups_batch(user_ids: List[int]) -> Dict[int, List[Dict[str, Any]]]:
+    """批次取得多個使用者的權限群組"""
+    if not user_ids:
+        return {}
+    
+    try:
+        from app.dao.base import BaseDAO, db_manager
+        dao = BaseDAO(db_manager)
+        
+        placeholders = ','.join(['%s'] * len(user_ids))
+        query = f"""
+            SELECT upg.*, pg.code, pg.name, pg.permission_type,
+                   d.name as department_name
+            FROM permission_groups_user upg
+            JOIN permission_groups pg ON upg.permission_group_id = pg.id
+            LEFT JOIN departments d ON upg.department_id = d.id
+            WHERE upg.user_id IN ({placeholders})
+            AND (upg.expires_at IS NULL OR upg.expires_at > NOW())
+            ORDER BY upg.user_id, pg.permission_type, pg.name
+        """
+        
+        results = dao.execute_query(query, user_ids)
+        
+        # 為每個權限群組取得實際權限（從關聯表）
+        for result in results:
+            perm_query = """
+                SELECT pm.permission_key
+                FROM permission_groups_matrix pgm
+                JOIN permission_matrix pm ON pgm.permission_matrix_id = pm.id
+                WHERE pgm.permission_group_id = %s
+                AND pm.is_active = 1
+            """
+            perms = dao.execute_query(perm_query, [result['permission_group_id']])
+            result['permission_list'] = [p['permission_key'] for p in perms] if perms else []
+        
+        # 按使用者ID分組
+        groups_by_user = {}
+        for result in results:
+            user_id = result['user_id']
+            if user_id not in groups_by_user:
+                groups_by_user[user_id] = []
+            groups_by_user[user_id].append(result)
+        
+        return groups_by_user
+        
+    except Exception as e:
+        logger.error(f"Error getting users permission groups batch: {e}")
+        return {}
+
+
+def get_users_department_roles_batch(user_ids: List[int]) -> Dict[int, List[Dict[str, Any]]]:
+    """批次取得多個使用者的部門角色"""
+    if not user_ids:
+        return {}
+    
+    try:
+        from app.dao.role_template import user_department_role_dao
+        
+        # 為每個使用者取得角色
+        roles_by_user = {}
+        for user_id in user_ids:
+            try:
+                roles = user_department_role_dao.get_user_roles(user_id)
+                roles_by_user[user_id] = roles
+            except Exception as e:
+                logger.warning(f"Error getting roles for user {user_id}: {e}")
+                roles_by_user[user_id] = []
+        
+        return roles_by_user
+        
+    except Exception as e:
+        logger.error(f"Error getting users department roles batch: {e}")
+        return {}
+
+
+def get_role_permission_groups_batch(role_ids: List[int]) -> Dict[int, List[Dict[str, Any]]]:
+    """批次取得多個部門角色的權限群組"""
+    if not role_ids:
+        return {}
+    
+    try:
+        from app.dao.base import BaseDAO, db_manager
+        dao = BaseDAO(db_manager)
+        
+        placeholders = ','.join(['%s'] * len(role_ids))
+        query = f"""
+            SELECT 
+                drpg.department_role_id,
+                pg.id,
+                pg.code,
+                pg.name,
+                pg.permission_type as type,
+                pg.description,
+                pg.is_active,
+                drpg.assigned_at,
+                drpg.assigned_by
+            FROM permission_groups_department_role drpg
+            JOIN permission_groups pg ON drpg.permission_group_id = pg.id
+            WHERE drpg.department_role_id IN ({placeholders})
+              AND pg.is_active = TRUE
+            ORDER BY drpg.department_role_id, pg.permission_type, pg.name
+        """
+        
+        results = dao.execute_query(query, role_ids)
+        
+        # 按角色ID分組
+        permissions_by_role = {}
+        for result in results:
+            role_id = result['department_role_id']
+            if role_id not in permissions_by_role:
+                permissions_by_role[role_id] = []
+            permissions_by_role[role_id].append(result)
+        
+        return permissions_by_role
+        
+    except Exception as e:
+        logger.error(f"Error getting role permission groups batch: {e}")
+        return {}
+
+
+def merge_permissions(direct_permissions: List[Dict], role_permissions: List[Dict]) -> Dict[str, Any]:
+    """合併直接權限和角色權限，並去重"""
+    try:
+        # 使用權限群組ID作為唯一標識進行去重
+        permission_map = {}
+        
+        # 添加直接權限
+        for perm in direct_permissions:
+            perm_id = perm.get('permission_group_id') or perm.get('id')
+            if perm_id:
+                permission_map[perm_id] = {
+                    **perm,
+                    'source': 'direct'
+                }
+        
+        # 添加角色權限（如果沒有直接權限則添加，如果有則標記為both）
+        for perm in role_permissions:
+            perm_id = perm.get('permission_group_id') or perm.get('id')
+            if perm_id:
+                if perm_id in permission_map:
+                    permission_map[perm_id]['source'] = 'both'
+                else:
+                    permission_map[perm_id] = {
+                        **perm,
+                        'source': 'role'
+                    }
+        
+        # 分類權限
+        direct = [p for p in permission_map.values() if p['source'] in ['direct', 'both']]
+        inherited = [p for p in permission_map.values() if p['source'] in ['role', 'both']]
+        combined = list(permission_map.values())
+        
+        return {
+            'direct': direct,
+            'inherited': inherited,
+            'combined': combined
+        }
+        
+    except Exception as e:
+        logger.error(f"Error merging permissions: {e}")
+        return {
+            'direct': direct_permissions,
+            'inherited': role_permissions,
+            'combined': direct_permissions + role_permissions
+        }
+
+
 # ===== 部門管理 API =====
 
 @router.post("/departments", response_model=Dict[str, Any])
+@permission_required("ORG.DEPT_CREATE")
 def create_department(
     department: DepartmentCreate,
     request: Request,
@@ -88,10 +260,12 @@ def create_department(
 
 
 @router.get("/departments", response_model=List[DepartmentResponse])
+@permission_required("ORG.DEPT_VIEW")
 def list_departments(
     parent_id: Optional[int] = Query(None),
     is_active: Optional[bool] = Query(None),
     tree: bool = Query(False),
+    include_roles: bool = Query(False),
     current_user: Dict[str, Any] = Depends(get_admin_user)
 ):
     """列出部門"""
@@ -99,6 +273,10 @@ def list_departments(
         if tree:
             # 返回樹狀結構
             departments = department_dao.get_department_tree()
+            
+            # 如果需要包含角色資訊
+            if include_roles:
+                departments = _add_roles_to_departments(departments)
         else:
             # 返回平面列表
             departments = department_dao.list_departments(parent_id, is_active)
@@ -115,7 +293,81 @@ def list_departments(
         raise HTTPException(status_code=500, detail="取得部門列表時發生錯誤")
 
 
+def _add_roles_to_departments(departments: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """為部門樹添加角色資訊"""
+    from app.dao.base import BaseDAO, db_manager
+    
+    try:
+        dao = BaseDAO(db_manager)
+        
+        # 遞歸處理部門樹
+        def add_roles_recursive(dept_list):
+            for dept in dept_list:
+                # 獲取該部門的角色（使用更寬容的條件）
+                roles_query = """
+                SELECT id, name, code, role_type, level, is_active
+                FROM department_roles 
+                WHERE department_id = %s AND (is_active = true OR is_active = 1 OR is_active IS NULL)
+                ORDER BY name
+                """
+                try:
+                    roles = dao.execute_query(roles_query, (dept['id'],))
+                    dept['roles'] = roles or []
+                    logger.info(f"部門 {dept.get('name', dept['id'])} 載入了 {len(dept['roles'])} 個角色")
+                    if dept['roles']:
+                        logger.info(f"  角色列表: {[r.get('name') for r in dept['roles']]}")
+                    
+                    # 如果沒有角色，再試試不帶 is_active 條件的查詢
+                    if not dept['roles']:
+                        all_roles_query = """
+                        SELECT id, name, code, role_type, level, is_active
+                        FROM department_roles 
+                        WHERE department_id = %s
+                        ORDER BY name
+                        """
+                        all_roles = dao.execute_query(all_roles_query, (dept['id'],))
+                        logger.info(f"部門 {dept.get('name', dept['id'])} 所有角色數量: {len(all_roles or [])}")
+                        if all_roles:
+                            for role in all_roles:
+                                logger.info(f"  角色: {role.get('name', 'N/A')}, is_active: {role.get('is_active', 'N/A')}")
+                        
+                        # 如果有角色但被 is_active 過濾掉，就使用全部角色
+                        if all_roles:
+                            dept['roles'] = all_roles
+                            
+                except Exception as role_error:
+                    logger.error(f"載入部門 {dept['id']} 角色時發生錯誤: {role_error}")
+                    dept['roles'] = []
+                
+                # 遞歸處理子部門
+                if dept.get('children'):
+                    add_roles_recursive(dept['children'])
+        
+        add_roles_recursive(departments)
+        
+        # 最終檢查：記錄處理後的部門結構
+        def log_final_structure(dept_list, level=0):
+            for dept in dept_list:
+                indent = "  " * level
+                roles_count = len(dept.get('roles', []))
+                logger.info(f"{indent}最終結構 - 部門: {dept.get('name')}, 角色數: {roles_count}")
+                if roles_count > 0:
+                    role_names = [r.get('name', 'N/A') for r in dept.get('roles', [])]
+                    logger.info(f"{indent}  角色: {role_names}")
+                if dept.get('children'):
+                    log_final_structure(dept['children'], level + 1)
+        
+        log_final_structure(departments)
+        return departments
+        
+    except Exception as e:
+        logger.error(f"Error adding roles to departments: {e}")
+        # 返回原始資料，不讓錯誤中斷整個請求
+        return departments
+
+
 @router.get("/departments/{dept_id}", response_model=DepartmentResponse)
+@permission_required("ORG.DEPT_VIEW")
 def get_department(
     dept_id: int,
     current_user: Dict[str, Any] = Depends(get_admin_user)
@@ -143,6 +395,7 @@ def get_department(
 
 
 @router.put("/departments/{dept_id}", response_model=Dict[str, Any])
+@permission_required("ORG.DEPT_UPDATE")
 def update_department(
     dept_id: int,
     updates: DepartmentUpdate,
@@ -200,6 +453,7 @@ def update_department(
 
 
 @router.delete("/departments/{dept_id}", response_model=Dict[str, Any])
+@permission_required("ORG.DEPT_DELETE")
 def delete_department(
     dept_id: int,
     request: Request,
@@ -230,9 +484,117 @@ def delete_department(
         raise HTTPException(status_code=500, detail="刪除部門時發生錯誤")
 
 
+@router.get("/departments/{dept_id}/employees", response_model=List[Dict[str, Any]])
+def get_department_employees(
+    dept_id: int,
+    current_user: Dict[str, Any] = Depends(get_admin_user)
+):
+    """取得部門員工列表（優化版本）"""
+    try:
+        # 檢查部門是否存在
+        department = department_dao.get_department(dept_id)
+        if not department:
+            raise HTTPException(status_code=404, detail="部門不存在")
+        
+        # 取得部門員工基本資訊
+        employees = user_org_dao.list_users_in_department(dept_id)
+        if not employees:
+            return []
+        
+        # 提取使用者ID列表
+        user_ids = [emp['id'] for emp in employees]
+        
+        # 批次取得完整使用者資訊
+        full_users_map = {}
+        for user_id in user_ids:
+            full_user = user_dao.get_user_by_id(user_id)
+            if full_user:
+                full_users_map[user_id] = full_user
+        
+        # 批次取得所有使用者的權限群組
+        users_permission_groups = get_users_permission_groups_batch(user_ids)
+        
+        # 批次取得所有使用者的部門角色
+        users_department_roles = get_users_department_roles_batch(user_ids)
+        
+        # 收集所有角色ID以批次取得角色權限
+        all_role_ids = set()
+        for user_roles in users_department_roles.values():
+            for role in user_roles:
+                if role.get('department_role_id'):
+                    all_role_ids.add(role['department_role_id'])
+        
+        # 批次取得角色權限群組
+        role_permission_groups = get_role_permission_groups_batch(list(all_role_ids))
+        
+        # 批次取得啟用 token 狀態
+        users_activation_tokens = user_dao.get_users_activation_tokens_batch(user_ids)
+        
+        # 組合員工資料
+        enriched_employees = []
+        for employee in employees:
+            user_id = employee['id']
+            full_user = full_users_map.get(user_id)
+            
+            if full_user:
+                # 從批次查詢結果取得啟用 token 狀態
+                has_activation_token = users_activation_tokens.get(user_id, False)
+                
+                # 基本資訊
+                enriched_employee = {
+                    'id': employee['id'],
+                    'loginid': full_user.get('loginid'),
+                    'username': employee['username'],
+                    'email': employee['email'],
+                    'is_active': employee['is_active'],
+                    'employee_no': employee['employee_no'],
+                    'title': employee['title'],
+                    'auth_source': employee['auth_source'],
+                    'has_activation_token': has_activation_token,
+                    'department': {
+                        'id': dept_id,
+                        'name': department['name'],
+                        'code': department['code']
+                    }
+                }
+                
+                # 個人權限群組
+                direct_permissions = users_permission_groups.get(user_id, [])
+                enriched_employee['permission_groups'] = direct_permissions
+                
+                # 部門角色
+                user_roles = users_department_roles.get(user_id, [])
+                enriched_employee['department_roles'] = user_roles
+                
+                # 收集所有角色的權限群組
+                role_permissions = []
+                for role in user_roles:
+                    role_id = role.get('department_role_id')
+                    if role_id and role_id in role_permission_groups:
+                        role_permissions.extend(role_permission_groups[role_id])
+                
+                # 角色繼承的權限群組
+                enriched_employee['role_permission_groups'] = role_permissions
+                
+                # 合併所有權限（去重）
+                merged_permissions = merge_permissions(direct_permissions, role_permissions)
+                enriched_employee['all_permissions'] = merged_permissions
+                
+                enriched_employees.append(enriched_employee)
+        
+        return enriched_employees
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting department employees: {e}")
+        raise HTTPException(status_code=500, detail="取得部門員工時發生錯誤")
+
+
 # ===== 使用者組織管理 API =====
 
 @router.get("/users", response_model=List[UserWithPermissionGroups])
+@permission_required("ORG.EMP_VIEW")
 def list_organization_users(
     department_id: Optional[int] = Query(None),
     role_id: Optional[int] = Query(None),
@@ -240,30 +602,41 @@ def list_organization_users(
 ):
     """列出組織使用者"""
     try:
-        users = []
+        # 收集使用者資料
+        user_list = []
         if department_id:
             # 按部門列出使用者
-            dept_users = user_org_dao.list_users_in_department(department_id)
-            for user in dept_users:
-                user_with_permission_groups = _build_user_with_permission_groups(user['id'])
-                if user_with_permission_groups:
-                    users.append(user_with_permission_groups)
-        
+            user_list = user_org_dao.list_users_in_department(department_id)
         elif role_id:
             # 按角色列出使用者
-            role_users = user_org_dao.list_users_with_permission_group(role_id)
-            for user in role_users:
-                user_with_permission_groups = _build_user_with_permission_groups(user['id'])
-                if user_with_permission_groups:
-                    users.append(user_with_permission_groups)
-        
+            user_list = user_org_dao.list_users_with_permission_group(role_id)
         else:
             # 列出所有使用者
-            all_users = user_dao.get_all_users()
-            for user in all_users:
-                user_with_permission_groups = _build_user_with_permission_groups(user['id'])
-                if user_with_permission_groups:
-                    users.append(user_with_permission_groups)
+            user_list = user_dao.get_all_users()
+        
+        if not user_list:
+            return []
+        
+        # 提取使用者ID列表進行批次查詢
+        user_ids = [user['id'] for user in user_list]
+        
+        # 批次取得啟用 token 狀態
+        users_activation_tokens = user_dao.get_users_activation_tokens_batch(user_ids)
+        
+        # 建立使用者資料
+        users = []
+        for user_data in user_list:
+            user_id = user_data['id']
+            
+            # 使用批次查詢結果
+            has_activation_token = users_activation_tokens.get(user_id, False)
+            
+            # 建立使用者資料（使用個別函數但傳入 token 狀態以避免重複查詢）
+            user_with_permission_groups = _build_user_with_permission_groups_with_token(
+                user_id, has_activation_token
+            )
+            if user_with_permission_groups:
+                users.append(user_with_permission_groups)
         
         return users
         
@@ -324,10 +697,12 @@ def get_organization_user(
 
 
 @router.put("/users/{user_id}", response_model=Dict[str, Any])
+@permission_required("ORG.EMP_UPDATE")
 def update_user(
     user_id: int,
     user_update: UserUpdate,
     request: Request,
+    background_tasks: BackgroundTasks,
     current_user: Dict[str, Any] = Depends(get_admin_user)
 ):
     """統一更新使用者資訊（基本資訊、擴充資訊、角色）"""
@@ -375,6 +750,10 @@ def update_user(
             ext_updates['employee_no'] = user_update.employee_no
         if user_update.title is not None:
             ext_updates['title'] = user_update.title
+        if user_update.activation_expires is not None:
+            ext_updates['activation_expires'] = user_update.activation_expires
+        if user_update.activation_scheduled is not None:
+            ext_updates['activation_scheduled'] = user_update.activation_scheduled
             
         if ext_updates:
             logger.debug(f"更新擴充資訊: user_id={user_id}, ext_updates={ext_updates}")
@@ -441,7 +820,7 @@ def update_user(
         # 5. 更新權限群組
         if user_update.permission_group_ids is not None:
             # 先獲取現有權限群組
-            existing_permission_groups = user_org_dao.get_user_permission_groups(user_id)
+            existing_permission_groups = user_org_dao.get_permission_groups_user(user_id)
             
             # 刪除所有現有權限群組
             for permission_group in existing_permission_groups:
@@ -462,6 +841,28 @@ def update_user(
                 )
                 user_org_dao.assign_user_permission_group(user_permission_group)
         
+        # 檢查是否需要發送啟用郵件（當 is_active 從 False 變為 True）
+        email_scheduled = False
+        if basic_updates and basic_updates.get('is_active') is True:
+            # 檢查原本的狀態是否為停用
+            if not user.get('is_active'):
+                logger.info(f"安排背景發送啟用郵件: user_id={user_id}, email={user.get('email')}")
+                
+                # 使用背景任務發送啟用郵件
+                from app.core.email import process_activation_email
+                
+                background_tasks.add_task(
+                    process_activation_email,
+                    user_id=user_id,
+                    user_email=user.get("email"),
+                    user_name=user.get("username"),
+                    clear_old_tokens=True,
+                    check_password_strategy=False  # 已經檢查過了
+                )
+                
+                email_scheduled = True
+                logger.info(f"啟用郵件已安排背景發送: user_id={user_id}")
+        
         # 記錄審計日誌
         changes = {}
         if basic_updates:
@@ -476,6 +877,8 @@ def update_user(
             changes['department_roles'] = user_update.department_roles
         if user_update.password:
             changes['password'] = '***'  # 不記錄實際密碼
+        if email_scheduled:
+            changes['activation_email_scheduled'] = True
             
         audit_log_dao.create_audit_log(AuditLog(
             user_id=current_user['id'],
@@ -487,8 +890,13 @@ def update_user(
             user_agent=request.headers.get("User-Agent")
         ))
         
+        # 準備回傳訊息
+        success_message = "使用者資訊更新成功"
+        if email_scheduled:
+            success_message += "，啟用郵件正在背景發送"
+        
         logger.info(f"使用者資訊更新成功: user_id={user_id}, changes={list(changes.keys())}")
-        return {"success": True, "message": "使用者資訊更新成功"}
+        return {"success": True, "message": success_message}
         
     except HTTPException as he:
         logger.error(f"HTTP錯誤更新使用者資訊 (user_id={user_id}): {he.detail}")
@@ -553,14 +961,19 @@ def update_user_extension(
 
 
 @router.post("/users", response_model=Dict[str, Any])
+@permission_required("ORG.EMP_CREATE")
 def create_organization_user(
     user_data: UserCreate,
     request: Request,
+    background_tasks: BackgroundTasks,
     current_user: Dict[str, Any] = Depends(get_admin_user)
 ):
     """管理員創建新使用者"""
     try:
         from app.core.security.auth import auth_manager
+        
+        # Debug: 記錄接收到的密碼策略
+        logger.info(f"創建用戶，接收到的 password_strategy: {user_data.password_strategy}")
         
         # 1. 驗證 loginid 唯一性
         existing_user = user_dao.get_user_by_loginid(user_data.loginid)
@@ -595,8 +1008,25 @@ def create_organization_user(
         if not primary_role.get('is_active', True):
             raise HTTPException(status_code=400, detail=f"角色 '{primary_role['name']}' 已停用")
         
-        # 6. 建立使用者（使用驗證過的資料）
-        password_hash = auth_manager.get_password_hash(user_data.password)
+        # 6. 建立使用者（根據密碼策略處理）
+        if user_data.password_strategy == 'ACTIVATION_LINK':
+            # 啟用連結策略：生成臨時密碼，使用前端指定的啟用狀態
+            import secrets
+            temp_password = secrets.token_urlsafe(16)  # 臨時密碼，不會被使用
+            password_hash = auth_manager.get_password_hash(temp_password)
+            is_active = user_data.is_active  # 使用前端傳來的啟用狀態
+        elif user_data.password_strategy == 'TEMP_PASSWORD':
+            # 臨時密碼策略：創建啟用帳號，使用臨時密碼
+            if not user_data.password:
+                raise HTTPException(status_code=400, detail="臨時密碼策略需要提供密碼")
+            password_hash = auth_manager.get_password_hash(user_data.password)
+            is_active = user_data.is_active
+        else:  # MANUAL 或其他
+            # 手動設定密碼策略：直接使用提供的密碼
+            if not user_data.password:
+                raise HTTPException(status_code=400, detail="手動密碼策略需要提供密碼")
+            password_hash = auth_manager.get_password_hash(user_data.password)
+            is_active = user_data.is_active
         
         user_id = user_dao.create_user(
             loginid=user_data.loginid,
@@ -604,7 +1034,7 @@ def create_organization_user(
             email=str(user_data.email),  # EmailStr 轉字串
             password_hash=password_hash,
             role='user',  # 預設系統角色
-            is_active=user_data.is_active
+            is_active=is_active
         )
         
         if not user_id or user_id == -1:
@@ -618,6 +1048,8 @@ def create_organization_user(
             title=user_data.title,
             auth_source='local',
             password_strategy=user_data.password_strategy,
+            activation_expires=user_data.activation_expires,
+            activation_scheduled=user_data.activation_scheduled,
             created_by=current_user['id']
         )
         
@@ -676,7 +1108,38 @@ def create_organization_user(
                 else:
                     logger.warning(f"跳過無效或停用的權限群組ID: {permission_group_id}")
         
-        # 11. 記錄審計日誌
+        # 11. 處理啟用連結策略
+        activation_token = None
+        activation_url = None
+        email_sent = False
+        if user_data.password_strategy == 'ACTIVATION_LINK':
+            # 記錄啟用連結生成情況
+            logger.info(f"啟用連結策略，用戶: {user_data.email}, is_active: {is_active}")
+            
+            # 如果是立即啟用且使用啟用連結策略，在背景發送啟用郵件
+            if is_active:
+                logger.info(f"安排背景發送啟用郵件: {user_data.email}")
+                
+                # 使用背景任務發送啟用郵件
+                from app.core.email import process_activation_email
+                
+                background_tasks.add_task(
+                    process_activation_email,
+                    user_id=user_id,
+                    user_email=str(user_data.email),
+                    user_name=user_data.username,
+                    clear_old_tokens=True,  # 新建用戶不需要清除舊 token
+                    check_password_strategy=False  # 已經確定是 ACTIVATION_LINK
+                )
+                
+                # 設定郵件發送狀態（背景處理中）
+                email_sent = None  # 背景處理中，狀態未知
+                activation_token = None  # 背景任務不返回 token
+                
+                logger.info(f"啟用郵件已安排背景發送: {user_data.email}")
+                
+
+        # 12. 記錄審計日誌
         audit_log_dao.create_audit_log(AuditLog(
             user_id=current_user['id'],
             action="create_user",
@@ -695,11 +1158,24 @@ def create_organization_user(
             user_agent=request.headers.get("User-Agent")
         ))
         
-        return {
+        response_data = {
             "success": True, 
             "user_id": user_id,
             "message": f"使用者 '{user_data.username}' 建立成功"
         }
+        
+        # 如果是啟用連結策略，添加相關資訊
+        if user_data.password_strategy == 'ACTIVATION_LINK':
+            response_data.update({
+                "password_strategy": "ACTIVATION_LINK",
+                "activation_required": True,
+                "activation_token": activation_token,  # 僅用於測試，正式環境不應返回
+                "activation_url": activation_url,      # 僅用於測試，正式環境不應返回
+                "email_sent": email_sent,
+                "email_message": "啟用郵件正在背景發送" if is_active else "啟用連結已生成，可稍後手動發送郵件"
+            })
+        
+        return response_data
         
     except HTTPException:
         # 已經是 HTTP 錯誤，直接拋出
@@ -718,6 +1194,7 @@ def patch_user_status(
     user_id: int,
     status_update: UserStatusUpdate,
     request: Request,
+    background_tasks: BackgroundTasks,
     current_user: Dict[str, Any] = Depends(get_admin_user)
 ):
     """更新使用者狀態（停用/啟用，支援延遲停用和預約啟用）"""
@@ -783,6 +1260,14 @@ def patch_user_status(
                 if 'is_active' not in update_data:
                     update_data['is_active'] = False  # 預約啟用時暫時保持停用
         
+        # 處理立即啟用/停用時的排程欄位清除邏輯
+        if (status_update.is_active is not None and 
+            status_update.activation_expires is None and 
+            status_update.activation_scheduled is None):
+            # 當只設定 is_active 而沒有任何排程時間時，清除所有排程欄位
+            extension_update_data['activation_scheduled'] = None
+            extension_update_data['activation_expires'] = None
+        
         # 更新基本使用者資料
         if update_data:
             success = user_dao.update_user(user_id, update_data)
@@ -806,8 +1291,31 @@ def patch_user_status(
             if not success:
                 raise HTTPException(status_code=400, detail="更新帳號排程設定失敗")
         
+        # 檢查是否需要發送啟用郵件（當狀態變為啟用時）
+        email_scheduled = False
+        if update_data.get('is_active') is True and not user.get('is_active'):
+            logger.info(f"安排背景發送啟用郵件: user_id={user_id}, email={user.get('email')}")
+            
+            # 使用背景任務發送啟用郵件
+            from app.core.email import process_activation_email
+            
+            background_tasks.add_task(
+                process_activation_email,
+                user_id=user_id,
+                user_email=user.get("email"),
+                user_name=user.get("username"),
+                clear_old_tokens=True,
+                check_password_strategy=False  # 已經檢查過了
+            )
+            
+            email_scheduled = True
+            logger.info(f"啟用郵件已安排背景發送: user_id={user_id}")
+        
         # 記錄審計日誌
         changes = {**update_data, **extension_update_data}
+        if email_scheduled:
+            changes['activation_email_scheduled'] = True
+            
         audit_log_dao.create_audit_log(AuditLog(
             user_id=current_user['id'],
             action="update_user_status",
@@ -818,7 +1326,14 @@ def patch_user_status(
             user_agent=request.headers.get("User-Agent")
         ))
         
-        return {"success": True}
+        # 準備回傳訊息
+        response = {"success": True}
+        if email_scheduled:
+            response["message"] = "狀態更新成功，啟用郵件正在背景發送"
+        else:
+            response["message"] = "狀態更新成功"
+        
+        return response
         
     except HTTPException:
         raise
@@ -828,6 +1343,7 @@ def patch_user_status(
 
 
 @router.delete("/users/{user_id}", response_model=Dict[str, Any])
+@permission_required("ORG.EMP_DELETE")
 def delete_organization_user(
     user_id: int,
     request: Request,
@@ -872,6 +1388,70 @@ def delete_organization_user(
     except Exception as e:
         logger.error(f"Error deleting user: {e}")
         raise HTTPException(status_code=500, detail="刪除使用者時發生錯誤")
+
+
+@router.post("/users/{user_id}/resend-activation", response_model=Dict[str, Any])
+def resend_user_activation_email(
+    user_id: int,
+    request: Request,
+    current_user: Dict[str, Any] = Depends(get_admin_user)
+):
+    """重新發送使用者啟用郵件（組織管理專用）"""
+    try:
+        logger.info(f"DEBUG: 開始重新發送啟用郵件 - user_id={user_id}, current_user_id={current_user.get('id')}")
+        
+        # 檢查使用者是否存在
+        user = user_dao.get_user_by_id(user_id, include_inactive=True)      
+        if not user:
+            raise HTTPException(status_code=404, detail="使用者不存在")
+               
+        # 檢查是否有啟用連結策略設定
+        user_extension = user_org_dao.get_user_extension(user_id)       
+        if not user_extension:
+            logger.error(f"DEBUG: 找不到使用者擴充資料 - user_id={user_id}")
+            raise HTTPException(status_code=400, detail="找不到使用者擴充資料")
+            
+        password_strategy = user_extension.get('password_strategy')       
+        if password_strategy != 'ACTIVATION_LINK':
+            logger.error(f"DEBUG: 密碼策略不符 - user_id={user_id}, expected=ACTIVATION_LINK, actual={password_strategy}")
+            raise HTTPException(status_code=400, detail="該使用者未設定為啟用連結策略")
+        
+        # 使用統一的啟用郵件處理函數
+        from app.core.email import process_activation_email
+        
+        result = process_activation_email(
+            user_id=user_id,
+            user_email=user.get("email"),
+            user_name=user.get("username"),
+            clear_old_tokens=True,
+            check_password_strategy=False  # 已經在上面檢查過了
+        )
+                
+        # 記錄審計日誌
+        audit_log_dao.create_audit_log(AuditLog(
+            user_id=current_user['id'],
+            action="resend_activation_email",
+            target_type="user",
+            target_id=str(user_id),
+            changes={
+                "email": user.get("email"),
+                "email_sent": result.get("email_sent", False)
+            },
+            ip_address=request.client.host,
+            user_agent=request.headers.get("User-Agent")
+        ))
+        
+        return {
+            "success": result.get("success", False),
+            "message": result.get("message", "處理失敗"),
+            "email_sent": result.get("email_sent", False)
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"重新發送啟用郵件失敗: {e}")
+        raise HTTPException(status_code=500, detail="系統錯誤")
 
 
 @router.post("/users/permission-groups", response_model=Dict[str, Any])
@@ -1068,8 +1648,8 @@ def list_audit_logs(
 
 # ===== 輔助函數 =====
 
-def _build_user_with_permission_groups(user_id: Any) -> Optional[UserWithPermissionGroups]:
-    """建立包含權限群組的使用者資訊"""
+def _build_user_with_permission_groups_with_token(user_id: Any, has_activation_token: bool) -> Optional[UserWithPermissionGroups]:
+    """建立包含權限群組的使用者資訊（使用預先查詢的 token 狀態）"""
     try:
         # 取得使用者基本資訊（包含停用用戶）
         user = user_dao.get_user_by_id(user_id, include_inactive=True)
@@ -1085,9 +1665,25 @@ def _build_user_with_permission_groups(user_id: Any) -> Optional[UserWithPermiss
             department = department_dao.get_department(extension['department_id'])
         
         # 取得權限群組資訊
-        user_permission_groups = user_org_dao.get_user_permission_groups(user_id)
+        permission_groups_user = user_org_dao.get_permission_groups_user(user_id)
         permission_groups = []
-        for upg in user_permission_groups:
+        
+        # 從關聯表取得每個群組的實際權限
+        from app.dao.base import BaseDAO, db_manager
+        dao = BaseDAO(db_manager)
+        
+        for upg in permission_groups_user:
+            # 取得該群組的權限列表
+            perm_query = """
+                SELECT pm.permission_key
+                FROM permission_groups_matrix pgm
+                JOIN permission_matrix pm ON pgm.permission_matrix_id = pm.id
+                WHERE pgm.permission_group_id = %s
+                AND pm.is_active = 1
+            """
+            perms = dao.execute_query(perm_query, [upg['permission_group_id']])
+            permission_list = [p['permission_key'] for p in perms] if perms else []
+            
             # 根據權限類型分配層級，管理員權限最高
             level = 0
             permission_type = upg['permission_type']
@@ -1105,10 +1701,114 @@ def _build_user_with_permission_groups(user_id: Any) -> Optional[UserWithPermiss
                 'code': upg['code'],
                 'name': upg['name'],
                 'permission_type': upg['permission_type'],
-                'permissions': upg['permissions'],
+                'permissions': permission_list,  # 使用陣列格式
                 'level': level  # 新增層級資訊
             }
             permission_groups.append(permission_group)
+        
+        # 取得部門角色資訊
+        department_roles = []
+        try:
+            from app.dao.role_template import user_department_role_dao
+            user_roles = user_department_role_dao.get_user_roles(user_id)
+            for role in user_roles:
+                department_role = {
+                    'id': role.get('department_role_id'),
+                    'code': role.get('template_name'),  # 使用模板名稱作為 code
+                    'name': role.get('role_name'),
+                    'role_type': role.get('role_type'),
+                    'level': role.get('role_level', 0),  # 修正為 role_level
+                    'department_id': role.get('department_id'),
+                    'department_name': role.get('department_name'),
+                    'is_primary': role.get('is_primary', False)
+                }
+                department_roles.append(department_role)
+        except Exception as e:
+            logger.warning(f"Failed to get department roles for user {user_id}: {e}")
+        
+        # 創建用戶資料物件，使用傳入的 token 狀態
+        user_data = UserWithPermissionGroups(
+            user_id=user['id'],
+            loginid=user.get('loginid', user['username']),  # 向後相容
+            username=user['username'],  # 真實姓名
+            email=user.get('email', ''),  # 提供預設值避免 None
+            is_active=user['is_active'],
+            department=department,
+            permission_groups=permission_groups,
+            user_extension=extension,
+            department_roles=department_roles,  # 直接設定到模型屬性
+            has_activation_token=has_activation_token,  # 使用傳入的 token 狀態
+            last_login_at=user.get('last_login_at'),  # 最後登入時間
+            last_activity_at=user.get('last_activity_at')  # 最後活動時間
+        )
+        
+        return user_data
+        
+    except Exception as e:
+        logger.error(f"Error building user with permission groups for user {user_id}: {e}")
+        return None
+
+
+def _build_user_with_permission_groups(user_id: Any) -> Optional[UserWithPermissionGroups]:
+    """建立包含權限群組的使用者資訊"""
+    try:
+        # 取得使用者基本資訊（包含停用用戶）
+        user = user_dao.get_user_by_id(user_id, include_inactive=True)
+        if not user:
+            return None
+        
+        # 取得擴充資訊
+        extension = user_org_dao.get_user_extension(user_id)
+        
+        # 取得部門資訊
+        department = None
+        if extension and extension['department_id']:
+            department = department_dao.get_department(extension['department_id'])
+        
+        # 取得權限群組資訊
+        permission_groups_user = user_org_dao.get_permission_groups_user(user_id)
+        permission_groups = []
+        
+        # 從關聯表取得每個群組的實際權限
+        from app.dao.base import BaseDAO, db_manager
+        dao = BaseDAO(db_manager)
+        
+        for upg in permission_groups_user:
+            # 取得該群組的權限列表
+            perm_query = """
+                SELECT pm.permission_key
+                FROM permission_groups_matrix pgm
+                JOIN permission_matrix pm ON pgm.permission_matrix_id = pm.id
+                WHERE pgm.permission_group_id = %s
+                AND pm.is_active = 1
+            """
+            perms = dao.execute_query(perm_query, [upg['permission_group_id']])
+            permission_list = [p['permission_key'] for p in perms] if perms else []
+            
+            # 根據權限類型分配層級，管理員權限最高
+            level = 0
+            permission_type = upg['permission_type']
+            if permission_type == 'admin':
+                level = 9  # 管理員最高層級
+            elif permission_type == 'manager':
+                level = 5  # 經理權限中級
+            elif permission_type == 'user':
+                level = 1  # 一般使用者權限
+            else:
+                level = 0  # 預設層級
+                
+            permission_group = {
+                'id': upg['permission_group_id'],
+                'code': upg['code'],
+                'name': upg['name'],
+                'permission_type': upg['permission_type'],
+                'permissions': permission_list,  # 使用陣列格式
+                'level': level  # 新增層級資訊
+            }
+            permission_groups.append(permission_group)
+        
+        # 檢查是否有有效的啟用 token
+        has_activation_token = user_dao.has_active_activation_token(user_id)
         
         # 取得部門角色資訊
         department_roles = []
@@ -1141,6 +1841,7 @@ def _build_user_with_permission_groups(user_id: Any) -> Optional[UserWithPermiss
             permission_groups=permission_groups,
             user_extension=extension,
             department_roles=department_roles,  # 直接設定到模型屬性
+            has_activation_token=has_activation_token,  # 新增啟用 token 狀態
             last_login_at=user.get('last_login_at'),  # 最後登入時間
             last_activity_at=user.get('last_activity_at')  # 最後活動時間
         )
@@ -1155,6 +1856,7 @@ def _build_user_with_permission_groups(user_id: Any) -> Optional[UserWithPermiss
 # ===== 角色模板管理 API =====
 
 @router.post("/role-templates", response_model=Dict[str, Any])
+@permission_required("ORG.ROLE_CREATE")
 def create_role_template(
     template: RoleTemplateCreate,
     request: Request,
@@ -1196,6 +1898,7 @@ def create_role_template(
 
 
 @router.get("/role-templates", response_model=List[RoleTemplateResponse])
+@permission_required("ORG.ROLE_VIEW")
 def list_role_templates(
     is_active: Optional[bool] = Query(None),
     is_system: Optional[bool] = Query(None),
@@ -1231,6 +1934,7 @@ def get_role_template(
 
 
 @router.put("/role-templates/{template_id}", response_model=Dict[str, Any])
+@permission_required("ORG.ROLE_UPDATE")
 def update_role_template(
     template_id: int,
     update_data: RoleTemplateUpdate,
@@ -1267,6 +1971,7 @@ def update_role_template(
 
 
 @router.delete("/role-templates/{template_id}", response_model=Dict[str, Any])
+@permission_required("ORG.ROLE_DELETE")
 def delete_role_template(
     template_id: int,
     request: Request,
@@ -2082,6 +2787,7 @@ def _build_role_tree(roles: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 # ===== 角色關係分析 API =====
 
 @router.get("/role-relationships/analyze", response_model=Dict[str, Any])
+@permission_required("ORG.ROLE_ANALYSIS")
 def analyze_role_relationships(
     include_inactive: bool = Query(False, description="是否包含停用的角色"),
     current_user: Dict[str, Any] = Depends(get_admin_user)
@@ -2344,5 +3050,239 @@ def apply_role_assignment_suggestions(
     except Exception as e:
         logger.error(f"Error applying role assignment suggestions: {e}")
         raise HTTPException(status_code=500, detail="應用角色分配建議失敗")
+
+
+# ===== 角色權限管理 API =====
+
+@router.get("/department-roles/{role_id}/permissions", response_model=List[Dict[str, Any]])
+def get_department_role_permissions(
+    role_id: int,
+    current_user: Dict[str, Any] = Depends(get_admin_user)
+):
+    """取得部門角色的權限群組"""
+    try:
+        from app.dao.base import BaseDAO, db_manager
+        
+        dao = BaseDAO(db_manager)
+        query = """
+            SELECT 
+                pg.id,
+                pg.code,
+                pg.name,
+                pg.permission_type as type,
+                pg.description,
+                pg.is_active,
+                drpg.assigned_at,
+                drpg.assigned_by
+            FROM permission_groups_department_role drpg
+            JOIN permission_groups pg ON drpg.permission_group_id = pg.id
+            WHERE drpg.department_role_id = %s 
+              AND pg.is_active = TRUE
+            ORDER BY pg.permission_type, pg.name
+        """
+        
+        permissions = dao.execute_query(query, (role_id,))
+        return permissions
+        
+    except Exception as e:
+        logger.error(f"Error getting department role permissions: {e}")
+        raise HTTPException(status_code=500, detail="取得角色權限失敗")
+
+
+@router.put("/department-roles/{role_id}/permissions", response_model=Dict[str, Any])
+def update_department_role_permissions(
+    role_id: int,
+    permission_data: Dict[str, List[int]],
+    current_user: Dict[str, Any] = Depends(get_admin_user)
+):
+    """更新部門角色的權限群組"""
+    try:
+        from app.dao.base import BaseDAO, db_manager
+        
+        permission_group_ids = permission_data.get('permission_group_ids', [])
+        
+        dao = BaseDAO(db_manager)
+        
+        # 驗證角色是否存在
+        role_query = "SELECT id, name FROM department_roles WHERE id = %s"
+        role = dao.execute_query(role_query, (role_id,))
+        if not role:
+            raise HTTPException(status_code=404, detail="角色不存在")
+        
+        # 驗證權限群組是否存在且啟用
+        if permission_group_ids:
+            placeholders = ','.join(['%s'] * len(permission_group_ids))
+            validate_query = f"""
+                SELECT id FROM permission_groups 
+                WHERE id IN ({placeholders}) AND is_active = TRUE
+            """
+            valid_groups = dao.execute_query(validate_query, permission_group_ids)
+            valid_ids = [g['id'] for g in valid_groups]
+            
+            # 檢查是否有無效的權限群組 ID
+            invalid_ids = set(permission_group_ids) - set(valid_ids)
+            if invalid_ids:
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"無效的權限群組ID: {list(invalid_ids)}"
+                )
+        
+        # 在事務中更新權限
+        with db_manager.get_connection() as conn:
+            with conn.cursor() as cursor:
+                # 先刪除現有權限
+                delete_query = "DELETE FROM permission_groups_department_role WHERE department_role_id = %s"
+                cursor.execute(delete_query, (role_id,))
+                
+                # 插入新權限
+                if permission_group_ids:
+                    insert_query = """
+                        INSERT INTO permission_groups_department_role 
+                        (department_role_id, permission_group_id, assigned_by, assigned_at)
+                        VALUES (%s, %s, %s, NOW())
+                    """
+                    for group_id in permission_group_ids:
+                        cursor.execute(insert_query, (role_id, group_id, current_user['id']))
+                
+                conn.commit()
+        
+        return {
+            "success": True,
+            "message": "角色權限更新成功",
+            "role_id": role_id,
+            "permission_count": len(permission_group_ids)
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating department role permissions: {e}")
+        raise HTTPException(status_code=500, detail="更新角色權限失敗")
+
+
+@router.get("/users/{user_id}/permissions", response_model=List[Dict[str, Any]])
+def get_user_permissions(
+    user_id: int,
+    current_user: Dict[str, Any] = Depends(get_admin_user)
+):
+    """取得用戶的完整權限（個人權限 + 角色權限）"""
+    try:
+        from app.dao.base import BaseDAO, db_manager
+        
+        dao = BaseDAO(db_manager)
+        
+        # 查詢用戶的個人權限和角色權限
+        query = """
+            SELECT DISTINCT
+                pg.id,
+                pg.code,
+                pg.name,
+                pg.permission_type as type,
+                pg.description,
+                pg.is_active,
+                'personal' as permission_source,
+                upg.assigned_at,
+                upg.assigned_by
+            FROM permission_groups_user upg
+            JOIN permission_groups pg ON upg.permission_group_id = pg.id
+            WHERE upg.user_id = %s AND pg.is_active = TRUE
+            
+            UNION
+            
+            SELECT DISTINCT
+                pg.id,
+                pg.code,
+                pg.name,
+                pg.permission_type as type,
+                pg.description,
+                pg.is_active,
+                'role' as permission_source,
+                drpg.assigned_at,
+                drpg.assigned_by
+            FROM user_department_roles udr
+            JOIN permission_groups_department_role drpg ON udr.department_role_id = drpg.department_role_id
+            JOIN permission_groups pg ON drpg.permission_group_id = pg.id
+            WHERE udr.user_id = %s AND pg.is_active = TRUE
+            
+            ORDER BY type, name
+        """
+        
+        permissions = dao.execute_query(query, (user_id, user_id))
+        return permissions
+        
+    except Exception as e:
+        logger.error(f"Error getting user permissions: {e}")
+        raise HTTPException(status_code=500, detail="取得用戶權限失敗")
+
+
+@router.put("/users/{user_id}/permissions", response_model=Dict[str, Any])
+def update_user_permissions(
+    user_id: int,
+    permission_data: Dict[str, List[int]],
+    current_user: Dict[str, Any] = Depends(get_admin_user)
+):
+    """更新用戶的個人權限（不影響角色權限）"""
+    try:
+        from app.dao.base import BaseDAO, db_manager
+        
+        permission_group_ids = permission_data.get('permission_group_ids', [])
+        
+        dao = BaseDAO(db_manager)
+        
+        # 驗證用戶是否存在
+        user_query = "SELECT id, username FROM users WHERE id = %s"
+        user = dao.execute_query(user_query, (user_id,))
+        if not user:
+            raise HTTPException(status_code=404, detail="用戶不存在")
+        
+        # 驗證權限群組是否存在且啟用
+        if permission_group_ids:
+            placeholders = ','.join(['%s'] * len(permission_group_ids))
+            validate_query = f"""
+                SELECT id FROM permission_groups 
+                WHERE id IN ({placeholders}) AND is_active = TRUE
+            """
+            valid_groups = dao.execute_query(validate_query, permission_group_ids)
+            valid_ids = [g['id'] for g in valid_groups]
+            
+            # 檢查是否有無效的權限群組 ID
+            invalid_ids = set(permission_group_ids) - set(valid_ids)
+            if invalid_ids:
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"無效的權限群組ID: {list(invalid_ids)}"
+                )
+        
+        # 在事務中更新權限
+        with db_manager.get_connection() as conn:
+            with conn.cursor() as cursor:
+                # 先刪除現有個人權限
+                delete_query = "DELETE FROM permission_groups_user WHERE user_id = %s"
+                cursor.execute(delete_query, (user_id,))
+                
+                # 插入新的個人權限
+                if permission_group_ids:
+                    insert_query = """
+                        INSERT INTO permission_groups_user 
+                        (user_id, permission_group_id, assigned_by, assigned_at)
+                        VALUES (%s, %s, %s, NOW())
+                    """
+                    for group_id in permission_group_ids:
+                        cursor.execute(insert_query, (user_id, group_id, current_user['id']))
+                
+                conn.commit()
+        
+        return {
+            "success": True,
+            "message": "用戶權限更新成功",
+            "user_id": user_id,
+            "permission_count": len(permission_group_ids)
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating user permissions: {e}")
+        raise HTTPException(status_code=500, detail="更新用戶權限失敗")
 
 

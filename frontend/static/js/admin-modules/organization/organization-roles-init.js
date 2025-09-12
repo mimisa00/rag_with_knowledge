@@ -39,10 +39,10 @@ const OrganizationRolesInitModule = (function() {
             modules.modalModule = window.__OrganizationRolesModalModule;
         }
         
-        // 初始化懸浮卡片子模組
-        if (window.__OrganizationRolesHoverCardModule) {
-            modules.hoverCardModule = window.__OrganizationRolesHoverCardModule;
-            modules.hoverCardModule.init();
+        // 確保統一的員工懸浮卡片模組已載入
+        if (window.EmployeeHoverCard && !window.EmployeeHoverCard._initialized) {
+            window.EmployeeHoverCard.init();
+            window.EmployeeHoverCard._initialized = true;
         }
         
         // 初始化搜尋子模組

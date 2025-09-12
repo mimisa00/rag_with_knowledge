@@ -109,6 +109,13 @@ window.OrganizationEmployeeCrudModule = (function() {
             const userId = userData.id || userData.user_id;
             let response;
             
+            // 記錄完整的用戶資料以供除錯
+            console.log('=== saveEmployee Debug ===');
+            console.log('Full userData being sent:', JSON.stringify(userData, null, 2));
+            console.log('Contains activation_scheduled:', userData.activation_scheduled);
+            console.log('Contains activation_expires:', userData.activation_expires);
+            console.log('========================');
+            
             // 有 user_id 表示是更新操作
             if (userId && userId !== '') {
                 console.log('使用 PUT 更新用戶，ID:', userId);
@@ -196,8 +203,14 @@ window.OrganizationEmployeeCrudModule = (function() {
     async function updateUserStatus(userId, isActive, activationExpires = null) {
         try {
             const requestBody = { is_active: isActive };
+            
             if (activationExpires) {
+                // 排程停用：設定過期時間
                 requestBody.activation_expires = convertLocalTimeToUTC(activationExpires);
+            } else {
+                // 立即操作：清除所有排程欄位
+                requestBody.activation_expires = null;
+                requestBody.activation_scheduled = null;
             }
             
             const response = await fetch(`${ENDPOINTS.users}/${userId}`, {

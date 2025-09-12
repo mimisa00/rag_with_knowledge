@@ -67,12 +67,13 @@ window.OrganizationEmployeeModule = (function() {
                 CommonUI.initScrollFadeEffect();
             }
             
-            // 初始化員工懸浮卡片模組
-            if (window.OrganizationEmployeeHoverCardModule) {
-                console.log('初始化員工懸浮卡片模組');
-                OrganizationEmployeeHoverCardModule.init(CRUD);
+            // 初始化統一的員工懸浮卡片模組
+            if (window.EmployeeHoverCard) {
+                console.log('初始化統一員工懸浮卡片元件');
+                EmployeeHoverCard.init();
+                window.EmployeeHoverCard._initialized = true;
             } else {
-                console.warn('OrganizationEmployeeHoverCardModule 不存在，懸浮卡片功能將無法使用');
+                console.warn('EmployeeHoverCard 模組不存在，懸浮卡片功能將無法使用');
             }
             
             // 載入初始數據
@@ -260,9 +261,35 @@ window.OrganizationEmployeeModule = (function() {
      */
     async function editUser(userId) {
         if (window.OrganizationEmployeeModalModule) {
+            // 在編輯用戶前先載入最新的部門資料
+            await loadDepartmentOptions('userDepartment');
+            
             OrganizationEmployeeModalModule.editUser(userId, allUsers);
         } else {
             showToast('模態框模組未載入', 'error');
+        }
+    }
+    
+    /**
+     * 編輯用戶權限
+     */
+    async function editUserPermissions(userId) {
+        try {
+            if (!window.OrganizationEmployeePermissionsModule) {
+                showToast('權限模組未載入', 'error');
+                return;
+            }
+            
+            // 載入用戶現有權限
+            const existingPermissions = await window.OrganizationEmployeePermissionsModule.loadExistingPermissions('user', userId);
+            const permissionIds = existingPermissions.map(p => p.id);
+            
+            // 顯示權限設定模態框
+            await window.OrganizationEmployeePermissionsModule.showPermissionsModal('user', userId, permissionIds);
+            
+        } catch (error) {
+            console.error('編輯用戶權限失敗:', error);
+            showToast('載入權限資料失敗', 'error');
         }
     }
     
@@ -282,7 +309,93 @@ window.OrganizationEmployeeModule = (function() {
             showToast('重設密碼失敗', 'error');
         }
     }
-    
+   
+        // 密碼策略切換
+    function togglePasswordField() {
+        const selectElement = document.getElementById('passwordStrategy');
+        const strategy = selectElement.value;
+        const passwordGroup = document.getElementById('manualPasswordGroup');
+        const sendEmailGroup = document.getElementById('sendActivationEmailGroup');
+        const infoDiv = document.getElementById('passwordStrategyInfo');
+        
+        // 取得密碼欄位
+        const passwordField = document.getElementById('userPassword');
+        
+        // 顯示/隱藏對應的輸入欄位並設定 required 屬性
+        if (strategy === 'MANUAL') {
+            passwordGroup.style.display = 'block';
+            sendEmailGroup.style.display = 'none';
+            if (passwordField) passwordField.required = true;
+        } else if (strategy === 'ACTIVATION_LINK') {
+            passwordGroup.style.display = 'none';
+            sendEmailGroup.style.display = 'block';
+            if (passwordField) passwordField.required = false;
+        } else {
+            passwordGroup.style.display = 'none';
+            sendEmailGroup.style.display = 'none';
+            if (passwordField) passwordField.required = false;
+        }
+        
+        // 顯示策略說明
+        let infoHtml = '';
+        switch (strategy) {
+            case 'ACTIVATION_LINK':
+                infoHtml = `
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>啟用連結模式：</strong>系統將發送啟用郵件到使用者信箱，使用者點擊連結後自行設定密碼。連結有效期為 7 天。
+                    </div>
+                `;
+                break;
+            case 'TEMP_PASSWORD':
+                infoHtml = `
+                    <div class="alert alert-warning">
+                        <i class="fas fa-key"></i>
+                        <strong>臨時密碼模式：</strong>系統將自動生成臨時密碼並發送到使用者信箱，使用者首次登入後需要修改密碼。
+                    </div>
+                `;
+                break;
+            case 'MANUAL':
+                infoHtml = `
+                    <div class="alert alert-success">
+                        <i class="fas fa-edit"></i>
+                        <strong>手動設定模式：</strong>由管理員直接設定初始密碼，使用者可立即使用此密碼登入。
+                    </div>
+                `;
+                break;
+        }
+        infoDiv.innerHTML = infoHtml;
+    };
+
+    // 密碼要求檢查
+    function checkPasswordRequirements() {
+        const password = document.getElementById('userPassword').value;
+        
+        // 檢查各項要求
+        const requirements = {
+            length: password.length >= 8,
+            uppercase: /[A-Z]/.test(password),
+            lowercase: /[a-z]/.test(password),
+            number: /\d/.test(password),
+            special: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)
+        };
+        
+        // 更新要求顯示
+        Object.keys(requirements).forEach(key => {
+            const element = document.getElementById(`req-${key}`);
+            if (element) {
+                if (requirements[key]) {
+                    element.innerHTML = element.innerHTML.replace('✗', '✓');
+                    element.classList.add('valid');
+                } else {
+                    element.innerHTML = element.innerHTML.replace('✓', '✗');
+                    element.classList.remove('valid');
+                }
+            }
+        });
+    };    
+
+
     /**
      * 切換用戶狀態（啟用和停用都顯示確認對話框）
      */
@@ -431,6 +544,10 @@ window.OrganizationEmployeeModule = (function() {
             if (!isImmediate && activationScheduled) {
                 // 預約啟用：設定 activation_scheduled 時間（修正時區偏移）
                 data.activation_scheduled = convertLocalTimeToUTC(activationScheduled);
+            } else if (isImmediate) {
+                // 立即啟用：清除所有排程欄位
+                data.activation_expires = null;
+                data.activation_scheduled = null;
             }
             
             const response = await fetch(`/api/organization/users/${userId}`, {
@@ -730,10 +847,178 @@ window.OrganizationEmployeeModule = (function() {
             addBtn.addEventListener('click', showAddUserModal);
         }
         
+        bindAccountStatusEvents();
         // 分頁按鈕已不再需要（使用樹狀結構和卡片代替）
     }
     
+    /**
+     * 綁定帳號狀態選擇器事件
+     */
+    function bindAccountStatusEvents() {
+        // 綁定狀態選擇變更事件
+        const statusRadios = document.querySelectorAll('input[name="account_status_mode"]');
+        statusRadios.forEach(radio => {
+            radio.addEventListener('change', handleStatusModeChange);
+        });
+            
+        console.log('帳號狀態選擇器事件已綁定');
+    }
+
+    /**
+     * 處理帳號狀態模式變更
+     */
+    function handleStatusModeChange() {
+        const selectedMode = document.querySelector('input[name="account_status_mode"]:checked')?.value;
+        const scheduledGroup = document.getElementById('scheduledStatusGroup');
+        const datetimeInput = document.getElementById('scheduledStatusDateTime');
+        const hintSpan = document.getElementById('scheduledStatusHint');
+        
+        if (!scheduledGroup || !datetimeInput || !hintSpan) return;
+        
+        // 根據選擇的模式顯示/隱藏預約時間設定
+        if (selectedMode === 'active_scheduled' || selectedMode === 'inactive_scheduled') {
+            scheduledGroup.style.display = 'block';
+            datetimeInput.required = true;
+            
+            // 設定預設時間（當前時間 + 1小時）
+            if (!datetimeInput.value) {
+                const now = new Date();
+                now.setHours(now.getHours() + 1);
+                const formattedDateTime = now.getFullYear() + '-' +
+                    String(now.getMonth() + 1).padStart(2, '0') + '-' +
+                    String(now.getDate()).padStart(2, '0') + 'T' +
+                    String(now.getHours()).padStart(2, '0') + ':' +
+                    String(now.getMinutes()).padStart(2, '0');
+                datetimeInput.value = formattedDateTime;
+            }
+            
+            // 更新提示文字
+            if (selectedMode === 'active_scheduled') {
+                hintSpan.textContent = '系統將在指定時間自動啟用該員工帳號';
+            } else {
+                hintSpan.textContent = '系統將在指定時間自動停用該員工帳號';
+            }
+        } else {
+            scheduledGroup.style.display = 'none';
+            datetimeInput.required = false;
+            datetimeInput.value = '';
+            hintSpan.textContent = '系統將在指定時間執行帳號狀態變更';
+        }
+        
+        // 更新隱藏欄位的值以維持相容性
+        const hiddenActiveField = document.getElementById('userActive');
+        if (hiddenActiveField) {
+            const isActiveMode = selectedMode === 'active_immediately' || selectedMode === 'active_scheduled';
+            hiddenActiveField.value = isActiveMode ? 'true' : 'false';
+        }
+    }
     
+    /**
+     * 初始化帳號狀態選擇器 - 動態生成選項
+     */
+    function initAccountStatusSelector(isNewAccount = true, currentStatus = true) {
+        const container = document.getElementById('statusOptionGroup');
+        if (!container) return;
+        
+        // 清空現有內容
+        container.innerHTML = '';
+        
+        let options = [];
+        
+        if (isNewAccount) {
+            // 新帳號：立即啟用、預約啟用
+            options = [
+                {
+                    value: 'active_immediately',
+                    icon: 'fas fa-check text-success',
+                    title: '立即啟用',
+                    description: '帳號將立即啟用，員工可以登入系統',
+                    checked: true
+                },
+                {
+                    value: 'active_scheduled',
+                    icon: 'fas fa-clock text-primary', 
+                    title: '預約啟用',
+                    description: '設定啟用時間，到期後自動啟用帳號',
+                    checked: false
+                }
+            ];
+        } else if (currentStatus) {
+            // 編輯已啟用帳號：啟用、立即停用、預約停用
+            options = [
+                {
+                    value: 'active_immediately',
+                    icon: 'fas fa-check text-success',
+                    title: '啟用',
+                    description: '帳號將維持啟用狀態',
+                    checked: true
+                },
+                {
+                    value: 'inactive_immediately',
+                    icon: 'fas fa-ban text-danger',
+                    title: '立即停用',
+                    description: '帳號將立即停用，員工無法再登入系統',
+                    checked: false
+                },
+                {
+                    value: 'inactive_scheduled',
+                    icon: 'fas fa-clock text-warning',
+                    title: '預約停用',
+                    description: '設定停用時間，到期後自動停用帳號',
+                    checked: false
+                }
+            ];
+        } else {
+            // 編輯已停用帳號：停用、立即啟用、預約啟用
+            options = [
+                {
+                    value: 'inactive_immediately',
+                    icon: 'fas fa-ban text-danger',
+                    title: '停用',
+                    description: '帳號將維持停用狀態',
+                    checked: true
+                },
+                {
+                    value: 'active_immediately',
+                    icon: 'fas fa-check text-success',
+                    title: '立即啟用',
+                    description: '帳號將立即啟用，員工可以登入系統',
+                    checked: false
+                },
+                {
+                    value: 'active_scheduled',
+                    icon: 'fas fa-clock text-primary',
+                    title: '預約啟用',
+                    description: '設定啟用時間，到期後自動啟用帳號',
+                    checked: false
+                }
+            ];
+        }
+        
+        // 動態生成選項HTML
+        options.forEach(option => {
+            const optionHTML = `
+                <label class="status-option">
+                    <input type="radio" name="account_status_mode" value="${option.value}" ${option.checked ? 'checked' : ''}>
+                    <span class="status-icon">
+                        <i class="${option.icon}"></i>
+                    </span>
+                    <span class="status-label">
+                        <strong>${option.title}</strong>
+                        <small>${option.description}</small>
+                    </span>
+                </label>
+            `;
+            container.insertAdjacentHTML('beforeend', optionHTML);
+        });
+        
+        // 重新綁定事件
+        bindAccountStatusEvents();
+        // 觸發初始化邏輯
+        handleStatusModeChange();
+    }
+
+        
     /**
      * 綁定表單事件
      */
@@ -748,9 +1033,16 @@ window.OrganizationEmployeeModule = (function() {
     /**
      * 顯示新增用戶 Modal（委託到模態框模組）
      */
-    function showAddUserModal() {
+    async function showAddUserModal() {
         if (window.OrganizationEmployeeModalModule) {
+            // 在顯示模態框前先載入最新的部門資料
+            await loadDepartmentOptions('userDepartment');
             OrganizationEmployeeModalModule.showAddUserModal(selectedDepartmentId);
+            // 初始化帳號狀態選擇器為新帳號模式
+            setTimeout(() => {
+                initAccountStatusSelector(true, true);
+            }, 100);
+
         } else {
             showToast('模態框模組未載入', 'error');
         }
@@ -759,9 +1051,16 @@ window.OrganizationEmployeeModule = (function() {
     /**
      * 專門用於待處理帳號的新增用戶模態框（委託到模態框模組）
      */
-    function showAddUserModalForPending(fromPending = false) {
+    async function showAddUserModalForPending(fromPending = false) {
         if (window.OrganizationEmployeeModalModule) {
+            // 在顯示模態框前先載入最新的部門資料
+            await loadDepartmentOptions('userDepartment');
             OrganizationEmployeeModalModule.showAddUserModalForPending(fromPending);
+            // 初始化帳號狀態選擇器為新帳號模式
+            setTimeout(() => {
+                initAccountStatusSelector(true, true);
+            }, 100);
+
         } else {
             showToast('模態框模組未載入', 'error');
         }
@@ -817,13 +1116,25 @@ window.OrganizationEmployeeModule = (function() {
              errors.push({ field: 'userEmployeeNo', message: '員工編號只能包含大寫英文、數字或短橫線' });
          }
         
-        // 5. 密碼驗證（新增模式必填，編輯模式選填）
-        if (!isEdit && !password) {
-            errors.push({ field: 'userPassword', message: '密碼不能為空' });
-        } else if (password && password.length < 6) {
-            errors.push({ field: 'userPassword', message: '密碼長度至少 6 個字元' });
-        } else if (password && (!/[0-9]/.test(password) || !/[a-zA-Z]/.test(password))) {
-            errors.push({ field: 'userPassword', message: '密碼必須包含至少一個數字和一個字母' });
+        // 5. 密碼驗證（根據密碼策略決定是否必填）
+        const passwordStrategy = document.getElementById('passwordStrategy')?.value || 'MANUAL';
+        
+        if (!isEdit && passwordStrategy !== 'ACTIVATION_LINK') {
+            // 只有非啟用連結策略才需要密碼
+            if (passwordStrategy === 'MANUAL' && !password) {
+                errors.push({ field: 'userPassword', message: '密碼不能為空' });
+            } else if (passwordStrategy === 'TEMP_PASSWORD' && !password) {
+                errors.push({ field: 'userPassword', message: '請輸入臨時密碼' });
+            }
+        }
+        
+        // 如果有輸入密碼才驗證格式（不管什麼策略）
+        if (password && password.length > 0) {
+            if (password.length < 6) {
+                errors.push({ field: 'userPassword', message: '密碼長度至少 6 個字元' });
+            } else if (!/[0-9]/.test(password) || !/[a-zA-Z]/.test(password)) {
+                errors.push({ field: 'userPassword', message: '密碼必須包含至少一個數字和一個字母' });
+            }
         }
         
         // 6. 部門驗證
@@ -841,6 +1152,28 @@ window.OrganizationEmployeeModule = (function() {
             errors.push({ field: 'userPrimaryRole', message: '必須選擇主要角色' });
         }
         
+         // 8. 帳號狀態預約時間驗證
+         const statusMode = document.querySelector('input[name="account_status_mode"]:checked')?.value;
+         if (statusMode === 'active_scheduled' || statusMode === 'inactive_scheduled') {
+             const scheduledDateTime = document.getElementById('scheduledStatusDateTime')?.value;
+             if (!scheduledDateTime) {
+                 errors.push({ field: 'scheduledStatusDateTime', message: '預約模式必須設定時間' });
+             } else {
+                 const scheduleDate = new Date(scheduledDateTime);
+                 const now = new Date();
+                 
+                 if (scheduleDate <= now) {
+                     errors.push({ field: 'scheduledStatusDateTime', message: '預約時間不能是過去時間' });
+                 }
+                 
+                 // 檢查時間是否過於接近（至少需要1分鐘後）
+                 const oneMinuteLater = new Date(now.getTime() + 60000);
+                 if (scheduleDate <= oneMinuteLater) {
+                     errors.push({ field: 'scheduledStatusDateTime', message: '預約時間至少需要1分鐘後' });
+                 }
+             }
+         }
+ 
         return errors;
     }
     
@@ -907,6 +1240,18 @@ window.OrganizationEmployeeModule = (function() {
     }
     
     /**
+     * 生成隨機密碼
+     */
+    function generateRandomPassword() {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+        let password = '';
+        for (let i = 0; i < 16; i++) {
+            password += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return password;
+    }
+    
+    /**
      * 處理新增/編輯用戶（統一處理函數）
      */
     async function handleAddUser(e) {
@@ -945,9 +1290,43 @@ window.OrganizationEmployeeModule = (function() {
             department_id: parseInt(formData.get('department_id')) || null,
             employee_no: formData.get('employee_no')?.trim() || null,
             title: formData.get('title')?.trim() || null,
-            is_active: formData.get('is_active') === 'on'
         };
         
+        // 處理帳號狀態選擇器
+        const statusMode = document.querySelector('input[name="account_status_mode"]:checked')?.value;
+        const scheduledDateTime = document.getElementById('scheduledStatusDateTime')?.value;
+        
+        // 清除所有排程相關欄位，避免舊資料殘留
+        userData.activation_scheduled = null;
+        userData.activation_expires = null;
+        
+        console.log('Status processing - Mode:', statusMode, 'Scheduled time:', scheduledDateTime);
+        
+        switch (statusMode) {
+            case 'active_immediately':
+                userData.is_active = true;
+                break;
+            case 'active_scheduled':
+                userData.is_active = false; // 先設為停用，等排程時間到再啟用
+                if (scheduledDateTime) {
+                    userData.activation_scheduled = convertLocalTimeToUTC(new Date(scheduledDateTime));
+                    console.log('Setting activation_scheduled:', userData.activation_scheduled);
+                }
+                break;
+            case 'inactive_immediately':
+                userData.is_active = false;
+                break;
+            case 'inactive_scheduled':
+                userData.is_active = true; // 先保持啟用，等排程時間到再停用
+                if (scheduledDateTime) {
+                    userData.activation_expires = convertLocalTimeToUTC(new Date(scheduledDateTime));
+                    console.log('Setting activation_expires:', userData.activation_expires);
+                }
+                break;
+            default:
+                // 備援：使用隱藏欄位的值
+                userData.is_active = formData.get('is_active') === 'on' || formData.get('is_active') === 'true';
+        }
         // 收集部門角色資料
         if (window.OrganizationEmployeeRolesModule) {
             const rolesData = OrganizationEmployeeRolesModule.getSelectedRoles();
@@ -963,10 +1342,25 @@ window.OrganizationEmployeeModule = (function() {
         
         // 密碼處理
         const password = formData.get('password')?.trim();
+        
+        // 取得密碼策略（直接從 select 元素取值，因為可能是 disabled 狀態）
+        const passwordStrategyElement = document.getElementById('passwordStrategy');
+        const passwordStrategy = passwordStrategyElement ? passwordStrategyElement.value : 'ACTIVATION_LINK';
+        
+        console.log('Debug: passwordStrategy =', passwordStrategy); // Debug 日誌
+        
         if (!isEdit) {
-            // 新增模式：密碼必填
-            userData.password = password;
-            userData.password_strategy = formData.get('password_strategy') || 'MANUAL';
+            // 新增模式
+            userData.password_strategy = passwordStrategy;
+            
+            // 根據密碼策略決定是否發送密碼
+            if (passwordStrategy === 'ACTIVATION_LINK') {
+                // 啟用連結策略：生成隨機密碼（後端會再次生成，這裡是備用）
+                userData.password = generateRandomPassword();
+            } else {
+                // 其他策略：需要密碼
+                userData.password = password;
+            }
         } else if (password) {
             // 編輯模式：有填密碼才更新
             userData.password = password;
@@ -979,13 +1373,32 @@ window.OrganizationEmployeeModule = (function() {
         }
         
         try {
-            await CRUD.saveEmployee(userData, isEdit);
+            const result = await CRUD.saveEmployee(userData, isEdit);
+            
             // 根據實際操作類型顯示正確的訊息
             const isUpdateOperation = userId && userId !== '';
-            const successMessage = isUpdateOperation ? 
-                (isEdit ? '員工資料更新成功' : '員工設定完成成功') : 
-                '員工新增成功';
-            showToast(successMessage, 'success');
+            let successMessage;
+            
+            if (isUpdateOperation) {
+                successMessage = isEdit ? '員工資料更新成功' : '員工設定完成成功';
+                showToast(successMessage, 'success');
+            } else {
+                // 新增用戶的情況
+                successMessage = '員工新增成功';
+                
+                // 如果是新增用戶且選擇啟用連結策略，顯示額外的郵件發送資訊
+                if (result && result.password_strategy === 'ACTIVATION_LINK') {
+                    if (result.email_sent) {
+                        showToast(successMessage + ' - 啟用郵件已發送', 'success');
+                        showToast('啟用郵件已發送到用戶信箱，請提醒用戶查收', 'info');
+                    } else {
+                        showToast(successMessage + ' - 啟用連結已生成', 'success');
+                        showToast('啟用連結郵件將在帳號正式啟用時寄發', 'info');
+                    }
+                } else {
+                    showToast(successMessage, 'success');
+                }
+            }
             
             // 檢查是否來自待處理帳號清單
             const isFromPending = form && form.dataset.fromPending === 'true';
@@ -1417,6 +1830,11 @@ window.OrganizationEmployeeModule = (function() {
             OrganizationEmployeePermissionsModule.resetPermissions();
         }
         
+        // 重置帳號狀態選擇器為新帳號模式
+        setTimeout(() => {
+            initAccountStatusSelector(true, true);
+        }, 50);
+
         // 隱藏重置按鈕
         const resetBtn = document.getElementById('resetAccountBtn');
         if (resetBtn) {
@@ -1538,6 +1956,12 @@ window.OrganizationEmployeeModule = (function() {
             form.dataset.mode = 'edit';
         }
         
+        // 6. 初始化帳號狀態選擇器（編輯模式）
+        const isCurrentlyActive = userData.is_active !== false && userData.is_active !== 0;
+        setTimeout(() => {
+            initAccountStatusSelector(false, isCurrentlyActive);
+        }, 100);
+
         console.log('已切換到編輯模式');
     }
 
@@ -1777,6 +2201,7 @@ window.OrganizationEmployeeModule = (function() {
         loadEmployeesByDept,
         showEmployeeDetail,
         editUser,
+        editUserPermissions,
         setSelectedPermissions,
         editEmployee: editUser,  // 添加別名，讓組織樹模組也能正常呼叫
         resetUserPassword,
@@ -1784,12 +2209,22 @@ window.OrganizationEmployeeModule = (function() {
         updateUserStatistics,  // 保留原有功能
         reinitialize,  // 新增重新初始化方法
         isInitialized: () => isInitialized,  // 暴露初始化狀態
-        // 懸浮卡片功能委託到子模組
+        // 懸浮卡片功能使用統一的 EmployeeHoverCard 模組
         showEmployeeHoverCard: function(deptId) {
-            if (window.OrganizationEmployeeHoverCardModule) {
-                return OrganizationEmployeeHoverCardModule.showEmployeeHoverCard(deptId);
+            if (window.EmployeeHoverCard) {
+                if (!window.EmployeeHoverCard._initialized) {
+                    window.EmployeeHoverCard.init();
+                    window.EmployeeHoverCard._initialized = true;
+                }
+                
+                // 使用統一的懸浮卡片模組顯示部門員工
+                return window.EmployeeHoverCard.show({
+                    type: 'department',
+                    id: deptId,
+                    title: '部門員工'
+                });
             }
-            console.warn('OrganizationEmployeeHoverCardModule 不存在');
+            console.warn('EmployeeHoverCard 模組未載入');
         },
         showAddUserModal,  // 暴露新增用戶模態框函數
         showAddUserModalForPending,  // 暴露待處理帳號專用的新增用戶模態框函數
@@ -1799,6 +2234,8 @@ window.OrganizationEmployeeModule = (function() {
                 OrganizationEmployeeModalModule.closeEmployeeModal();
             }
         },
+        togglePasswordField,
+        checkPasswordRequirements,
         toggleInactiveEmployees: function() {
             showInactiveUsers = !showInactiveUsers;
             loadUsers();
@@ -1818,19 +2255,19 @@ window.OrganizationEmployeeModule = (function() {
         loadPendingAccountSuggestions,
         refreshPendingAccountsModal,  // 新增：暴露待處理帳號清單更新函數
         updatePendingAccountsBanner,  // 暴露待處理帳號橫幅更新函數
-        // Badge 相關函數委託到懸浮卡片子模組
+        // Badge 相關函數委託到統一懸浮卡片模組
         generateEmployeeBadges: function(roleList, permissionList) {
-            if (window.OrganizationEmployeeHoverCardModule) {
-                return OrganizationEmployeeHoverCardModule.generateEmployeeBadges(roleList, permissionList);
+            if (window.EmployeeHoverCard) {
+                return window.EmployeeHoverCard.generateBadges(roleList, permissionList);
             }
-            console.warn('OrganizationEmployeeHoverCardModule 不存在');
+            console.warn('EmployeeHoverCard 模組不存在');
             return '';
         },
         bindEmployeeBadgeEvents: function() {
-            if (window.OrganizationEmployeeHoverCardModule) {
-                return OrganizationEmployeeHoverCardModule.bindEmployeeBadgeEvents();
+            if (window.EmployeeHoverCard) {
+                return window.EmployeeHoverCard.bindBadgeEvents();
             }
-            console.warn('OrganizationEmployeeHoverCardModule 不存在');
+            console.warn('EmployeeHoverCard 模組不存在');
         },
         // 模式切換相關
         resetToAddMode,
@@ -1842,7 +2279,10 @@ window.OrganizationEmployeeModule = (function() {
         showEmployeeActivateModal,
         closeEmployeeActivateModal,
         confirmEmployeeActivate,
-        executeUserActivation
+        executeUserActivation,
+        // 狀態選擇器初始化
+        initAccountStatusSelector,  // 暴露狀態選擇器初始化函數
+        generateRandomPassword,
     };
 })();
 

@@ -40,8 +40,23 @@ def get_current_user_optional(
 def get_admin_user(
     current_user: Dict[str, Any] = Depends(get_current_user)
 ) -> Dict[str, Any]:
-    """FastAPI 依賴：要求管理員權限"""
-    require_admin(current_user)
+    """FastAPI 依賴：要求管理員權限（支援 role 或權限群組）"""
+    from app.core.security.permissions import check_permission
+    from fastapi import HTTPException, status
+    
+    # 方式1: 檢查 role 是否為 admin
+    if current_user and current_user.get("role") == "admin":
+        return current_user
+    
+    # 方式2: 檢查是否有 ADMIN.ACCESS 權限（透過權限群組）
+    if current_user and check_permission(current_user, "ADMIN.ACCESS"):
+        return current_user
+    
+    # 都不符合，拒絕存取
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="需要管理員權限"
+    )
     return current_user
 
 

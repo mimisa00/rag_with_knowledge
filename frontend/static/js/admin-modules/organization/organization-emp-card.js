@@ -69,6 +69,116 @@ const OrganizationEmployeeCardModule = (function() {
     }
     
     /**
+     * 判斷員工帳號狀態（包含排程和啟用狀態）
+     */
+    function getEmployeeStatus(employee) {
+        const now = new Date();
+        const isActive = employee.is_active;
+        const activationScheduled = employee.user_extension.activation_scheduled ? new Date(employee.user_extension.activation_scheduled) : null;
+        const activationExpires = employee.user_extension.activation_expires ? new Date(employee.user_extension.activation_expires) : null;
+        
+        // 檢查密碼策略和啟用狀態
+        const passwordStrategy = employee.user_extension?.password_strategy;
+        const activatedAt = employee.user_extension?.activated_at;
+        
+        // 檢查是否有有效的啟用連結 token（根據資料庫記錄）
+        const hasActivationToken = employee.has_activation_token || false;
+        console.info("------------------------------");
+        console.info(employee);
+
+
+        // 檢查是否有排程啟用
+        if (activationScheduled && activationScheduled > now) {
+            return {
+                type: 'scheduled-active',
+                class: 'scheduled-active',
+                title: `排程於 ${formatDateTime(activationScheduled)} 啟用`,
+                scheduleTime: activationScheduled,
+                scheduleType: 'activation',
+                needsActivation: hasActivationToken
+            };
+        }
+
+        // 檢查是否是等待啟用的帳號（ACTIVATION_LINK 策略且未啟用）
+        if (passwordStrategy === 'ACTIVATION_LINK' && !isActive && !activatedAt) {
+            return {
+                type: 'pending-activation',
+                class: 'pending-activation',
+                title: '等待啟用 - 需要點擊啟用郵件連結',
+                scheduleTime: null,
+                scheduleType: 'pending',
+                needsActivation: hasActivationToken
+            };
+        }
+        
+        // 檢查是否有排程停用
+        if (activationExpires && activationExpires > now && isActive) {
+            return {
+                type: 'scheduled-inactive',
+                class: 'scheduled-inactive', 
+                title: `排程於 ${formatDateTime(activationExpires)} 停用`,
+                scheduleTime: activationExpires,
+                scheduleType: 'expiration',
+                needsActivation: hasActivationToken
+            };
+        }
+        
+        // 一般狀態
+        if (isActive) {
+            return {
+                type: 'active',
+                class: 'active',
+                title: '啟用中',
+                scheduleTime: null,
+                scheduleType: null,
+                needsActivation: hasActivationToken
+            };
+        } else {
+            return {
+                type: 'inactive', 
+                class: 'inactive',
+                title: '已停用',
+                scheduleTime: null,
+                scheduleType: null,
+                needsActivation: hasActivationToken
+            };
+        }
+    }
+    
+    /**
+     * 格式化日期時間顯示
+     */
+    function formatDateTime(date) {
+        if (!date) return '';
+        return date.toLocaleString('zh-TW', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+    
+    /**
+     * 生成排程資訊HTML
+     */
+    function generateScheduleInfo(status) {
+        if (!status.scheduleTime) return '';
+        
+        const timeText = formatDateTime(status.scheduleTime);
+        const actionText = status.scheduleType === 'activation' ? '啟用' : '停用';
+        const iconClass = status.scheduleType === 'activation' ? 'fa-clock text-primary' : 'fa-clock text-warning';
+        
+        return `
+            <div class="card-schedule ${status.class}">
+                <i class="fas ${iconClass}"></i>
+                <span>排程 ${actionText}：</span>
+                <span class="schedule-time">${timeText}</span>
+            </div>
+        `;
+    }
+
+    /**
      * 建立單個員工卡片
      */
     function buildEmployeeCard(employee) {
@@ -76,8 +186,11 @@ const OrganizationEmployeeCardModule = (function() {
         const email = employee.email || '無郵箱';
         const title = employee.user_extension?.title || employee.title || '';//未設定職稱
         const departmentName = employee.department?.name || employee.department_name || employee.dept_name || '未分配部門';
-        const isActive = employee.is_active;
         const userId = employee.user_id || employee.id; // 與樹狀結構保持一致
+        
+        // 取得帳號狀態資訊（包含排程）
+        const statusInfo = getEmployeeStatus(employee);
+        const isActive = employee.is_active;
         
         // 處理角色資料，統一格式以便使用 generateEmployeeBadges 函數
         let roleList = [];
@@ -90,15 +203,52 @@ const OrganizationEmployeeCardModule = (function() {
             }));
         }
         
-        // 處理權限群組資料，統一格式
+        // 處理權限群組資料，統一格式（合併個人權限和角色權限）
         let permissionList = [];
-        if (employee.permission_groups && employee.permission_groups.length > 0) {
-            permissionList = employee.permission_groups.map(p => ({
-                name: typeof p === 'object' ? p.name : p,
-                type: typeof p === 'object' ? p.permission_type : 'default',
-                level: typeof p === 'object' ? (p.level || 0) : 0
-            }));
-        }
+        
+        // 取得個人權限
+        const directPermissions = employee.permission_groups || [];
+        
+        // 取得角色權限
+        const rolePermissions = employee.role_permission_groups || [];
+        
+        // 合併權限（去重）
+        const permissionMap = new Map();
+        
+        // 添加個人權限
+        directPermissions.forEach(p => {
+            const permId = typeof p === 'object' ? p.id : p;
+            const permName = typeof p === 'object' ? p.name : p;
+            const permType = typeof p === 'object' ? p.permission_type : 'default';
+            const permLevel = typeof p === 'object' ? (p.level || 0) : 0;
+            
+            permissionMap.set(permId, {
+                name: permName,
+                type: permType,
+                level: permLevel,
+                source: 'personal'
+            });
+        });
+        
+        // 添加角色權限（不覆蓋個人權限）
+        rolePermissions.forEach(p => {
+            const permId = typeof p === 'object' ? p.id : p;
+            const permName = typeof p === 'object' ? p.name : p;
+            const permType = typeof p === 'object' ? p.permission_type : 'default';
+            const permLevel = typeof p === 'object' ? (p.level || 0) : 0;
+            
+            if (!permissionMap.has(permId)) {
+                permissionMap.set(permId, {
+                    name: permName,
+                    type: permType,
+                    level: permLevel,
+                    source: 'role'
+                });
+            }
+        });
+        
+        // 轉換為陣列
+        permissionList = Array.from(permissionMap.values());
         
         // 使用統一的 badge 生成函數
         let badgesHtml = '';
@@ -124,7 +274,25 @@ const OrganizationEmployeeCardModule = (function() {
             let permissionsHtml = '';
             if (permissionList.length > 0) {
                 permissionList.slice(0, 2).forEach(perm => {
-                    permissionsHtml += `<span class="badge badge-info">${perm.name}</span>`;
+                    // 判斷權限來源並設定樣式
+                    let sourceClass = '';
+                    let sourceText = '';
+                    if (perm.source === 'role') {
+                        sourceClass = 'from-role';
+                        sourceText = '部門角色權限';
+                    } else if (perm.source === 'direct' || perm.source === 'personal') {
+                        sourceClass = 'from-direct';
+                        sourceText = '個人指派權限';
+                    } else if (perm.source === 'both') {
+                        sourceClass = 'from-both';
+                        sourceText = '部門角色 + 個人指派';
+                    } else {
+                        sourceClass = '';
+                        sourceText = '權限';
+                    }
+                    
+                    const permType = perm.type || 'default';
+                    permissionsHtml += `<span class="employee-permission-badge permission-${permType} ${sourceClass}" title="${perm.name} (${sourceText})">${perm.name}</span>`;
                 });
                 if (permissionList.length > 2) {
                     permissionsHtml += `<span class="badge badge-light">+${permissionList.length - 2}</span>`;
@@ -163,9 +331,7 @@ const OrganizationEmployeeCardModule = (function() {
                         <i class="fas fa-user-circle fa-2x"></i>
                     </div>
                     <div class="card-status">
-                        ${isActive ? 
-                            '<span class="status-indicator active" title="啟用中"></span>' : 
-                            '<span class="status-indicator inactive" title="已停用"></span>'}
+                        <span class="status-indicator ${statusInfo.class}" title="${statusInfo.title}"></span>
                     </div>
                 </div>
                 
@@ -180,6 +346,8 @@ const OrganizationEmployeeCardModule = (function() {
                     </p>
                     
                     ${badgesHtml}
+                    
+                    ${generateScheduleInfo(statusInfo)}
                     
                     <div class="card-meta">
                         <small class="text-muted">
@@ -196,11 +364,27 @@ const OrganizationEmployeeCardModule = (function() {
                         <button class="btn btn-sm btn-outline" onclick="OrganizationEmployeeCardModule.editEmployee(${userId})" title="編輯">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="btn btn-sm btn-outline ${isActive ? 'btn-danger' : 'btn-success'}" 
-                                onclick="OrganizationEmployeeCardModule.toggleStatus(${userId}, ${isActive})" 
-                                title="${isActive ? '停用' : '啟用'}">
-                            <i class="fas fa-${isActive ? 'ban' : 'check'}"></i>
+                        <button class="btn btn-sm btn-outline" onclick="OrganizationEmployeeCardModule.editUserPermissions(${userId})" title="編輯權限">
+                            <i class="fas fa-shield-alt"></i>
                         </button>
+                        ${statusInfo.needsActivation ? 
+                            `<button class="btn btn-sm btn-outline btn-warning" 
+                                     onclick="OrganizationEmployeeCardModule.resendActivationEmail(${userId}, '${email}')" 
+                                     title="重發啟用密碼郵件">
+                                <i class="fas fa-envelope"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline ${isActive ? 'btn-danger' : 'btn-success'}" 
+                                     onclick="OrganizationEmployeeCardModule.toggleStatus(${userId}, ${isActive})" 
+                                     title="${isActive ? '停用' : '啟用'}">
+                                <i class="fas fa-${isActive ? 'ban' : 'check'}"></i>
+                            </button>
+                            ` : 
+                            `<button class="btn btn-sm btn-outline ${isActive ? 'btn-danger' : 'btn-success'}" 
+                                     onclick="OrganizationEmployeeCardModule.toggleStatus(${userId}, ${isActive})" 
+                                     title="${isActive ? '停用' : '啟用'}">
+                                <i class="fas fa-${isActive ? 'ban' : 'check'}"></i>
+                            </button>`
+                        }
                     </div>
                 </div>
             </div>
@@ -242,6 +426,15 @@ const OrganizationEmployeeCardModule = (function() {
     function editEmployee(empId) {
         if (window.OrganizationEmployeeModule && window.OrganizationEmployeeModule.editUser) {
             window.OrganizationEmployeeModule.editUser(empId);
+        }
+    }
+    
+    /**
+     * 編輯員工權限
+     */
+    function editUserPermissions(empId) {
+        if (window.OrganizationEmployeeModule && window.OrganizationEmployeeModule.editUserPermissions) {
+            window.OrganizationEmployeeModule.editUserPermissions(empId);
         }
     }
     
@@ -536,6 +729,51 @@ const OrganizationEmployeeCardModule = (function() {
         return true;
     }
     
+    /**
+     * 重發啟用郵件
+     */
+    function resendActivationEmail(userId, email) {
+        // 確認操作，使用回調方式
+        Dialog.confirm(
+            `確定要重新發送啟用郵件到 ${email} 嗎？請注意舊的啟用連結將失效。`,
+            async function() {
+                try {
+                    // 調用組織管理 API
+                    const response = await fetch(`/api/organization/users/${userId}/resend-activation`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        credentials: 'include'
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (response.ok && result.success) {
+                        Dialog.success(result.message || '啟用郵件已重新發送，請提醒用戶檢查信箱');
+                        
+                        // 刷新員工卡片以更新狀態
+                        if (window.OrganizationEmployeeModule && window.OrganizationEmployeeModule.loadEmployees) {
+                            setTimeout(() => {
+                                window.OrganizationEmployeeModule.loadEmployees();
+                            }, 1000);
+                        }
+                    } else {
+                        Dialog.error(result.message || '發送失敗，請稍後再試');
+                    }
+                } catch (error) {
+                    console.error('重發啟用郵件錯誤:', error);
+                    Dialog.error('系統錯誤，請稍後再試');
+                }
+            },
+            {
+                title: '重新發送啟用郵件',
+                confirmText: '發送',
+                cancelText: '取消'
+            }
+        );
+    }
+    
     // 公開API
     return {
         init,
@@ -548,7 +786,9 @@ const OrganizationEmployeeCardModule = (function() {
         highlightEmployee,
         viewDetails,
         editEmployee,
-        toggleStatus
+        editUserPermissions,
+        toggleStatus,
+        resendActivationEmail
     };
 })();
 

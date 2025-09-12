@@ -67,7 +67,6 @@ class DepartmentRoleBase(BaseModel):
     name: str = Field(..., description="角色名稱")
     role_type: str = Field(..., description="角色類型")
     level: int = Field(0, description="角色層級")
-    permissions: Optional[Dict[str, Any]] = Field(None, description="自訂權限")
     is_active: bool = Field(True, description="是否啟用")
 
 
@@ -76,7 +75,6 @@ class DepartmentRoleCreate(BaseModel):
     template_id: int = Field(..., description="模板ID")
     name: Optional[str] = Field(None, description="角色名稱（可選，預設使用部門名-模板名）")
     parent_id: Optional[int] = Field(None, description="父角色ID（可選，系統會自動推導）")
-    permissions: Optional[Dict[str, Any]] = Field(None, description="自訂權限")
 
 
 class DepartmentRoleUpdate(BaseModel):
@@ -84,7 +82,6 @@ class DepartmentRoleUpdate(BaseModel):
     name: Optional[str] = None
     parent_id: Optional[int] = None
     level: Optional[int] = None
-    permissions: Optional[Dict[str, Any]] = None
     is_active: Optional[bool] = None
 
 

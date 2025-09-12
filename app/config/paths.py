@@ -42,6 +42,7 @@ class PathConfig:
             "HTML_PATH_PERMISSION_MANAGEMENT": os.path.join(static_dir, "admin", "permission-management.html"),
             "HTML_PATH_LOGIN": os.path.join(static_dir, "login.html"),
             "HTML_PATH_REGISTER": os.path.join(static_dir, "register.html"),
+            "HTML_PATH_ACTIVATE": os.path.join(static_dir, "activate.html"),
             "HTML_PATH_SHOWINDEX": os.path.join(static_dir, "showindex.html"),
             "HTML_PATH_MD_VIEWER": os.path.join(static_dir, "md_viewer.html"),
         }

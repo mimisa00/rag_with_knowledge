@@ -40,7 +40,7 @@ class PermissionGroup(BaseModel):
     name: str = Field(..., max_length=100)
     description: Optional[str] = None
     permission_type: str = Field(default="custom", max_length=20)  # 保留欄位名稱以相容資料庫
-    permissions: Optional[Dict[str, Any]] = None
+    # permissions 欄位已移除，改為從 permission_groups_matrix 關聯表取得
     is_active: bool = True
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
@@ -180,7 +180,7 @@ class PermissionGroupCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=100, description="權限群組名稱不能為空")
     description: Optional[str] = None
     permission_type: str = Field(default="custom", max_length=20)  # 保留欄位名稱以相容資料庫
-    permissions: Optional[Dict[str, Any]] = None
+    permission_ids: Optional[List[int]] = None  # 權限 ID 列表
     is_active: bool = True
 
 
@@ -189,7 +189,7 @@ class PermissionGroupUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=100, description="權限群組名稱不能為空")
     description: Optional[str] = None
     permission_type: Optional[str] = Field(None, max_length=20, description="權限群組類型")  # 保留欄位名稱
-    permissions: Optional[Dict[str, Any]] = None
+    permission_ids: Optional[List[int]] = None  # 權限 ID 列表
     is_active: Optional[bool] = None
 
 
@@ -199,6 +199,12 @@ class UserPermissionGroupAssign(BaseModel):
     permission_group_id: int
     department_id: Optional[int] = None
     expires_at: Optional[datetime] = None
+
+
+class DepartmentRolePermissionBatchAssign(BaseModel):
+    """批次分配部門角色權限群組請求"""
+    department_role_ids: List[int]
+    action: str  # 'assign' 或 'remove'
 
 
 class UserExtensionUpdate(BaseModel):
@@ -224,7 +230,7 @@ class UserCreate(BaseModel):
     loginid: str = Field(..., min_length=3, max_length=50, description="登入帳號")
     username: str = Field(..., min_length=2, max_length=100, description="真實姓名")
     email: EmailStr = Field(..., description="電子信箱")
-    password: str = Field(..., min_length=6, description="密碼")
+    password: Optional[str] = Field(None, min_length=6, description="密碼")
     
     # 組織資訊 (必填)
     department_id: int = Field(..., description="部門ID")
@@ -240,6 +246,8 @@ class UserCreate(BaseModel):
     
     # 帳號狀態
     is_active: bool = Field(default=True, description="帳號狀態")
+    activation_expires: Optional[datetime] = Field(None, description="帳號停用時間")
+    activation_scheduled: Optional[datetime] = Field(None, description="預約啟用時間")
     
     # 密碼策略 (系統內部使用)
     password_strategy: Optional[str] = Field(default="MANUAL", max_length=20, description="密碼策略")
@@ -264,8 +272,15 @@ class UserCreate(BaseModel):
         return v.strip()
     
     @validator('password')
-    def validate_password(cls, v):
+    def validate_password(cls, v, values):
         """驗證密碼強度"""
+        password_strategy = values.get('password_strategy', 'MANUAL')
+        
+        # 如果是啟用連結策略，允許空密碼
+        if password_strategy == 'ACTIVATION_LINK' and (v is None or v == ''):
+            return v
+            
+        # 其他策略需要密碼驗證
         if not v or len(v) < 6:
             raise ValueError('密碼長度至少6個字元')
         
@@ -346,11 +361,14 @@ class DepartmentResponse(Department):
     """部門回應模型"""
     children: Optional[List['DepartmentResponse']] = []
     user_count: Optional[int] = 0
+    roles: Optional[List[Dict[str, Any]]] = Field(default=[], description="部門角色列表")
 
 
 class PermissionGroupResponse(PermissionGroup):
     """權限群組回應模型"""
     user_count: Optional[int] = 0
+    department_count: Optional[int] = 0
+    role_count: Optional[int] = 0
 
 
 class UserWithPermissionGroups(BaseModel):
@@ -364,6 +382,7 @@ class UserWithPermissionGroups(BaseModel):
     permission_groups: List[PermissionGroup] = []
     user_extension: Optional[UserExtension] = None
     department_roles: Optional[List[Dict[str, Any]]] = []  # 新增部門角色資訊欄位
+    has_activation_token: Optional[bool] = False  # 是否有有效的啟用連結 token
     last_login_at: Optional[datetime] = None  # 最後登入時間
     last_activity_at: Optional[datetime] = None  # 最後活動時間
 
