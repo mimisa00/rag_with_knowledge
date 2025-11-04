@@ -27,7 +27,7 @@ from app.core.rag.reranking import (
     rerank_with_bge,
     cleanup_reranker_model
 )
-from app.core.rag.ollama_client import (
+from app.core.rag.llm_client import (
     initialize_ollama_client,
     get_ollama_client,
     update_ollama_model_options,

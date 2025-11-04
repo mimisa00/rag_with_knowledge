@@ -11,7 +11,7 @@ from typing import Dict, Any, List, Generator, Optional
 from app.models.request import QueryRequest
 from app.core.rag.indexing import search_similar_chunks, load_kb_index
 from app.core.rag.reranking import rerank_with_bge
-from app.core.rag.ollama_client import (
+from app.core.rag.llm_client import (
     get_ollama_client,
     get_model_options,
     test_connection
@@ -189,7 +189,10 @@ def query_knowledge_base(
         logger.info("初始化 Ollama 客戶端")
         client = get_ollama_client()
         model_options = get_model_options()
-        model_name = config.get("llm_model", "gemma2:9b")
+
+        # 根據 provider 獲取正確的模型名稱
+        from app.core.rag.llm_client import get_current_model
+        model_name = get_current_model()
         
         def stream_generator():
             try:
@@ -327,8 +330,10 @@ def noun_analysis_endpoint(
         def stream_generator():
             try:
                 client = get_ollama_client()
+                # 根據 provider 獲取正確的模型名稱
+                from app.core.rag.llm_client import get_current_model
                 stream = client.chat(
-                    model=config.get("llm_model", "gemma2:9b"),
+                    model=get_current_model(),
                     messages=messages,
                     think=False,
                     stream=True,

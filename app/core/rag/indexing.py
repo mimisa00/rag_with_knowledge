@@ -6,7 +6,7 @@ import json
 import numpy as np
 import faiss
 from typing import List, Dict, Any, Optional
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from app.config.settings import app_config
 from app.config.paths import path_config

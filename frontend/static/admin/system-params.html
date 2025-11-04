@@ -326,10 +326,36 @@
                             <!-- LLM 模型設定分類 -->
                             <div id="llmCategory" class="param-category-section">
                                 <div class="param-cards-grid">
+                                    <!-- LLM Provider 選擇 -->
                                     <div class="param-card">
                                         <div class="param-card-header">
                                             <span class="param-importance critical">🔴</span>
-                                            <h4>模型選擇</h4>
+                                            <h4>LLM Provider 選擇</h4>
+                                        </div>
+                                        <div class="param-card-body">
+                                            <div class="mb-sm">
+                                                <label for="llm_provider" class="form-label">Provider</label>
+                                                <select id="llm_provider" name="llm_provider" class="form-control" onchange="LLMProviderUI.switchProvider(this.value)">
+                                                    <option value="ollama">Ollama (本地模型)</option>
+                                                    <option value="openai">OpenAI</option>
+                                                    <option value="anthropic">Anthropic Claude</option>
+                                                    <option value="vertex_ai">Vertex AI (Anthropic on GCP)</option>
+                                                </select>
+                                                <small class="param-help">選擇要使用的 LLM 服務提供商</small>
+                                            </div>
+                                            <div>
+                                                <button type="button" class="btn btn-sm btn-info" onclick="LLMProviderUI.testConnection()">
+                                                    <i class="fas fa-plug"></i> 測試連線
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Ollama 設定 -->
+                                    <div class="param-card provider-config" data-provider="ollama" style="display: none;">
+                                        <div class="param-card-header">
+                                            <span class="param-importance critical">🔴</span>
+                                            <h4>Ollama 模型選擇</h4>
                                         </div>
                                         <div class="param-card-body">
                                             <div class="mb-sm">
@@ -357,7 +383,8 @@
                                         </div>
                                     </div>
 
-                                    <div class="param-card">
+                                    <!-- Ollama 專屬參數卡片 -->
+                                    <div class="param-card ollama-only-config" style="display: none;">
                                         <div class="param-card-header">
                                             <span class="param-importance critical">🔴</span>
                                             <h4>生成控制</h4>
@@ -381,7 +408,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="param-card">
+                                    <div class="param-card ollama-only-config" style="display: none;">
                                         <div class="param-card-header">
                                             <span class="param-importance important">🟡</span>
                                             <h4>採樣參數</h4>
@@ -405,7 +432,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="param-card">
+                                    <div class="param-card ollama-only-config" style="display: none;">
                                         <div class="param-card-header">
                                             <span class="param-importance normal">🟢</span>
                                             <h4>重複控制</h4>
@@ -424,7 +451,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="param-card">
+                                    <div class="param-card ollama-only-config" style="display: none;">
                                         <div class="param-card-header">
                                             <span class="param-importance normal">🟢</span>
                                             <h4>其他設定</h4>
@@ -439,6 +466,195 @@
                                                 <label for="stop" class="form-label">stop</label>
                                                 <input id="stop" type="text" name="stop" value="<|endoftext|>" class="form-control">
                                                 <small class="param-help">停止字串</small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- OpenAI 設定 (隱藏) -->
+                                    <div class="param-card provider-config" data-provider="openai" style="display: none;">
+                                        <div class="param-card-header">
+                                            <span class="param-importance critical">🔴</span>
+                                            <h4>OpenAI 設定</h4>
+                                        </div>
+                                        <div class="param-card-body">
+                                            <div class="mb-sm">
+                                                <label for="openai_api_key" class="form-label">API Key</label>
+                                                <input id="openai_api_key" type="password" name="openai_api_key" value="" class="form-control" placeholder="sk-...">
+                                                <small class="param-help">OpenAI API 金鑰</small>
+                                            </div>
+                                            <div class="mb-sm">
+                                                <label for="openai_api_base" class="form-label">API Base URL</label>
+                                                <input id="openai_api_base" type="text" name="openai_api_base" value="https://api.openai.com/v1" class="form-control">
+                                                <small class="param-help">OpenAI API 基礎網址</small>
+                                            </div>
+                                            <div class="mb-sm">
+                                                <label for="openai_model" class="form-label">Model</label>
+                                                <select id="openai_model" name="openai_model" class="form-control">
+                                                    <option value="gpt-4-turbo-preview">GPT-4 Turbo</option>
+                                                    <option value="gpt-4">GPT-4</option>
+                                                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                                                </select>
+                                                <small class="param-help">使用的 OpenAI 模型</small>
+                                            </div>
+                                            <div>
+                                                <label for="openai_organization" class="form-label">Organization (選填)</label>
+                                                <input id="openai_organization" type="text" name="openai_organization" value="" class="form-control">
+                                                <small class="param-help">OpenAI 組織 ID（如有）</small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Anthropic 設定 (隱藏) -->
+                                    <div class="param-card provider-config" data-provider="anthropic" style="display: none;">
+                                        <div class="param-card-header">
+                                            <span class="param-importance critical">🔴</span>
+                                            <h4>Anthropic Claude 設定</h4>
+                                        </div>
+                                        <div class="param-card-body">
+                                            <div class="mb-sm">
+                                                <label for="anthropic_api_key" class="form-label">API Key</label>
+                                                <input id="anthropic_api_key" type="password" name="anthropic_api_key" value="" class="form-control" placeholder="sk-ant-...">
+                                                <small class="param-help">Anthropic API 金鑰</small>
+                                            </div>
+                                            <div class="mb-sm">
+                                                <label for="anthropic_api_base" class="form-label">API Base URL</label>
+                                                <input id="anthropic_api_base" type="text" name="anthropic_api_base" value="https://api.anthropic.com" class="form-control">
+                                                <small class="param-help">Anthropic API 基礎網址</small>
+                                            </div>
+                                            <div class="mb-sm">
+                                                <label for="anthropic_model" class="form-label">Model</label>
+                                                <select id="anthropic_model" name="anthropic_model" class="form-control">
+                                                    <option value="claude-haiku-4-5">Claude 4.5 Haiku</option>
+                                                    <option value="claude-sonnet-4-5">Claude 4.5 Sonnet</option>
+                                                    <option value="claude-opus-4-1">Claude 4.1 Opus</option>
+                                                </select>
+                                                <small class="param-help">使用的 Claude 模型</small>
+                                            </div>
+                                            <div>
+                                                <label for="anthropic_api_version" class="form-label">API Version</label>
+                                                <input id="anthropic_api_version" type="text" name="anthropic_api_version" value="2023-06-01" class="form-control">
+                                                <small class="param-help">Anthropic API 版本</small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Vertex AI 配置卡片 -->
+                                    <div class="param-card provider-config" data-provider="vertex_ai" style="display: none;">
+                                        <div class="param-card-header">
+                                            <span class="param-importance critical">🔴</span>
+                                            <h4>Vertex AI 配置</h4>
+                                            <span id="vertexAIKeyStatus" class="badge badge-secondary ml-2">
+                                                <i class="fas fa-circle-question"></i> 未檢查
+                                            </span>
+                                        </div>
+                                        <div class="param-card-body">
+                                            <!-- Key 狀態檢查 -->
+                                            <div class="mb-sm">
+                                                <label class="form-label">憑證狀態</label>
+                                                <div class="mb-2">
+                                                    <span id="keyStatusText" class="text-muted d-block mb-2">尚未檢查憑證狀態</span>
+                                                    <div class="vertex-ai-btn-group">
+                                                        <button type="button" class="btn btn-sm btn-info" onclick="VertexAIManager.checkKeyStatus()">
+                                                            <i class="fas fa-sync"></i> 檢查憑證
+                                                        </button>
+                                                        <button type="button" class="btn btn-sm btn-warning" onclick="VertexAIManager.showUpdateKeyGuide()">
+                                                            <i class="fas fa-key"></i> 更新憑證
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <small class="param-help">檢查 Service Account Key 是否已正確設定</small>
+                                            </div>
+
+                                            <hr />
+
+                                            <!-- 配置欄位 -->
+                                            <div class="mb-sm">
+                                                <label for="vertex_ai_project_id" class="form-label">GCP Project ID <span class="text-danger">*</span></label>
+                                                <input id="vertex_ai_project_id" type="text" name="vertex_ai_project_id"
+                                                       class="form-control" placeholder="your-project-id">
+                                                <small class="param-help">Google Cloud 專案 ID（必填）</small>
+                                            </div>
+
+                                            <div class="mb-sm">
+                                                <label for="vertex_ai_location_id" class="form-label">Location</label>
+                                                <select id="vertex_ai_location_id" name="vertex_ai_location_id" class="form-control">
+                                                    <option value="global">GLOBAL（推薦）</option>
+                                                    <option value="us-central1">US Central 1（推薦2）</option>
+                                                    <option value="us-east5">US East 5</option>
+                                                    <option value="us-west1">US West 1</option>
+                                                    <option value="us-west4">US West 4</option>
+                                                    <option value="europe-west1">Europe West 1</option>
+                                                    <option value="europe-west4">Europe West 4</option>
+                                                    <option value="asia-southeast1">Asia Southeast 1</option>
+                                                    <option value="asia-northeast1">Asia Northeast 1</option>
+                                                </select>
+                                                <small class="param-help">模型部署區域（影響延遲和可用模型）</small>
+                                            </div>
+
+                                            <div class="mb-sm">
+                                                <label for="vertex_ai_model_id" class="form-label">Model</label>
+                                                <select id="vertex_ai_model_id" name="vertex_ai_model_id" class="form-control">
+                                                    <option value="claude-haiku-4-5@20251001">Claude 4.5 Haik</option>
+                                                    <option value="claude-sonnet-4-5@20250929">Claude 4.5 Sonnet</option>
+                                                    <option value="claude-opus-4-1@20250805">Claude 4.1 Opus</option>
+                                                </select>
+                                                <small class="param-help">選擇 Claude 模型版本</small>
+                                            </div>
+
+                                            <div class="mb-sm">
+                                                <label for="vertex_ai_anthropic_version" class="form-label">Anthropic Version</label>
+                                                <input id="vertex_ai_anthropic_version" type="text" name="vertex_ai_anthropic_version"
+                                                       value="vertex-2023-10-16" class="form-control" readonly>
+                                                <small class="param-help">Vertex AI Anthropic API 版本（通常不需要修改）</small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Vertex AI 設定指南卡片 -->
+                                    <div class="param-card param-card-wide provider-config" data-provider="vertex_ai" style="display: none;">
+                                        <div class="param-card-header">
+                                            <span class="param-importance critical">📚</span>
+                                            <h4>Vertex AI 設定指南</h4>
+                                            <button type="button" class="btn btn-sm" onclick="VertexAIManager.toggleSetupGuide()">
+                                                <i class="fas fa-chevron-up" id="vertexAISetupGuideToggle"></i>
+                                            </button>
+                                        </div>
+                                        <div id="vertexAISetupGuide" class="param-card-body" style="display: block;">
+                                            <div class="alert alert-info">
+                                                <h5>Service Account Key 設定步驟</h5>
+                                                <ol>
+                                                    <li>
+                                                        <strong>建立 Service Account：</strong>
+                                                        <pre style="background: #f5f5f5; padding: 10px; border-radius: 4px;">gcloud iam service-accounts create rag-vertex-ai \
+    --display-name="RAG Vertex AI Service Account"</pre>
+                                                    </li>
+                                                    <li>
+                                                        <strong>授予權限：</strong>
+                                                        <pre style="background: #f5f5f5; padding: 10px; border-radius: 4px;">gcloud projects add-iam-policy-binding ${PROJECT_ID} \
+    --member="serviceAccount:rag-vertex-ai@${PROJECT_ID}.iam.gserviceaccount.com" \
+    --role="roles/aiplatform.user"</pre>
+                                                    </li>
+                                                    <li>
+                                                        <strong>下載 Key：</strong>
+                                                        <pre style="background: #f5f5f5; padding: 10px; border-radius: 4px;">gcloud iam service-accounts keys create ./credentials/vertex-ai-key.json \
+    --iam-account=rag-vertex-ai@${PROJECT_ID}.iam.gserviceaccount.com</pre>
+                                                    </li>
+                                                    <li>
+                                                        <strong>重啟服務：</strong>
+                                                        <pre style="background: #f5f5f5; padding: 10px; border-radius: 4px;">docker compose restart backend</pre>
+                                                    </li>
+                                                </ol>
+                                                <div class="alert alert-warning mt-3">
+                                                    <strong>重要提醒：</strong>
+                                                    <ul>
+                                                        <li>此操作是在宿主機操作，請確認宿主機有安裝 gcloud CLI 並且已登入，且專案有啟用 Vertex AI API</li>
+                                                        <li>此操作需在專案目錄執行，請確認專案目錄有 <code>credentials</code> 目錄</li>
+                                                        <li>Key 檔案必須放在 <code>./credentials/vertex-ai-key.json</code></li>
+                                                        <li>確保檔案權限：<code>chmod 644 credentials/vertex-ai-key.json</code></li>
+                                                        <li>不要將 key 檔案提交到版本控制</li>
+                                                        <li>建議每 90 天更換一次 key</li>
+                                                    </ul>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -654,6 +870,8 @@
                 // 載入受保護的管理員模組
                 await ResourceLoader.loadProtectedAdminScriptsInOrder([
                     'system-params-drawer-manager.js',  // 抽屜管理器
+                    'llm-provider-ui.js',               // LLM Provider UI 模組
+                    'vertex-ai-manager.js',             // Vertex AI 管理模組
                     'system-params-module.js',          // 參數模組
                     'system-params.js',                 // 頁面初始化腳本（最後載入）
                 ]);
@@ -661,8 +879,9 @@
                 // 初始化模組
                 CommonUI.hideSpinner();
                 UserMenu.init();
-                
-                // 注意：ParamDrawerManager.init() 和 ParamModule.init() 
+                LLMProviderUI.init();  // 初始化 LLM Provider UI
+
+                // 注意：ParamDrawerManager.init() 和 ParamModule.init()
                 // 現在由 system-params.js 自動處理
 
                 // 初始化滾動條淡出淡入效果

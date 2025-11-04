@@ -291,6 +291,7 @@ from app.api.routes.query import router as query_router
 from app.api.routes.organization import router as organization_router
 from app.api.routes.permissions import router as permissions_router
 from app.api.routes.system import router as system_router
+from app.api.routes.llm_providers import router as llm_router
 
 app.include_router(static_router, tags=["頁面"])
 app.include_router(config_router, prefix="/api", tags=["配置"])
@@ -304,6 +305,7 @@ app.include_router(query_router, prefix="/api", tags=["查詢"])
 app.include_router(organization_router, prefix="/api",tags=["組織管理"])
 app.include_router(permissions_router, prefix="/api", tags=["權限管理"])
 app.include_router(system_router, prefix="/api", tags=["系統管理"])
+app.include_router(llm_router, prefix="/api/llm", tags=["LLM Provider"])
 
 # 掛載靜態文件服務
 static_dir = path_config.get_base_paths()["STATIC_DIR"]

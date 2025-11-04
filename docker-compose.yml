@@ -64,6 +64,7 @@ services:
       - DB_NAME=${DB_NAME}
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
+      - GOOGLE_APPLICATION_CREDENTIALS=/credentials/vertex-ai-key.json
     depends_on:
       - ollama
       - mariadb
@@ -76,6 +77,7 @@ services:
       - ./models:${HF_HOME}
       - ./logs:/backend/logs
       - .env:/backend/.env
+      - ./credentials/vertex-ai-key.json:/credentials/vertex-ai-key.json:ro
     restart: unless-stopped
     logging:
       driver: "json-file"

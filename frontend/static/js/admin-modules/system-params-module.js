@@ -36,7 +36,12 @@
                     const input = document.querySelector(`[name="${key}"]`);
                     if (input) input.value = value;
                 }
-                
+
+                // 載入參數後，更新 LLM Provider UI 顯示
+                if (window.LLMProviderUI && config.llm_provider) {
+                    window.LLMProviderUI.switchProvider(config.llm_provider);
+                }
+
                 // 記錄初始表單狀態
                 this.captureInitialFormState();
                 this.hasUnsavedChanges = false;

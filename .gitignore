@@ -45,3 +45,12 @@ Thumbs.db
 # 暫存備份目錄
 backup_org_refactor_20250828/
 test/
+
+# Google Cloud / Vertex AI credentials
+credentials/*.json
+credentials/vertex-ai-key.json
+vertex-ai-key.json
+*.json
+!package.json
+!package-lock.json
+!credentials/README.md

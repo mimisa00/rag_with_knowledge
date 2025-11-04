@@ -50,13 +50,28 @@ def update_params(
 ):
     """更新系統參數"""
     try:
+        # 檢查是否有 LLM provider 變更
+        provider_changed = False
+        if 'llm_provider' in update_data.params:
+            old_provider = app_config.all.get('llm_provider', 'ollama')
+            new_provider = update_data.params['llm_provider']
+            provider_changed = (old_provider != new_provider)
+            if provider_changed:
+                logger.info(f"LLM Provider 變更: {old_provider} -> {new_provider}")
+
         # 更新配置
         app_config.update(update_data.params)
-        
-        # 更新 Ollama 模型選項
+
+        # 如果 LLM provider 變更，清除舊的 client 實例
+        if provider_changed:
+            from app.core.rag import llm_client
+            llm_client.llm_client = None
+            logger.info("已清除舊的 LLM client 實例")
+
+        # 更新 Ollama 模型選項（這會重新初始化 client）
         from app.core.rag import update_ollama_model_options
         update_ollama_model_options()
-        
+
         return {
             "success": True,
             "message": "系統參數更新成功"

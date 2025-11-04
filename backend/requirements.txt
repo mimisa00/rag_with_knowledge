@@ -8,6 +8,7 @@ ollama>=0.5.1
 langchain>=0.1.0
 langchain-community>=0.0.10
 langchain-huggingface>=0.0.6
+langchain-text-splitters>=0.0.1
 sentence-transformers>=2.2.2
 transformers>=4.35.0
 # 文件擷取
@@ -40,4 +41,8 @@ email-validator>=2.0.0
 python-dotenv>=1.0.0
 # 排程任務
 APScheduler>=3.10.0
+# Google Cloud 認證 (Vertex AI)
+google-auth>=2.34.0
+google-auth-oauthlib>=1.2.0
+google-auth-httplib2>=0.2.0
 

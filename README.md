@@ -1,14 +1,22 @@
 # RAG (Retrieval-Augmented Generation) 系統
 
-本專案實作增強型檢索系統，並採用了 Ollama 框架作為 LLM 平台核心。系統具備以下功能：
-帳號管理：提供簡易的使用者註冊與登入功能
-檔案上傳與擷取：可上傳檔案並進行內容擷取
-索引建立：建立語意檢索所需的資料索引
-後台參數調整：可調整系統運作所需的參數設定
+## 本專案實作增強型檢索系統，支援多種 LLM 平台。系統具備以下功能：
+- **帳號管理**：提供簡易的使用者註冊與登入功能
+- **檔案上傳與擷取**：可上傳檔案並進行內容擷取
+- **索引建立**：建立語意檢索所需的資料索引
+- **後台參數調整**：可調整系統運作所需的參數設定
+- **多 LLM Provider 支援**：Ollama、OpenAI、Anthropic、Vertex AI
+
+## 支援的 LLM Providers
+- **Ollama**（預設）- 本地模型執行
+- **OpenAI** - GPT-4、GPT-3.5 等模型
+- **Anthropic** - Claude 4 模型
+- **Vertex AI** - Google Cloud 上的 Anthropic Claude 模型 ([設定指南](docs/vertex-ai-setup.md))
+
 歡迎提供寶貴建議，您可以留言或來信與我們聯繫！
 
 
-## 🏗️ 專案結構
+## 專案結構
 
 ```
 rag/
@@ -50,7 +58,7 @@ rag/
 └── startup.sh                # Linux   啟動腳本
 ```
 
-## 🚀 快速開始
+## 快速開始
 
 ### 前置需求
 - Docker
@@ -77,7 +85,7 @@ chmod +x startup.sh
 - 主界面: http://localhost:8080/login
 
 
-## 🚀 配置本地端開發環境
+## 配置本地端開發環境
 ```
 # 需手動執行 
 1.安裝並啟動 ollama
