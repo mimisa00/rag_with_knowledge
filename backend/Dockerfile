@@ -12,7 +12,7 @@ RUN pip install -r requirements.txt
 # 創建必要的目錄
 RUN mkdir -p /backend/logs /backend/models /backend/conversations /backend/documents/markdown /backend/frontend /backend/app     
 
-# Docling 異常修復
+# Docling 異常修復 https://github.com/docling-project/docling/issues/3528
 # 補上系統層級的 OpenGL / GLib 函式庫
 RUN apt-get update && \
     apt-get install -y --no-install-recommends libgl1 libglib2.0-0 && \
