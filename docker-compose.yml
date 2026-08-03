@@ -68,14 +68,15 @@ services:
   #    - ./vllm_chat_template:/vllm-workspace/vllm_chat_template
   #  # 用的模型需要有對應的模版..才能完美輸出結果，由於 Gemma3 vllm 尚未推出範本，故由論壇討論提供修正，請參見 https://github.com/vllm-project/vllm/issues/14734 討論
   #  command: >
-  #    --model google/gpt-oss-20b 
-  #    --host 0.0.0.0 
-  #    --port 8000 
-  #    --gpu-memory-utilization 0.5 
+  #    openai/gpt-oss-20b
+  #    --tensor-parallel-size 2
+  #    --host 0.0.0.0
+  #    --port 8000
+  #    --gpu-memory-utilization 0.9
   #    --max-model-len 8192
   #    --enable-auto-tool-choice
-  #    --tool-call-parser pythonic
-  #    --chat-template /vllm-workspace/vllm_chat_template/template_gemma3_pythonic.jinja
+  #    --tool-call-parser openai
+  #    --reasoning-parser openai_gptoss
   #  restart: unless-stopped
 
 
