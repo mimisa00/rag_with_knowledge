@@ -119,6 +119,8 @@ class OpenAIProvider(BaseLLMProvider):
                     stream=True,
                     timeout=120.0
                 )
+                if not response.ok:
+                    logger.error(f"vLLM returned {response.status_code}: {response.text}")
                 response.raise_for_status()
 
                 def stream_generator():
