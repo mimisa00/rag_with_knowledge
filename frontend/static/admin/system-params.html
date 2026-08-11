@@ -65,7 +65,8 @@
                     <i class="fas fa-chevron-right"></i>
                 </span>
                 <div class="breadcrumb-item">
-                    <a href="javascript:void(0)" onclick="ParamDrawerManager.switchCategory('request')" class="breadcrumb-link">
+                    <a href="javascript:void(0)" onclick="ParamDrawerManager.switchCategory('request')"
+                        class="breadcrumb-link">
                         <span>系統參數管理</span>
                     </a>
                 </div>
@@ -147,32 +148,38 @@
                             <button type="button" id="updateConfigBtn" class="btn btn-danger mb-md w-100 ">
                                 <i class="fas fa-save"></i> 儲存參數
                             </button>
-                            <div class="category-item active" data-category="request" onclick="ParamDrawerManager.switchCategory('request')">
+                            <div class="category-item active" data-category="request"
+                                onclick="ParamDrawerManager.switchCategory('request')">
                                 <i class="fas fa-network-wired"></i>
                                 <span>請求控制</span>
                                 <span class="category-badge">3</span>
                             </div>
-                            <div class="category-item" data-category="file" onclick="ParamDrawerManager.switchCategory('file')">
+                            <div class="category-item" data-category="file"
+                                onclick="ParamDrawerManager.switchCategory('file')">
                                 <i class="fas fa-file-alt"></i>
                                 <span>文檔處理</span>
                                 <span class="category-badge">1</span>
                             </div>
-                            <div class="category-item" data-category="embedding" onclick="ParamDrawerManager.switchCategory('embedding')">
+                            <div class="category-item" data-category="embedding"
+                                onclick="ParamDrawerManager.switchCategory('embedding')">
                                 <i class="fas fa-project-diagram"></i>
                                 <span>嵌入設定</span>
                                 <span class="category-badge">3</span>
                             </div>
-                            <div class="category-item" data-category="llm" onclick="ParamDrawerManager.switchCategory('llm')">
+                            <div class="category-item" data-category="llm"
+                                onclick="ParamDrawerManager.switchCategory('llm')">
                                 <i class="fas fa-robot"></i>
                                 <span>模型設定</span>
                                 <span class="category-badge">11</span>
                             </div>
-                            <div class="category-item" data-category="email" onclick="ParamDrawerManager.switchCategory('email')">
+                            <div class="category-item" data-category="email"
+                                onclick="ParamDrawerManager.switchCategory('email')">
                                 <i class="fas fa-envelope"></i>
                                 <span>郵件服務</span>
                                 <span class="category-badge">6</span>
                             </div>
-                            <div class="category-item" data-category="prompt" onclick="ParamDrawerManager.switchCategory('prompt')">
+                            <div class="category-item" data-category="prompt"
+                                onclick="ParamDrawerManager.switchCategory('prompt')">
                                 <i class="fas fa-comment-dots"></i>
                                 <span>提示詞</span>
                                 <span class="category-badge">1</span>
@@ -203,8 +210,10 @@
                                             <h4>系統並發限制</h4>
                                         </div>
                                         <div class="param-card-body">
-                                            <label for="llm_req_limit_total" class="form-label">llm_req_limit_total</label>
-                                            <input id="llm_req_limit_total" type="number" name="llm_req_limit_total" value="3" class="form-control">
+                                            <label for="llm_req_limit_total"
+                                                class="form-label">llm_req_limit_total</label>
+                                            <input id="llm_req_limit_total" type="number" name="llm_req_limit_total"
+                                                value="3" class="form-control">
                                             <small class="param-help">控制系統整體同時最多只能被請求的次數</small>
                                         </div>
                                     </div>
@@ -215,8 +224,10 @@
                                             <h4>用戶並發限制</h4>
                                         </div>
                                         <div class="param-card-body">
-                                            <label for="llm_req_limit_user" class="form-label">llm_req_limit_user</label>
-                                            <input id="llm_req_limit_user" type="number" name="llm_req_limit_user" value="1" class="form-control">
+                                            <label for="llm_req_limit_user"
+                                                class="form-label">llm_req_limit_user</label>
+                                            <input id="llm_req_limit_user" type="number" name="llm_req_limit_user"
+                                                value="1" class="form-control">
                                             <small class="param-help">控制使用者同時最多只能請求的次數</small>
                                         </div>
                                     </div>
@@ -228,18 +239,24 @@
                                         </div>
                                         <div class="param-card-body">
                                             <div class="mb-sm">
-                                                <label for="token_idle_timeout" class="form-label">token_idle_timeout</label>
-                                                <input id="token_idle_timeout" type="number" name="token_idle_timeout" value="3600" class="form-control">
+                                                <label for="token_idle_timeout"
+                                                    class="form-label">token_idle_timeout</label>
+                                                <input id="token_idle_timeout" type="number" name="token_idle_timeout"
+                                                    value="3600" class="form-control">
                                                 <small class="param-help">使用者無活動後 token 失效時間（秒）</small>
                                             </div>
                                             <div class="mb-sm">
-                                                <label for="token_max_lifetime" class="form-label">token_max_lifetime</label>
-                                                <input id="token_max_lifetime" type="number" name="token_max_lifetime" value="28800" class="form-control">
+                                                <label for="token_max_lifetime"
+                                                    class="form-label">token_max_lifetime</label>
+                                                <input id="token_max_lifetime" type="number" name="token_max_lifetime"
+                                                    value="28800" class="form-control">
                                                 <small class="param-help">Token 最長有效時間，無論是否有活動（秒）</small>
                                             </div>
                                             <div>
-                                                <label for="token_refresh_threshold" class="form-label">token_refresh_threshold</label>
-                                                <input id="token_refresh_threshold" type="number" name="token_refresh_threshold" value="300" class="form-control">
+                                                <label for="token_refresh_threshold"
+                                                    class="form-label">token_refresh_threshold</label>
+                                                <input id="token_refresh_threshold" type="number"
+                                                    name="token_refresh_threshold" value="300" class="form-control">
                                                 <small class="param-help">Token 剩餘時間小於此值時自動刷新（秒）</small>
                                             </div>
                                         </div>
@@ -256,8 +273,10 @@
                                             <h4>圖片匯出模式</h4>
                                         </div>
                                         <div class="param-card-body">
-                                            <label for="docling_image_export_mode" class="form-label">docling_image_export_mode</label>
-                                            <select id="docling_image_export_mode" name="docling_image_export_mode" class="form-control">
+                                            <label for="docling_image_export_mode"
+                                                class="form-label">docling_image_export_mode</label>
+                                            <select id="docling_image_export_mode" name="docling_image_export_mode"
+                                                class="form-control">
                                                 <option value="placeholder" selected>placeholder</option>
                                                 <option value="embedded">embedded</option>
                                                 <option value="referenced">referenced</option>
@@ -278,7 +297,8 @@
                                         </div>
                                         <div class="param-card-body">
                                             <label for="embedding_model" class="form-label">embedding_model</label>
-                                            <input id="embedding_model" type="text" name="embedding_model" value="intfloat/multilingual-e5-large" class="form-control">
+                                            <input id="embedding_model" type="text" name="embedding_model"
+                                                value="intfloat/multilingual-e5-large" class="form-control">
                                             <small class="param-help">文件分詞模型</small>
                                         </div>
                                     </div>
@@ -291,12 +311,14 @@
                                         <div class="param-card-body">
                                             <div class="mb-sm">
                                                 <label for="chunk_size" class="form-label">chunk_size</label>
-                                                <input id="chunk_size" type="number" name="chunk_size" value="500" class="form-control">
+                                                <input id="chunk_size" type="number" name="chunk_size" value="500"
+                                                    class="form-control">
                                                 <small class="param-help">文件切割大小（單位：token）</small>
                                             </div>
                                             <div>
                                                 <label for="chunk_overlap" class="form-label">chunk_overlap</label>
-                                                <input id="chunk_overlap" type="number" name="chunk_overlap" value="50" class="form-control">
+                                                <input id="chunk_overlap" type="number" name="chunk_overlap" value="50"
+                                                    class="form-control">
                                                 <small class="param-help">文件切割重疊內容（單位：token）</small>
                                             </div>
                                         </div>
@@ -309,13 +331,17 @@
                                         </div>
                                         <div class="param-card-body">
                                             <div class="mb-sm">
-                                                <label for="idx_result_count" class="form-label">idx_result_count</label>
-                                                <input id="idx_result_count" type="number" name="idx_result_count" value="3" class="form-control">
+                                                <label for="idx_result_count"
+                                                    class="form-label">idx_result_count</label>
+                                                <input id="idx_result_count" type="number" name="idx_result_count"
+                                                    value="3" class="form-control">
                                                 <small class="param-help">向量資料庫查詢 chunk 總數</small>
                                             </div>
                                             <div>
-                                                <label for="rerank_top_k_final" class="form-label">rerank_top_k_final</label>
-                                                <input id="rerank_top_k_final" type="number" name="rerank_top_k_final" value="3" class="form-control">
+                                                <label for="rerank_top_k_final"
+                                                    class="form-label">rerank_top_k_final</label>
+                                                <input id="rerank_top_k_final" type="number" name="rerank_top_k_final"
+                                                    value="3" class="form-control">
                                                 <small class="param-help">BGE 重新排序後取出最相關個數</small>
                                             </div>
                                         </div>
@@ -335,7 +361,8 @@
                                         <div class="param-card-body">
                                             <div class="mb-sm">
                                                 <label for="llm_provider" class="form-label">Provider</label>
-                                                <select id="llm_provider" name="llm_provider" class="form-control" onchange="LLMProviderUI.switchProvider(this.value)">
+                                                <select id="llm_provider" name="llm_provider" class="form-control"
+                                                    onchange="LLMProviderUI.switchProvider(this.value)">
                                                     <option value="ollama">Ollama (本地模型)</option>
                                                     <option value="openai">OpenAI</option>
                                                     <option value="anthropic">Anthropic Claude</option>
@@ -344,7 +371,8 @@
                                                 <small class="param-help">選擇要使用的 LLM 服務提供商</small>
                                             </div>
                                             <div>
-                                                <button type="button" class="btn btn-sm btn-info" onclick="LLMProviderUI.testConnection()">
+                                                <button type="button" class="btn btn-sm btn-info"
+                                                    onclick="LLMProviderUI.testConnection()">
                                                     <i class="fas fa-plug"></i> 測試連線
                                                 </button>
                                             </div>
@@ -352,7 +380,8 @@
                                     </div>
 
                                     <!-- Ollama 設定 -->
-                                    <div class="param-card provider-config" data-provider="ollama" style="display: none;">
+                                    <div class="param-card provider-config" data-provider="ollama"
+                                        style="display: none;">
                                         <div class="param-card-header">
                                             <span class="param-importance critical">🔴</span>
                                             <h4>Ollama 模型選擇</h4>
@@ -374,7 +403,8 @@
                                             </div>
                                             <div>
                                                 <label for="is_enable_think" class="form-label">啟用推理</label>
-                                                <select id="is_enable_think" name="is_enable_think" class="form-control">
+                                                <select id="is_enable_think" name="is_enable_think"
+                                                    class="form-control">
                                                     <option value="False">off</option>
                                                     <option value="True">on</option>
                                                 </select>
@@ -392,17 +422,20 @@
                                         <div class="param-card-body">
                                             <div class="mb-sm">
                                                 <label for="temperature" class="form-label">temperature</label>
-                                                <input id="temperature" type="number" name="temperature" value="0.5" step="0.1" min="0" max="2" class="form-control">
+                                                <input id="temperature" type="number" name="temperature" value="0.5"
+                                                    step="0.1" min="0" max="2" class="form-control">
                                                 <small class="param-help">模型溫度（0-2，越高越有創意）</small>
                                             </div>
                                             <div class="mb-sm">
                                                 <label for="num_ctx" class="form-label">num_ctx</label>
-                                                <input id="num_ctx" type="number" name="num_ctx" value="4096" class="form-control">
+                                                <input id="num_ctx" type="number" name="num_ctx" value="4096"
+                                                    class="form-control">
                                                 <small class="param-help">上下文視窗大小</small>
                                             </div>
                                             <div>
                                                 <label for="num_predict" class="form-label">num_predict</label>
-                                                <input id="num_predict" type="number" name="num_predict" value="1024" class="form-control">
+                                                <input id="num_predict" type="number" name="num_predict" value="1024"
+                                                    class="form-control">
                                                 <small class="param-help">最大生成 token 數量</small>
                                             </div>
                                         </div>
@@ -416,17 +449,20 @@
                                         <div class="param-card-body">
                                             <div class="mb-sm">
                                                 <label for="top_k" class="form-label">top_k</label>
-                                                <input id="top_k" type="number" name="top_k" value="10" class="form-control">
+                                                <input id="top_k" type="number" name="top_k" value="10"
+                                                    class="form-control">
                                                 <small class="param-help">降低無意義內容機率（預設：40）</small>
                                             </div>
                                             <div class="mb-sm">
                                                 <label for="top_p" class="form-label">top_p</label>
-                                                <input id="top_p" type="number" name="top_p" value="0.9" step="0.1" min="0" max="1" class="form-control">
+                                                <input id="top_p" type="number" name="top_p" value="0.9" step="0.1"
+                                                    min="0" max="1" class="form-control">
                                                 <small class="param-help">採樣多樣性（0-1）</small>
                                             </div>
                                             <div>
                                                 <label for="min_p" class="form-label">min_p</label>
-                                                <input id="min_p" type="number" name="min_p" value="0.0" step="0.01" min="0" max="1" class="form-control">
+                                                <input id="min_p" type="number" name="min_p" value="0.0" step="0.01"
+                                                    min="0" max="1" class="form-control">
                                                 <small class="param-help">最低機率閾值</small>
                                             </div>
                                         </div>
@@ -440,12 +476,14 @@
                                         <div class="param-card-body">
                                             <div class="mb-sm">
                                                 <label for="repeat_last_n" class="form-label">repeat_last_n</label>
-                                                <input id="repeat_last_n" type="number" name="repeat_last_n" value="64" class="form-control">
+                                                <input id="repeat_last_n" type="number" name="repeat_last_n" value="64"
+                                                    class="form-control">
                                                 <small class="param-help">回看文字長度避免重複</small>
                                             </div>
                                             <div>
                                                 <label for="repeat_penalty" class="form-label">repeat_penalty</label>
-                                                <input id="repeat_penalty" type="number" name="repeat_penalty" value="1.1" step="0.1" min="0" max="2" class="form-control">
+                                                <input id="repeat_penalty" type="number" name="repeat_penalty"
+                                                    value="1.1" step="0.1" min="0" max="2" class="form-control">
                                                 <small class="param-help">重複內容懲罰強度</small>
                                             </div>
                                         </div>
@@ -459,19 +497,22 @@
                                         <div class="param-card-body">
                                             <div class="mb-sm">
                                                 <label for="seed" class="form-label">seed</label>
-                                                <input id="seed" type="number" name="seed" value="0" class="form-control">
+                                                <input id="seed" type="number" name="seed" value="0"
+                                                    class="form-control">
                                                 <small class="param-help">隨機數種子（0為隨機）</small>
                                             </div>
                                             <div>
                                                 <label for="stop" class="form-label">stop</label>
-                                                <input id="stop" type="text" name="stop" value="<|endoftext|>" class="form-control">
+                                                <input id="stop" type="text" name="stop" value="<|endoftext|>"
+                                                    class="form-control">
                                                 <small class="param-help">停止字串</small>
                                             </div>
                                         </div>
                                     </div>
 
                                     <!-- OpenAI 設定 (隱藏) -->
-                                    <div class="param-card provider-config" data-provider="openai" style="display: none;">
+                                    <div class="param-card provider-config" data-provider="openai"
+                                        style="display: none;">
                                         <div class="param-card-header">
                                             <span class="param-importance critical">🔴</span>
                                             <h4>OpenAI 設定</h4>
@@ -479,17 +520,20 @@
                                         <div class="param-card-body">
                                             <div class="mb-sm">
                                                 <label for="openai_api_key" class="form-label">API Key</label>
-                                                <input id="openai_api_key" type="password" name="openai_api_key" value="" class="form-control" placeholder="sk-...">
+                                                <input id="openai_api_key" type="password" name="openai_api_key"
+                                                    value="" class="form-control" placeholder="sk-...">
                                                 <small class="param-help">OpenAI API 金鑰</small>
                                             </div>
                                             <div class="mb-sm">
                                                 <label for="openai_api_base" class="form-label">API Base URL</label>
-                                                <input id="openai_api_base" type="text" name="openai_api_base" value="https://api.openai.com/v1" class="form-control">
+                                                <input id="openai_api_base" type="text" name="openai_api_base"
+                                                    value="https://api.openai.com/v1" class="form-control">
                                                 <small class="param-help">OpenAI API 基礎網址</small>
                                             </div>
                                             <div class="mb-sm">
                                                 <label for="openai_model" class="form-label">Model</label>
                                                 <select id="openai_model" name="openai_model" class="form-control">
+                                                    <option value="gpt-oss-20b">GPT OSS 20B</option>
                                                     <option value="gpt-4-turbo-preview">GPT-4 Turbo</option>
                                                     <option value="gpt-4">GPT-4</option>
                                                     <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
@@ -497,13 +541,17 @@
                                                 <small class="param-help">使用的 OpenAI 模型</small>
                                             </div>
                                             <div>
-                                                <label for="openai_organization" class="form-label">Organization (選填)</label>
-                                                <input id="openai_organization" type="text" name="openai_organization" value="" class="form-control">
+                                                <label for="openai_organization" class="form-label">Organization
+                                                    (選填)</label>
+                                                <input id="openai_organization" type="text" name="openai_organization"
+                                                    value="" class="form-control">
                                                 <small class="param-help">OpenAI 組織 ID（如有）</small>
                                             </div>
                                             <div class="mb-sm" style="margin-top: 12px;">
-                                                <label for="openai_reasoning_effort" class="form-label">Reasoning Effort（推理力度）</label>
-                                                <select id="openai_reasoning_effort" name="openai_reasoning_effort" class="form-control">
+                                                <label for="openai_reasoning_effort" class="form-label">Reasoning
+                                                    Effort（推理力度）</label>
+                                                <select id="openai_reasoning_effort" name="openai_reasoning_effort"
+                                                    class="form-control">
                                                     <option value="none">停用推理 (none)</option>
                                                     <option value="low">低 (low)</option>
                                                     <option value="medium" selected>中 (medium) — 建議</option>
@@ -517,7 +565,8 @@
                                     </div>
 
                                     <!-- Anthropic 設定 (隱藏) -->
-                                    <div class="param-card provider-config" data-provider="anthropic" style="display: none;">
+                                    <div class="param-card provider-config" data-provider="anthropic"
+                                        style="display: none;">
                                         <div class="param-card-header">
                                             <span class="param-importance critical">🔴</span>
                                             <h4>Anthropic Claude 設定</h4>
@@ -525,17 +574,20 @@
                                         <div class="param-card-body">
                                             <div class="mb-sm">
                                                 <label for="anthropic_api_key" class="form-label">API Key</label>
-                                                <input id="anthropic_api_key" type="password" name="anthropic_api_key" value="" class="form-control" placeholder="sk-ant-...">
+                                                <input id="anthropic_api_key" type="password" name="anthropic_api_key"
+                                                    value="" class="form-control" placeholder="sk-ant-...">
                                                 <small class="param-help">Anthropic API 金鑰</small>
                                             </div>
                                             <div class="mb-sm">
                                                 <label for="anthropic_api_base" class="form-label">API Base URL</label>
-                                                <input id="anthropic_api_base" type="text" name="anthropic_api_base" value="https://api.anthropic.com" class="form-control">
+                                                <input id="anthropic_api_base" type="text" name="anthropic_api_base"
+                                                    value="https://api.anthropic.com" class="form-control">
                                                 <small class="param-help">Anthropic API 基礎網址</small>
                                             </div>
                                             <div class="mb-sm">
                                                 <label for="anthropic_model" class="form-label">Model</label>
-                                                <select id="anthropic_model" name="anthropic_model" class="form-control">
+                                                <select id="anthropic_model" name="anthropic_model"
+                                                    class="form-control">
                                                     <option value="claude-haiku-4-5">Claude 4.5 Haiku</option>
                                                     <option value="claude-sonnet-4-5">Claude 4.5 Sonnet</option>
                                                     <option value="claude-opus-4-1">Claude 4.1 Opus</option>
@@ -543,15 +595,19 @@
                                                 <small class="param-help">使用的 Claude 模型</small>
                                             </div>
                                             <div>
-                                                <label for="anthropic_api_version" class="form-label">API Version</label>
-                                                <input id="anthropic_api_version" type="text" name="anthropic_api_version" value="2023-06-01" class="form-control">
+                                                <label for="anthropic_api_version" class="form-label">API
+                                                    Version</label>
+                                                <input id="anthropic_api_version" type="text"
+                                                    name="anthropic_api_version" value="2023-06-01"
+                                                    class="form-control">
                                                 <small class="param-help">Anthropic API 版本</small>
                                             </div>
                                         </div>
                                     </div>
 
                                     <!-- Vertex AI 配置卡片 -->
-                                    <div class="param-card provider-config" data-provider="vertex_ai" style="display: none;">
+                                    <div class="param-card provider-config" data-provider="vertex_ai"
+                                        style="display: none;">
                                         <div class="param-card-header">
                                             <span class="param-importance critical">🔴</span>
                                             <h4>Vertex AI 配置</h4>
@@ -564,12 +620,15 @@
                                             <div class="mb-sm">
                                                 <label class="form-label">憑證狀態</label>
                                                 <div class="mb-2">
-                                                    <span id="keyStatusText" class="text-muted d-block mb-2">尚未檢查憑證狀態</span>
+                                                    <span id="keyStatusText"
+                                                        class="text-muted d-block mb-2">尚未檢查憑證狀態</span>
                                                     <div class="vertex-ai-btn-group">
-                                                        <button type="button" class="btn btn-sm btn-info" onclick="VertexAIManager.checkKeyStatus()">
+                                                        <button type="button" class="btn btn-sm btn-info"
+                                                            onclick="VertexAIManager.checkKeyStatus()">
                                                             <i class="fas fa-sync"></i> 檢查憑證
                                                         </button>
-                                                        <button type="button" class="btn btn-sm btn-warning" onclick="VertexAIManager.showUpdateKeyGuide()">
+                                                        <button type="button" class="btn btn-sm btn-warning"
+                                                            onclick="VertexAIManager.showUpdateKeyGuide()">
                                                             <i class="fas fa-key"></i> 更新憑證
                                                         </button>
                                                     </div>
@@ -581,15 +640,17 @@
 
                                             <!-- 配置欄位 -->
                                             <div class="mb-sm">
-                                                <label for="vertex_ai_project_id" class="form-label">GCP Project ID <span class="text-danger">*</span></label>
+                                                <label for="vertex_ai_project_id" class="form-label">GCP Project ID
+                                                    <span class="text-danger">*</span></label>
                                                 <input id="vertex_ai_project_id" type="text" name="vertex_ai_project_id"
-                                                       class="form-control" placeholder="your-project-id">
+                                                    class="form-control" placeholder="your-project-id">
                                                 <small class="param-help">Google Cloud 專案 ID（必填）</small>
                                             </div>
 
                                             <div class="mb-sm">
                                                 <label for="vertex_ai_location_id" class="form-label">Location</label>
-                                                <select id="vertex_ai_location_id" name="vertex_ai_location_id" class="form-control">
+                                                <select id="vertex_ai_location_id" name="vertex_ai_location_id"
+                                                    class="form-control">
                                                     <option value="global">GLOBAL（推薦）</option>
                                                     <option value="us-central1">US Central 1（推薦2）</option>
                                                     <option value="us-east5">US East 5</option>
@@ -605,29 +666,35 @@
 
                                             <div class="mb-sm">
                                                 <label for="vertex_ai_model_id" class="form-label">Model</label>
-                                                <select id="vertex_ai_model_id" name="vertex_ai_model_id" class="form-control">
+                                                <select id="vertex_ai_model_id" name="vertex_ai_model_id"
+                                                    class="form-control">
                                                     <option value="claude-haiku-4-5@20251001">Claude 4.5 Haik</option>
-                                                    <option value="claude-sonnet-4-5@20250929">Claude 4.5 Sonnet</option>
+                                                    <option value="claude-sonnet-4-5@20250929">Claude 4.5 Sonnet
+                                                    </option>
                                                     <option value="claude-opus-4-1@20250805">Claude 4.1 Opus</option>
                                                 </select>
                                                 <small class="param-help">選擇 Claude 模型版本</small>
                                             </div>
 
                                             <div class="mb-sm">
-                                                <label for="vertex_ai_anthropic_version" class="form-label">Anthropic Version</label>
-                                                <input id="vertex_ai_anthropic_version" type="text" name="vertex_ai_anthropic_version"
-                                                       value="vertex-2023-10-16" class="form-control" readonly>
+                                                <label for="vertex_ai_anthropic_version" class="form-label">Anthropic
+                                                    Version</label>
+                                                <input id="vertex_ai_anthropic_version" type="text"
+                                                    name="vertex_ai_anthropic_version" value="vertex-2023-10-16"
+                                                    class="form-control" readonly>
                                                 <small class="param-help">Vertex AI Anthropic API 版本（通常不需要修改）</small>
                                             </div>
                                         </div>
                                     </div>
 
                                     <!-- Vertex AI 設定指南卡片 -->
-                                    <div class="param-card param-card-wide provider-config" data-provider="vertex_ai" style="display: none;">
+                                    <div class="param-card param-card-wide provider-config" data-provider="vertex_ai"
+                                        style="display: none;">
                                         <div class="param-card-header">
                                             <span class="param-importance critical">📚</span>
                                             <h4>Vertex AI 設定指南</h4>
-                                            <button type="button" class="btn btn-sm" onclick="VertexAIManager.toggleSetupGuide()">
+                                            <button type="button" class="btn btn-sm"
+                                                onclick="VertexAIManager.toggleSetupGuide()">
                                                 <i class="fas fa-chevron-up" id="vertexAISetupGuideToggle"></i>
                                             </button>
                                         </div>
@@ -637,32 +704,39 @@
                                                 <ol>
                                                     <li>
                                                         <strong>建立 Service Account：</strong>
-                                                        <pre style="background: #f5f5f5; padding: 10px; border-radius: 4px;">gcloud iam service-accounts create rag-vertex-ai \
+                                                        <pre
+                                                            style="background: #f5f5f5; padding: 10px; border-radius: 4px;">gcloud iam service-accounts create rag-vertex-ai \
     --display-name="RAG Vertex AI Service Account"</pre>
                                                     </li>
                                                     <li>
                                                         <strong>授予權限：</strong>
-                                                        <pre style="background: #f5f5f5; padding: 10px; border-radius: 4px;">gcloud projects add-iam-policy-binding ${PROJECT_ID} \
+                                                        <pre
+                                                            style="background: #f5f5f5; padding: 10px; border-radius: 4px;">gcloud projects add-iam-policy-binding ${PROJECT_ID} \
     --member="serviceAccount:rag-vertex-ai@${PROJECT_ID}.iam.gserviceaccount.com" \
     --role="roles/aiplatform.user"</pre>
                                                     </li>
                                                     <li>
                                                         <strong>下載 Key：</strong>
-                                                        <pre style="background: #f5f5f5; padding: 10px; border-radius: 4px;">gcloud iam service-accounts keys create ./credentials/vertex-ai-key.json \
+                                                        <pre
+                                                            style="background: #f5f5f5; padding: 10px; border-radius: 4px;">gcloud iam service-accounts keys create ./credentials/vertex-ai-key.json \
     --iam-account=rag-vertex-ai@${PROJECT_ID}.iam.gserviceaccount.com</pre>
                                                     </li>
                                                     <li>
                                                         <strong>重啟服務：</strong>
-                                                        <pre style="background: #f5f5f5; padding: 10px; border-radius: 4px;">docker compose restart backend</pre>
+                                                        <pre
+                                                            style="background: #f5f5f5; padding: 10px; border-radius: 4px;">docker compose restart backend</pre>
                                                     </li>
                                                 </ol>
                                                 <div class="alert alert-warning mt-3">
                                                     <strong>重要提醒：</strong>
                                                     <ul>
-                                                        <li>此操作是在宿主機操作，請確認宿主機有安裝 gcloud CLI 並且已登入，且專案有啟用 Vertex AI API</li>
+                                                        <li>此操作是在宿主機操作，請確認宿主機有安裝 gcloud CLI 並且已登入，且專案有啟用 Vertex AI API
+                                                        </li>
                                                         <li>此操作需在專案目錄執行，請確認專案目錄有 <code>credentials</code> 目錄</li>
-                                                        <li>Key 檔案必須放在 <code>./credentials/vertex-ai-key.json</code></li>
-                                                        <li>確保檔案權限：<code>chmod 644 credentials/vertex-ai-key.json</code></li>
+                                                        <li>Key 檔案必須放在 <code>./credentials/vertex-ai-key.json</code>
+                                                        </li>
+                                                        <li>確保檔案權限：<code>chmod 644 credentials/vertex-ai-key.json</code>
+                                                        </li>
                                                         <li>不要將 key 檔案提交到版本控制</li>
                                                         <li>建議每 90 天更換一次 key</li>
                                                     </ul>
@@ -684,13 +758,17 @@
                                         <div class="param-card-body">
                                             <div class="mb-sm">
                                                 <label for="smtp_host" class="form-label">SMTP 主機</label>
-                                                <input id="smtp_host" type="text" name="smtp_host" value="smtp.gmail.com" class="form-control">
-                                                <small class="param-help">SMTP 伺服器位址（例：smtp.gmail.com, smtp.outlook.com）</small>
+                                                <input id="smtp_host" type="text" name="smtp_host"
+                                                    value="smtp.gmail.com" class="form-control">
+                                                <small class="param-help">SMTP 伺服器位址（例：smtp.gmail.com,
+                                                    smtp.outlook.com）</small>
                                             </div>
                                             <div class="mb-sm">
                                                 <label for="smtp_port" class="form-label">SMTP 埠號</label>
-                                                <input id="smtp_port" type="number" name="smtp_port" value="587" class="form-control">
-                                                <small class="param-help">SMTP 伺服器埠號（587: STARTTLS, 465: SSL, 25: 無加密）</small>
+                                                <input id="smtp_port" type="number" name="smtp_port" value="587"
+                                                    class="form-control">
+                                                <small class="param-help">SMTP 伺服器埠號（587: STARTTLS, 465: SSL, 25:
+                                                    無加密）</small>
                                             </div>
                                             <div>
                                                 <label for="smtp_use_tls" class="form-label">使用加密連線</label>
@@ -711,12 +789,14 @@
                                         <div class="param-card-body">
                                             <div class="mb-sm">
                                                 <label for="smtp_username" class="form-label">SMTP 使用者名稱</label>
-                                                <input id="smtp_username" type="text" name="smtp_username" value="" class="form-control">
+                                                <input id="smtp_username" type="text" name="smtp_username" value=""
+                                                    class="form-control">
                                                 <small class="param-help">SMTP 伺服器登入帳號（通常是完整的電子郵件地址）</small>
                                             </div>
                                             <div>
                                                 <label for="smtp_password" class="form-label">SMTP 密碼</label>
-                                                <input id="smtp_password" type="password" name="smtp_password" value="" class="form-control">
+                                                <input id="smtp_password" type="password" name="smtp_password" value=""
+                                                    class="form-control">
                                                 <small class="param-help">SMTP 伺服器登入密碼（Gmail 建議使用應用程式專用密碼）</small>
                                             </div>
                                         </div>
@@ -730,12 +810,14 @@
                                         <div class="param-card-body">
                                             <div class="mb-sm">
                                                 <label for="mail_from_email" class="form-label">寄件者信箱</label>
-                                                <input id="mail_from_email" type="email" name="mail_from_email" value="" class="form-control">
+                                                <input id="mail_from_email" type="email" name="mail_from_email" value=""
+                                                    class="form-control">
                                                 <small class="param-help">系統寄出郵件時顯示的寄件者信箱</small>
                                             </div>
                                             <div>
                                                 <label for="mail_from_name" class="form-label">寄件者名稱</label>
-                                                <input id="mail_from_name" type="text" name="mail_from_name" value="E-Helper系統" class="form-control">
+                                                <input id="mail_from_name" type="text" name="mail_from_name"
+                                                    value="E-Helper系統" class="form-control">
                                                 <small class="param-help">系統寄出郵件時顯示的寄件者名稱</small>
                                             </div>
                                         </div>
@@ -749,12 +831,16 @@
                                         <div class="param-card-body">
                                             <div class="mb-sm">
                                                 <label for="activation_base_url" class="form-label">啟用頁面基礎網址</label>
-                                                <input id="activation_base_url" type="text" name="activation_base_url" value="http://localhost:8080" class="form-control">
+                                                <input id="activation_base_url" type="text" name="activation_base_url"
+                                                    value="http://localhost:8080" class="form-control">
                                                 <small class="param-help">用戶收到啟用郵件中連結的基礎網址</small>
                                             </div>
                                             <div>
-                                                <label for="activation_token_expire_hours" class="form-label">啟用連結有效期限（小時）</label>
-                                                <input id="activation_token_expire_hours" type="number" name="activation_token_expire_hours" value="168" class="form-control">
+                                                <label for="activation_token_expire_hours"
+                                                    class="form-label">啟用連結有效期限（小時）</label>
+                                                <input id="activation_token_expire_hours" type="number"
+                                                    name="activation_token_expire_hours" value="168"
+                                                    class="form-control">
                                                 <small class="param-help">啟用連結的有效時間（預設 168 小時 = 7 天）</small>
                                             </div>
                                         </div>
@@ -768,7 +854,8 @@
                                         <div class="param-card-body">
                                             <div class="mb-sm">
                                                 <label for="test_email_recipient" class="form-label">測試郵件收件者</label>
-                                                <input id="test_email_recipient" type="email" placeholder="輸入測試郵件地址" class="form-control">
+                                                <input id="test_email_recipient" type="email" placeholder="輸入測試郵件地址"
+                                                    class="form-control">
                                                 <small class="param-help">輸入郵件地址來測試 SMTP 設定是否正確</small>
                                             </div>
                                             <div class="text-center">
@@ -790,8 +877,10 @@
                                         <h4>名詞分析提示詞</h4>
                                     </div>
                                     <div class="param-card-body">
-                                        <label for="noun_analysis_prompt" class="form-label">noun_analysis_prompt</label>
-                                        <textarea id="noun_analysis_prompt" name="noun_analysis_prompt" rows="20" class="form-control param-prompt-textarea">### Task:...</textarea>
+                                        <label for="noun_analysis_prompt"
+                                            class="form-label">noun_analysis_prompt</label>
+                                        <textarea id="noun_analysis_prompt" name="noun_analysis_prompt" rows="20"
+                                            class="form-control param-prompt-textarea">### Task:...</textarea>
                                         <small class="param-help">用於分析使用者問題裡名詞並產生多種同義詞。<br>
                                             注意：{query.question} 是使用者的問題，該變數不可以調整。</small>
                                     </div>
