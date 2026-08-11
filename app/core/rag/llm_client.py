@@ -163,8 +163,12 @@ class LLMClientWrapper:
             # 準備調用參數
             call_kwargs = {}
 
-            # 對於 Ollama provider，傳遞 think 參數
+            # 對於 Ollama provider，傳遞原生 think 參數
             if self.provider_type == "ollama" and think:
+                call_kwargs['think'] = think
+
+            # 對於 OpenAI provider（含 vLLM 部署），傳遞 think 以觸發 reasoning_effort
+            elif self.provider_type == "openai" and think:
                 call_kwargs['think'] = think
 
             # 合併 options 到 kwargs

@@ -67,6 +67,7 @@ class OpenAIProvider(BaseLLMProvider):
         temperature: float = 0.7,
         max_tokens: int = 1024,
         stream: bool = False,
+        think: bool = False,
         **kwargs
     ) -> Union[Generator[str, None, None], str]:
         """
@@ -78,6 +79,7 @@ class OpenAIProvider(BaseLLMProvider):
             temperature: Temperature for generation
             max_tokens: Maximum tokens to generate
             stream: Whether to stream the response
+            think: Whether to enable reasoning/thinking mode (vLLM reasoning_effort)
             **kwargs: Additional OpenAI-specific parameters
 
         Returns:
@@ -96,6 +98,14 @@ class OpenAIProvider(BaseLLMProvider):
             "max_tokens": max_tokens,
             "stream": stream
         }
+
+        # 推理模式：當使用者啟用 think 且 reasoning_effort 不為 none 時，
+        # 在 payload 注入 reasoning_effort（vLLM OpenAI-compatible 推理控制參數）
+        if think:
+            reasoning_effort = self.config.get('reasoning_effort', 'medium')
+            if reasoning_effort and reasoning_effort != 'none':
+                payload['reasoning_effort'] = reasoning_effort
+                logger.debug(f"啟用推理模式，reasoning_effort={reasoning_effort}")
 
         # Add optional parameters
         if 'top_p' in kwargs:
@@ -137,9 +147,12 @@ class OpenAIProvider(BaseLLMProvider):
                                     if 'choices' in chunk and len(chunk['choices']) > 0:
                                         delta = chunk['choices'][0].get('delta', {})
                                         content = delta.get('content', '')
-                                        if content:
-                                            # Format response to match existing streaming format
-                                            yield self.format_streaming_response(content)
+                                        # vLLM 推理模型的思考過程放在 delta.reasoning
+                                        # （較舊版本為 delta.reasoning_content）
+                                        reasoning = delta.get('reasoning', '') or delta.get('reasoning_content', '')
+                                        if content or reasoning:
+                                            # 同時傳遞 content 與 thinking（thinking 可為空字串）
+                                            yield self.format_streaming_response(content, thinking=reasoning)
                                 except json.JSONDecodeError:
                                     continue
 
@@ -155,7 +168,13 @@ class OpenAIProvider(BaseLLMProvider):
 
                 data = response.json()
                 if 'choices' in data and len(data['choices']) > 0:
-                    return data['choices'][0]['message']['content']
+                    message = data['choices'][0]['message']
+                    content = message.get('content', '')
+                    # 非串流模式下，thinking 內容在 message.reasoning
+                    reasoning = message.get('reasoning', '') or message.get('reasoning_content', '')
+                    if reasoning:
+                        logger.debug(f"收到推理內容，長度: {len(reasoning)} 字元")
+                    return content
                 return ""
 
         except Exception as e:

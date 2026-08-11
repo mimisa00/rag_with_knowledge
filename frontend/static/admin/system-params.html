@@ -501,6 +501,18 @@
                                                 <input id="openai_organization" type="text" name="openai_organization" value="" class="form-control">
                                                 <small class="param-help">OpenAI 組織 ID（如有）</small>
                                             </div>
+                                            <div class="mb-sm" style="margin-top: 12px;">
+                                                <label for="openai_reasoning_effort" class="form-label">Reasoning Effort（推理力度）</label>
+                                                <select id="openai_reasoning_effort" name="openai_reasoning_effort" class="form-control">
+                                                    <option value="none">停用推理 (none)</option>
+                                                    <option value="low">低 (low)</option>
+                                                    <option value="medium" selected>中 (medium) — 建議</option>
+                                                    <option value="high">高 (high)</option>
+                                                </select>
+                                                <small class="param-help">
+                                                    使用者啟用推理功能時套用的力度。vLLM 部署需模型支援 reasoning；設為「停用」可避免不支援的模型報錯。
+                                                </small>
+                                            </div>
                                         </div>
                                     </div>
 

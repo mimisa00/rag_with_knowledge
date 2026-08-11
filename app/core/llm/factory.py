@@ -111,6 +111,9 @@ class LLMFactory:
                 'api_base': config.get('openai_api_base', 'https://api.openai.com/v1'),
                 'organization': config.get('openai_organization', ''),
                 'model': config.get('openai_model', 'gpt-4-turbo-preview'),
+                # reasoning_effort: low / medium / high / none
+                # 'none' 表示即使啟用推理也不傳送此參數（用於不支援的模型）
+                'reasoning_effort': config.get('openai_reasoning_effort', 'medium'),
             }
 
         elif provider_type == 'anthropic':
