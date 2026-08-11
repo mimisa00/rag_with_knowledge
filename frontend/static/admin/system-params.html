@@ -375,6 +375,16 @@
                                                     onclick="LLMProviderUI.testConnection()">
                                                     <i class="fas fa-plug"></i> 測試連線
                                                 </button>
+                                                <small class="param-help">測試 Provider 是否正常運作及回應</small>
+                                            </div>
+                                            <div>
+                                                <label for="is_enable_think" class="form-label">啟用推理</label>
+                                                <select id="is_enable_think" name="is_enable_think"
+                                                    class="form-control">
+                                                    <option value="False">off</option>
+                                                    <option value="True">on</option>
+                                                </select>
+                                                <small class="param-help">部分模型支援推理功能</small>
                                             </div>
                                         </div>
                                     </div>
@@ -400,15 +410,6 @@
                                                     <option value="mistral:latest">mistral</option>
                                                     <option value="llama3.1:8b">llama3.1:8b</option>
                                                 </select>
-                                            </div>
-                                            <div>
-                                                <label for="is_enable_think" class="form-label">啟用推理</label>
-                                                <select id="is_enable_think" name="is_enable_think"
-                                                    class="form-control">
-                                                    <option value="False">off</option>
-                                                    <option value="True">on</option>
-                                                </select>
-                                                <small class="param-help">部分模型支援推理功能</small>
                                             </div>
                                         </div>
                                     </div>

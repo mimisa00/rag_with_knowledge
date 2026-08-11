@@ -281,6 +281,16 @@
                     if (elements.thinkResponseDiv) {
                         elements.thinkResponseDiv.innerHTML = "已關閉推理";
                     }
+                } else {
+                    // 系統允許推理，預設開啟（使用者可隨時手動關閉）
+                    enableThink = true;
+                    if (elements.thinkToggleSection) {
+                        elements.thinkToggleSection.classList.remove('d-none');
+                        elements.thinkToggleSection.classList.add('d-flex');
+                    }
+                    if (elements.thinkResponseDiv) {
+                        elements.thinkResponseDiv.innerHTML = "已啟用推理";
+                    }
                 }
                 
                 // 通知 UserMenu 更新狀態
@@ -740,6 +750,7 @@
             sendQuestion,
             loadConversations,
             checkThinkFeature,
+            syncWithUserMenu,
             setSelectedKnowledgeBase
         };
     })();
