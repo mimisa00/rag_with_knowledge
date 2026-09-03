@@ -22,22 +22,44 @@ services:
         max-size: "2m"
         max-file: "5"
 
-  ollama:
-    image: ollama/ollama
-    container_name: ollama
+  backend:
+    # 非首次啟動時可以註解掉 build 啟用 image，以加快啟動速度
+    build: ./backend
+   #image: rag_with_knowledge-backend:latest
+    container_name: backend
+    ports:
+      - "${BACKEND_PORT}:8080"
     environment:
       - TZ=${TZ}
-      - OLLAMA_KEEP_ALIVE=${OLLAMA_KEEP_ALIVE}
-    ports:
-      - "11434:11434"
+      - OLLAMA_API_HOST=${OLLAMA_API_HOST}
+      - HF_HOME=${HF_HOME}
+      - LOG_LEVEL=${LOG_LEVEL}
+      - DEBUG=${DEBUG}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - GOOGLE_APPLICATION_CREDENTIALS=/credentials/vertex-ai-key.json
+    depends_on:
+      - mariadb
     volumes:
-      - ./ollama:/root/.ollama
+      - ./app:/backend/app
+      - ./config:/etc/backend
+      - ./documents:/backend/documents
+      - ./faiss_data:${FAISS_DIR}
+      - ./frontend:/backend/frontend
+      - ./models:${HF_HOME}
+      - ./logs:/backend/logs
+      - .env:/backend/.env
+      - ./credentials/vertex-ai-key.json:/credentials/vertex-ai-key.json:ro
     restart: unless-stopped
     logging:
       driver: "json-file"
       options:
         max-size: "2m"
         max-file: "5"
+    # mark deploy release gpu source, because embedding parser text to used gpu 
     deploy:
       resources:
         reservations:
@@ -45,6 +67,31 @@ services:
             - driver: nvidia
               count: ${NVIDIA_GPU_COUNT}
               capabilities: [gpu]
+
+
+  #ollama:
+  #  image: ollama/ollama
+  #  container_name: ollama
+  #  environment:
+  #    - TZ=${TZ}
+  #    - OLLAMA_KEEP_ALIVE=${OLLAMA_KEEP_ALIVE}
+  #  ports:
+  #    - "11434:11434"
+  #  volumes:
+  #    - ./ollama:/root/.ollama
+  #  restart: unless-stopped
+  #  logging:
+  #    driver: "json-file"
+  #    options:
+  #      max-size: "2m"
+  #      max-file: "5"
+  #  deploy:
+  #    resources:
+  #      reservations:
+  #        devices:
+  #          - driver: nvidia
+  #            count: ${NVIDIA_GPU_COUNT}
+  #            capabilities: [gpu]
 
 
   #vllm:
@@ -78,50 +125,3 @@ services:
   #    --tool-call-parser openai
   #    --reasoning-parser openai_gptoss
   #  restart: unless-stopped
-
-
-  backend:
-    #build: ./backend
-    image: rag_with_ollama-backend:latest
-    container_name: backend
-    ports:
-      - "${BACKEND_PORT}:8080"
-    environment:
-      - TZ=${TZ}
-      - OLLAMA_API_HOST=${OLLAMA_API_HOST}
-      - HF_HOME=${HF_HOME}
-      - LOG_LEVEL=${LOG_LEVEL}
-      - DEBUG=${DEBUG}
-      - DB_HOST=${DB_HOST}
-      - DB_PORT=${DB_PORT}
-      - DB_NAME=${DB_NAME}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - GOOGLE_APPLICATION_CREDENTIALS=/credentials/vertex-ai-key.json
-    depends_on:
-      - ollama
-      - mariadb
-    volumes:
-      - ./app:/backend/app
-      - ./config:/etc/backend
-      - ./documents:/backend/documents
-      - ./faiss_data:${FAISS_DIR}
-      - ./frontend:/backend/frontend
-      - ./models:${HF_HOME}
-      - ./logs:/backend/logs
-      - .env:/backend/.env
-      - ./credentials/vertex-ai-key.json:/credentials/vertex-ai-key.json:ro
-    restart: unless-stopped
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "2m"
-        max-file: "5"
-    # mark deploy release gpu source, because embedding parser text to used gpu 
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: ${NVIDIA_GPU_COUNT}
-              capabilities: [gpu]

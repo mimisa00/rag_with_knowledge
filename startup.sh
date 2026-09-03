@@ -35,12 +35,14 @@ mkdir -p documents faiss_data logs mariadb_data models ollama
 
 
 # 啟動 MariaDB 服務
+source .env
+
 echo "🗄️ 啟動 MariaDB 資料庫服務..."
 docker compose up -d mariadb
 # 檢查資料庫是否正常運行
 echo "🔍 檢查資料庫狀態..."
 for i in {1..30}; do
-    if docker compose exec -T mariadb mysql -u rag_user -prag_password_2024 -e "SELECT 1;" > /dev/null 2>&1; then
+    if docker compose exec -T mariadb mysql -u ${DB_USER} -p${DB_PASSWORD} -e "SELECT 1;" > /dev/null 2>&1; then
         echo "✅ 資料庫已正常運行"
         break
     else
