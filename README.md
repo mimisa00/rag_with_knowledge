@@ -7,6 +7,10 @@
 - **後台參數調整**：可調整系統運作所需的參數設定
 - **多 LLM Provider 支援**：Ollama、OpenAI、Anthropic、Vertex AI
 
+## Quick View
+<img width="500" alt="580768214-c731f5f6-96fc-456d-b55d-257c7c9c5c45" src="https://github.com/user-attachments/assets/b1716ef8-78c3-41c8-9a48-fad9599f1666" />
+
+
 ## 支援的 LLM Providers
 - **Ollama**（預設）- 本地模型執行
 - **OpenAI** - GPT-4、GPT-3.5 等模型
