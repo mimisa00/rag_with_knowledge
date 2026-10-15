@@ -1,83 +1,83 @@
-# RAG (Retrieval-Augmented Generation) 系統
+# RAG (Retrieval-Augmented Generation) System
 
-## 本專案實作增強型檢索系統，支援多種 LLM 平台。系統具備以下功能：
-- **帳號管理**：提供簡易的使用者註冊與登入功能
-- **檔案上傳與擷取**：可上傳檔案並進行內容擷取
-- **索引建立**：建立語意檢索所需的資料索引
-- **後台參數調整**：可調整系統運作所需的參數設定
-- **多 LLM Provider 支援**：Ollama、OpenAI、Anthropic、Vertex AI
+## This project implements an enhanced retrieval system that supports multiple LLM platforms. Features include:
+- **Account Management**: Simple user registration and login
+- **File Upload and Extraction**: Upload files and extract their content
+- **Index Building**: Build the data indexes required for semantic retrieval
+- **Admin Parameter Tuning**: Adjust the parameters the system needs to run
+- **Multi-LLM Provider Support**: Ollama, OpenAI, Anthropic, Vertex AI
 
 ## Quick View
 <img width="500" alt="580768214-c731f5f6-96fc-456d-b55d-257c7c9c5c45" src="https://github.com/user-attachments/assets/b1716ef8-78c3-41c8-9a48-fad9599f1666" />
 
 
-## 支援的 LLM Providers
-- **Ollama**（預設）- 本地模型執行
-- **OpenAI** - GPT-4、GPT-3.5 等模型
-- **Anthropic** - Claude 4 模型
-- **Vertex AI** - Google Cloud 上的 Anthropic Claude 模型 ([設定指南](docs/vertex-ai-setup.md))
+## Supported LLM Providers
+- **Ollama** (default) - Run models locally
+- **OpenAI** - GPT-4, GPT-3.5, and other models
+- **Anthropic** - Claude 4 models
+- **Vertex AI** - Anthropic Claude models on Google Cloud ([Setup Guide](docs/vertex-ai-setup.md))
 
-歡迎提供寶貴建議，您可以留言或來信與我們聯繫！
+We welcome your feedback! Feel free to leave a comment or contact us by email.
 
 
-## 專案結構
+## Project Structure
 
 ```
 rag/
-├── app/                      # Python 應用程式
-│   ├── main.py               # FastAPI 主應用入口
-│   ├── config/               # 配置管理
-│   │   ├── settings.py       # 應用程式設定
-│   │   ├── database.py       # 資料庫配置
-│   │   └── paths.py          # 路徑配置
-│   ├── api/                  # API 路由層
-│   │   └── routes/           # 路由定義
-│   ├── core/                 # 核心業務邏輯
-│   │   ├── security/         # 安全相關
-│   │   ├── rag/              # RAG 功能
-│   │   └── document/         # 文檔處理
-│   ├── dao/                  # 資料存取層
-│   ├── models/               # 資料模型
-│   ├── services/             # 業務服務層
-│   ├── utils/                # 工具函數
-│   └── tests/                # 單元測試
-├── backend/                  # backend 配置
-│   ├── Dockerfile            # 容器配置
-│   ├── requirements.txt      # Python 依賴
-│   └── test_db_connection.py # 啟動時DB測試
-├── documents/                # 索引文件放置
-├── faiss_data/               # 向量資料庫儲存位置
-├── frontend/                 # 前端目錄
-│   └── static/               # 靜態文件 (HTML, CSS, JS)
-├── init-db/                  # 初始化 DB 文件
-├── logs/                     # 日誌文件
-├── mariadb_data/             # 資料庫儲存
-├── models/                   # 模型儲存位置
-├── ollama/                   # ollama 快取
-├── ollama_modelfile/         # ollama 自訂 modelfile
-├── docker-compose.yml        # Docker 服務配置
-├── env.example               # 環境變數範例
-├── README.md                 # 詳細文檔
-├── startup.ps1.sh            # Windows 環境啟動腳本
-└── startup.sh                # Linux   啟動腳本
+├── app/                      # Python application
+│   ├── main.py               # FastAPI application entry point
+│   ├── config/               # Configuration management
+│   │   ├── settings.py       # Application settings
+│   │   ├── database.py       # Database configuration
+│   │   └── paths.py          # Path configuration
+│   ├── api/                  # API routing layer
+│   │   └── routes/           # Route definitions
+│   ├── core/                 # Core business logic
+│   │   ├── security/         # Security
+│   │   ├── rag/              # RAG functionality
+│   │   └── document/         # Document processing
+│   ├── dao/                  # Data access layer
+│   ├── models/               # Data models
+│   ├── services/             # Business service layer
+│   ├── utils/                # Utility functions
+│   └── tests/                # Unit tests
+├── backend/                  # Backend configuration
+│   ├── Dockerfile            # Container configuration
+│   ├── requirements.txt      # Python dependencies
+│   └── test_db_connection.py # DB connection test at startup
+├── documents/                # Location for documents to be indexed
+├── faiss_data/               # Vector database storage
+├── frontend/                 # Frontend directory
+│   └── static/               # Static files (HTML, CSS, JS)
+├── init-db/                  # DB initialization files
+├── logs/                     # Log files
+├── mariadb_data/             # Database storage
+├── models/                   # Model storage
+├── ollama/                   # Ollama cache
+├── ollama_modelfile/         # Custom Ollama Modelfiles
+├── docker-compose.yml        # Docker service configuration
+├── env.example               # Example environment variables
+├── README.md                 # Documentation
+├── startup.ps1.sh            # Startup script for Windows
+└── startup.sh                # Startup script for Linux
 ```
 
-## 快速開始
+## Quick Start
 
-### 前置需求
+### Prerequisites
 - Docker
 - Git
-- 至少 8GB RAM
-- NVIDIA GPU (可選，用於加速)
+- At least 8GB RAM
+- NVIDIA GPU (optional, for acceleration)
 
-### 1. Clone 專案
+### 1. Clone the Repository
 
 ```bash
-git clone https://gitlab.iwerp.xyz/op/rag_with_ollama.git
-cd rag_with_ollama
+git clone https://github.com/mimisa00/rag_with_knowledge.git
+cd rag_with_knowledge
 ```
 
-### 2. 環境設置
+### 2. Environment Setup
 
 #### Linux/macOS:
 ```bash
@@ -85,19 +85,19 @@ chmod +x startup.sh
 ./startup.sh
 ```
 
-### 3. 訪問系統
-- 主界面: http://localhost:8080/login
+### 3. Access the System
+- Main interface: http://localhost:8080/login
 
 
-## 配置本地端開發環境
+## Local Development Setup
 ```
-# 需手動執行 
-1.安裝並啟動 ollama
-2.安裝 mariadb 資料庫 v10.11 並建立 DB 帳號，帳號密碼需與 env.example 一致
-3.初始化資料庫     : 執行 init-db 底下所有 sql
-4.建立環境變數     : 複製 env.example > .env 並放到專案目錄下
-5.建立工作目錄     : documents faiss_data logs models
-5.更新 python lib : pip install --upgrade pip
-6.安裝 python lib : pip install -r requirements.txt
-7.啟動 FastApi    : uvicorn app.main:app --host 127.0.0.1 --port 8080
+# The following steps must be performed manually:
+1. Install and start Ollama
+2. Install MariaDB v10.11 and create a DB account (credentials must match env.example)
+3. Initialize the database: run all SQL files under init-db
+4. Create environment variables: copy env.example to .env and place it in the project directory
+5. Create working directories: documents faiss_data logs models
+6. Upgrade pip: pip install --upgrade pip
+7. Install Python libraries: pip install -r requirements.txt
+8. Start FastAPI: uvicorn app.main:app --host 127.0.0.1 --port 8080
 ```
