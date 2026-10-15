@@ -1,6 +1,6 @@
 # RAG (Retrieval-Augmented Generation) System
 
-## This project implements an enhanced retrieval system that supports multiple LLM platforms. Features include:
+## This project implements an enhanced retrieval system by Claude Code that supports multiple LLM platforms. Features include:
 - **Account Management**: Simple user registration and login
 - **File Upload and Extraction**: Upload files and extract their content
 - **Index Building**: Build the data indexes required for semantic retrieval
