@@ -8,7 +8,7 @@
 - **Multi-LLM Provider Support**: Ollama, OpenAI, Anthropic, Vertex AI
 
 ## Quick View
-<img width="500" alt="674189821-b1716ef8-78c3-41c8-9a48-fad9599f1666" src="https://github.com/user-attachments/assets/37e09e2c-ca2b-4758-b35d-83bdf5b725d9" />
+<img width="1920" height="923" alt="674189821-b1716ef8-78c3-41c8-9a48-fad9599f1666" src="https://github.com/user-attachments/assets/c1e284ce-8f18-401c-987b-382559dd2f26" />
 
 
 ## Supported LLM Providers
